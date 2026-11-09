@@ -9654,10 +9654,10 @@ react-native-vision-camera@5.2.3:
   resolved "https://registry.npmjs.org/react-native-vision-camera/-/react-native-vision-camera-5.2.3.tgz"
   integrity sha512-OHjgM8BPzxppTqbF1FEltj+fxvisj4xdghM7ypoT1p6cOe28HByhOJP1c7LkBiUiZuotbsdbQwGdJ8nU7ZvPzA==
 
-react-native-web@~0.21.0:
-  version "0.21.2"
-  resolved "https://registry.npmjs.org/react-native-web/-/react-native-web-0.21.2.tgz"
-  integrity sha512-SO2t9/17zM4iEnFvlu2DA9jqNbzNhoUP+AItkoCOyFmDMOhUnBBznBDCYN92fGdfAkfQlWzPoez6+zLxFNsZEg==
+react-native-web@~0.21.4:
+  version "0.21.4"
+  resolved "https://registry.yarnpkg.com/react-native-web/-/react-native-web-0.21.4.tgz#04d1d5018af18c6ebe749140bd863844d7316917"
+  integrity sha512-77B6KlalB4osNIck91TNFixPkYPsTbuNEvw8P7IV+4v4/5wZSBRKZnw0Zhx6YjuauDTz71gc8IW+fVhcBMjr5A==
   dependencies:
     "@babel/runtime" "^7.18.6"
     "@react-native/normalize-colors" "^0.74.1"
