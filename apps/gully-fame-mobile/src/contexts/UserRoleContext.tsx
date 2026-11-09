@@ -44,7 +44,7 @@ export const UserRoleProvider = ({
         } else {
           setRoleState(DEFAULT_ROLE);
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           setRoleState(DEFAULT_ROLE);
         }
@@ -71,7 +71,7 @@ export const UserRoleProvider = ({
     try {
       setRoleState(newRole);
       await AsyncStorage.setItem("userRole", newRole);
-    } catch (error) {
+    } catch {
       // Revert on error
       setRoleState(DEFAULT_ROLE);
     }

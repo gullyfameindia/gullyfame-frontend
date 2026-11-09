@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect,  useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 
@@ -11,7 +11,7 @@ interface LensOverlayProps {
 }
 
 const LensOverlay: React.FC<LensOverlayProps> = ({ lens, isRecording }) => {
-  const hintOpacity = useRef(new Animated.Value(1)).current;
+  const [hintOpacity] = useState(() => new Animated.Value(1));
   const rect = lens.overlayRect ?? FULL_FRAME;
 
   useEffect(() => {

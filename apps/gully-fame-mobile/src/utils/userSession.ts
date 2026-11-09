@@ -35,6 +35,8 @@ export const SESSION_CACHE_KEYS = [
   "profileCompleted",
   "accountCreatedVia",
   "@gullyfame_home_screen",
+  // Blocked users are per account, so they are cleared on logout.
+  "@gullyfame_blocked_users",
   // Legacy: the token used to be duplicated here. Always cleared.
   "authToken",
 ];

@@ -1,36 +1,17 @@
-import { getAuthHeaders } from './authApi';
 import type { ApiResponse } from './apiTypes';
+import { apiRequest, type HttpMethod } from './http';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.gullyfame.com/v1/api/';
-
+/** Every request goes through lib/http.ts (base URL, admin token, timeout, JSON guard). */
 async function call<T = any>(
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+  method: HttpMethod,
   path: string,
   body?: FormData | Record<string, unknown>
 ): Promise<ApiResponse<T>> {
-  try {
-    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers: getAuthHeaders(
-        body && !isForm ? { 'Content-Type': 'application/json', Accept: 'application/json' } : { Accept: 'application/json' }
-      ),
-      body: body ? (isForm ? (body as FormData) : JSON.stringify(body)) : undefined,
-    });
-    const text = await res.text();
-    let json: any = {};
-    try {
-      json = text ? JSON.parse(text) : {};
-    } catch {
-      return { success: false, message: `Invalid response from server (HTTP ${res.status})`, error: 'INVALID_JSON' };
-    }
-    if (!res.ok || json.code !== 1) {
-      return { success: false, message: json.message || `Request failed (HTTP ${res.status})`, error: `HTTP ${res.status}`, data: json.data };
-    }
-    return { success: true, message: json.message, data: json.data };
-  } catch (e: any) {
-    return { success: false, message: e?.message || 'Network error occurred', error: 'NETWORK_ERROR' };
-  }
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  const r = await apiRequest<T>(method, path, isForm ? { formData: body as FormData } : { body });
+  return r.success
+    ? { success: true, message: r.message, data: r.data }
+    : { success: false, message: r.message, error: r.error, data: r.data };
 }
 
 const id = (x: any): string => x?._id?.toString?.() || x?.id?.toString?.() || '';

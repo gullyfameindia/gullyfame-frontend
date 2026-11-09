@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect,  useState } from "react";
 import { View, StyleSheet, Animated } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,8 +10,8 @@ const DEFAULT_LOGO = require("../../assets/images/logo.png");
 const DEFAULT_BACKGROUND = "#3C2610";
 
 export default function SplashScreen() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [scaleAnim] = useState(() => new Animated.Value(0.9));
   const [hasStartedAnimation, setHasStartedAnimation] = useState(false);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function SplashScreen() {
         } else {
           router.replace("/auth/onboarding1");
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           router.replace("/auth/onboarding1");
         }

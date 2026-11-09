@@ -34,3 +34,5 @@ export default function AuthLayout() {
     </Stack>
   );
 }
+// Contains a crash to this section instead of taking down the whole app.
+export { RouteErrorBoundary as ErrorBoundary } from "@/components/RouteErrorBoundary";

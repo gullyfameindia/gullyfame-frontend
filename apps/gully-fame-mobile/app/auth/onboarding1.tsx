@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect,  useState } from "react";
 import {
   StyleSheet,
   ImageBackground,
@@ -18,15 +18,15 @@ import { useBranding } from "@contexts/BrandingContext";
 const { width, height } = Dimensions.get("window");
 
 
-const DEFAULT_ONBOARDING1 = require("@assets/images/onboarding1.png");
+const DEFAULT_ONBOARDING1 = require("@assets/images/onboarding1.webp");
 
 export default function Onboarding1() {
   const { splashImages } = useBranding();
   
   const backgroundImage = splashImages && splashImages.length > 0 && splashImages[0] ? { uri: splashImages[0] } : DEFAULT_ONBOARDING1;
   // const backgroundImage = splashImages[0] ? { uri: splashImages[0] } : DEFAULT_ONBOARDING1;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(50));
 
   useEffect(() => {
     Animated.parallel([
@@ -41,7 +41,7 @@ export default function Onboarding1() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   Text,
@@ -10,7 +11,6 @@ import {
   Modal,
   TextInput,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,6 +18,7 @@ import { Circle } from "react-native-svg";
 import { BackIcon } from "@/icons";
 import { getWalletSummary, toDisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
+import { Skeleton, SkeletonGrid, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
 export default function CoinsScreen() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -83,7 +84,7 @@ export default function CoinsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
 
       {}
@@ -99,9 +100,10 @@ export default function CoinsScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-        </View>
+        <SkeletonRoot style={{ flex: 1, padding: 16, gap: 20 }}>
+          <Skeleton height={160} radius={20} />
+          <SkeletonGrid count={4} aspectRatio={1.4} />
+        </SkeletonRoot>
       ) : loadError ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
           <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError}</Text>
@@ -470,7 +472,7 @@ export default function CoinsScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

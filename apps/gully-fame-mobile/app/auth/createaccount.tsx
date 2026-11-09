@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   Dimensions,
   Image,
@@ -11,7 +12,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { showGuestModeUnavailable } from "@utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -27,12 +28,10 @@ import { getNativePushToken, getDeviceType, registerPushTokenWithBackend } from 
 import { saveUserSession } from "@utils/userSession";
 
 let GoogleSignin: any = null;
-let statusCodes: any = null;
 try {
   const googleSignIn = require("@react-native-google-signin/google-signin");
   GoogleSignin = googleSignIn.GoogleSignin;
-  statusCodes = googleSignIn.statusCodes;
-} catch (e) { /* intentionally ignored */
+} catch { /* intentionally ignored */
 }
 
 const { width, height } = Dimensions.get("window");
@@ -70,24 +69,21 @@ export default function CreateAccount() {
   
 
   
-  useEffect(() => {
-    const checkTermsAccepted = async () => {
-      try {
-        const accepted = await AsyncStorage.getItem("termsAccepted");
-        if (accepted === "true") {
-          setTermsAccepted(true);
-        } else {
-          setTermsAccepted(false);
-        }
-      } catch (error) { /* intentionally ignored */
-      }
-    };
-    checkTermsAccepted();
-
-    
-    const interval = setInterval(checkTermsAccepted, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // The terms screen is a separate route that writes "termsAccepted" and returns here, so
+  // re-reading on focus is enough (no polling).
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      AsyncStorage.getItem("termsAccepted")
+        .then((accepted) => {
+          if (active) setTermsAccepted(accepted === "true");
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   // Mirrors the backend: any password of 6+ characters is accepted.
   const validatePassword = (pwd: string): string[] => {
@@ -264,7 +260,7 @@ export default function CreateAccount() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -291,6 +287,7 @@ export default function CreateAccount() {
               placeholderTextColor="#B7B7B7"
               value={firstName}
               onChangeText={setFirstName}
+              testID="signup-first-name"
             />
           </View>
 
@@ -304,6 +301,7 @@ export default function CreateAccount() {
               placeholderTextColor="#B7B7B7"
               value={lastName}
               onChangeText={setLastName}
+              testID="signup-last-name"
             />
           </View>
 
@@ -318,6 +316,7 @@ export default function CreateAccount() {
               keyboardType="phone-pad"
               value={mobileNo}
               onChangeText={setMobileNo}
+              testID="signup-mobile"
             />
           </View>
 
@@ -333,6 +332,7 @@ export default function CreateAccount() {
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
+              testID="signup-email"
             />
           </View>
 
@@ -348,11 +348,13 @@ export default function CreateAccount() {
                 secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={handlePasswordChange}
+                testID="signup-password"
               />
               {password.length > 0 && (
                 <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
+                  testID="signup-toggle-password"
                   activeOpacity={0.7}
                 >
                   {showPassword ? (
@@ -412,11 +414,13 @@ export default function CreateAccount() {
                 secureTextEntry={!showConfirmPassword}
                 value={confirmPassword}
                 onChangeText={handleConfirmPasswordChange}
+                testID="signup-confirm-password"
               />
               {confirmPassword.length > 0 && (
                 <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  testID="signup-toggle-confirm-password"
                   activeOpacity={0.7}
                 >
                   {showConfirmPassword ? (
@@ -442,6 +446,7 @@ export default function CreateAccount() {
                 role === "participant" && styles.roleButtonActive,
               ]}
               onPress={() => setRole("participant")}
+              testID="signup-role-participant"
               activeOpacity={0.8}
             >
               <Text
@@ -459,6 +464,7 @@ export default function CreateAccount() {
                 role === "fan" && styles.roleButtonActive,
               ]}
               onPress={() => setRole("fan")}
+              testID="signup-role-fan"
               activeOpacity={0.8}
             >
               <Text
@@ -477,6 +483,7 @@ export default function CreateAccount() {
               style={styles.termsLinkContainer}
               activeOpacity={0.8}
               onPress={() => router.push("./termsandconditions")}
+              testID="signup-terms-link"
             >
               <Text style={styles.termsLink}>
                 {termsAccepted
@@ -504,6 +511,7 @@ export default function CreateAccount() {
               isLoading && styles.primaryButtonDisabled,
             ]}
             onPress={handleCreateAccount}
+            testID="signup-submit"
             activeOpacity={0.85}
             disabled={isLoading}
           >
@@ -527,6 +535,7 @@ export default function CreateAccount() {
               style={styles.socialIconButton}
               activeOpacity={0.7}
               onPress={() => handleGoogleLogin("google")}
+              testID="signup-google"
               disabled={isSocialLoading}
             >
               {isGoogleLoading ? (
@@ -564,6 +573,7 @@ export default function CreateAccount() {
 
           <TouchableOpacity
             onPress={() => router.push("./signin")}
+            testID="signup-sign-in-link"
             activeOpacity={0.7}
           >
             <Text style={styles.footerText}>
@@ -573,6 +583,7 @@ export default function CreateAccount() {
 
           <TouchableOpacity
             onPress={showGuestModeUnavailable}
+            testID="signup-skip"
             activeOpacity={0.7}
             style={styles.skipButton}
           >
@@ -583,7 +594,7 @@ export default function CreateAccount() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

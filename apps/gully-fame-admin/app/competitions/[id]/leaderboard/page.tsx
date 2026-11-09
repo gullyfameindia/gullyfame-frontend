@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { ArrowLeft, Trophy, RefreshCw } from 'lucide-react';
+import { usePagedItems } from '@/lib/hooks';
+import Pagination from '@/components/Pagination';
 import { getCompetitionById, getCompetitionLeaderboard, type Competition, type CompetitionLeaderboard } from '@/lib/competitionApi';
 
 export default function CompetitionLeaderboardPage() {
@@ -14,21 +16,23 @@ export default function CompetitionLeaderboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchData();
-    }
-  }, [params.id]);
+  const competitionId = params.id as string | undefined;
+  const { page, setPage, totalPages, total, pageSize, pageItems } = usePagedItems(leaderboard, 25);
+  // Only the newest request may update state (navigating between competitions can overlap).
+  const latestRequest = useRef(0);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!competitionId) return;
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
       
       const [compResult, leaderboardResult] = await Promise.all([
-        getCompetitionById(params.id as string),
-        getCompetitionLeaderboard(params.id as string),
+        getCompetitionById(competitionId),
+        getCompetitionLeaderboard(competitionId),
       ]);
+      if (requestId !== latestRequest.current) return;
       
       if (compResult.success && compResult.data) {
         setCompetition(compResult.data);
@@ -40,12 +44,17 @@ export default function CompetitionLeaderboardPage() {
         setError(leaderboardResult.message || 'Failed to fetch leaderboard');
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching data:', err);
       setError(err.message || 'Failed to load data');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, [competitionId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) return '🥇';
@@ -133,12 +142,12 @@ export default function CompetitionLeaderboardPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {leaderboard.map((entry, index) => (
-                  <tr key={entry.id || entry._id || index} className="hover:bg-gray-50">
+                {pageItems.map((entry, localIndex) => (
+                  <tr key={entry.id || entry._id || localIndex} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className="text-lg font-bold text-gray-900">
-                          {getRankIcon(entry.rank || index + 1)}
+                          {getRankIcon(entry.rank || (page - 1) * pageSize + localIndex + 1)}
                         </span>
                       </div>
                     </td>
@@ -177,6 +186,7 @@ export default function CompetitionLeaderboardPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
           </div>
         )}
       </div>

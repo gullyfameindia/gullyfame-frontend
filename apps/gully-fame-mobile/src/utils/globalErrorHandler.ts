@@ -2,6 +2,8 @@
 // and for promise rejections nobody catches. React render errors are handled by
 // the root ErrorBoundary in app/_layout.tsx.
 
+import { reportError } from "./monitoring";
+
 type ErrorHandler = (error: unknown, isFatal?: boolean) => void;
 
 let installed = false;
@@ -19,6 +21,7 @@ export function installGlobalErrorHandlers() {
     errorUtils.setGlobalHandler((error, isFatal) => {
       // Keep React Native's default behaviour for fatal errors (red box in dev,
       // crash report in release). Non-fatal errors are logged without crashing.
+      reportError(error, isFatal ? "global-fatal" : "global-nonfatal");
       if (isFatal) {
         defaultHandler(error, isFatal);
       }
@@ -31,7 +34,8 @@ export function installGlobalErrorHandlers() {
   if (hermes?.enablePromiseRejectionTracker) {
     hermes.enablePromiseRejectionTracker({
       allRejections: true,
-      onUnhandled: (id: number, rejection: unknown) => {
+      onUnhandled: (_id: number, rejection: unknown) => {
+        reportError(rejection, "unhandled-rejection");
       },
       onHandled: () => {},
     });

@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { safeDecode } from "@/utils/routeParams";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   Text,
@@ -24,9 +26,9 @@ const genders = ["Female", "Male", "Non-binary", "Prefer not to say"];
 export default function OnboardingPersonalDetails() {
   const params = useLocalSearchParams();
   const role = params.role ? String(params.role) : "participant";
-  const firstName = params.firstName ? decodeURIComponent(String(params.firstName)) : "";
-  const lastName = params.lastName ? decodeURIComponent(String(params.lastName)) : "";
-  const email = params.email ? decodeURIComponent(String(params.email)) : "";
+  const firstName = params.firstName ? safeDecode(String(params.firstName)) : "";
+  const lastName = params.lastName ? safeDecode(String(params.lastName)) : "";
+  const email = params.email ? safeDecode(String(params.email)) : "";
   const fromVerified = params.fromVerified === "true";
   const fromKycFlow = params.fromKycFlow === "true";
 
@@ -122,7 +124,7 @@ export default function OnboardingPersonalDetails() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
@@ -192,7 +194,7 @@ export default function OnboardingPersonalDetails() {
           <Text style={styles.secondaryButtonText}>Skip (You can update later)</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

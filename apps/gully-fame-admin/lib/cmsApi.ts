@@ -1,169 +1,55 @@
-import { getAuthHeaders } from './authApi';
 import type { ApiResponse } from './apiTypes';
+import { apiRequest, type HttpResult } from './http';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.gullyfame.com/v1/api/';
+/**
+ * CMS pages. Reads and writes go through lib/http.ts (base URL, admin token, timeout, JSON guard).
+ * Paths and body field names are exactly as in the API collection, including its spellings
+ * (termAndCondition / termsAndConditions).
+ */
 
-async function makeGetRequest(apiName: string, endpoint: string): Promise<ApiResponse<any>> {
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'GET',
-      headers: getAuthHeaders({
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      }),
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error(`[CMS API] GET ${apiName} - Parse error:`, parseError);
-      
-      if (!httpResponse.ok) {
-        console.error(`[CMS API] GET ${apiName} - Error:`, httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message: `Failed to fetch ${apiName.toLowerCase()}: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.code !== 1) {
-      console.error(`[CMS API] GET ${apiName} - API Error:`, responseData);
-      return {
-        success: false,
-        message: responseData.message || responseData.error || `Failed to fetch ${apiName.toLowerCase()} with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: responseData.data,
-      };
-    }
-
-    return {
-      success: true,
-      message: responseData.message || `${apiName} fetched successfully`,
-      data: responseData.data,
-    };
-  } catch (error: any) {
-    console.error(`[CMS API] GET ${apiName} - Network error:`, error);
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
-}
-
-async function makePostRequest(apiName: string, endpoint: string, requestBody: any): Promise<ApiResponse<any>> {
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: getAuthHeaders({
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      }),
-      body: JSON.stringify(requestBody),
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error(`[CMS API] POST ${apiName} - Parse error:`, parseError);
-      
-      if (!httpResponse.ok) {
-        console.error(`[CMS API] POST ${apiName} - Error:`, httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message: `Failed to update ${apiName.toLowerCase()}: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.code !== 1) {
-      console.error(`[CMS API] POST ${apiName} - API Error:`, responseData);
-      return {
-        success: false,
-        message: responseData.message || responseData.error || `Failed to update ${apiName.toLowerCase()} with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: responseData.data,
-      };
-    }
-
-    return {
-      success: true,
-      message: responseData.message || `${apiName} updated successfully`,
-      data: responseData.data,
-    };
-  } catch (error: any) {
-    console.error(`[CMS API] POST ${apiName} - Network error:`, error);
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
+function toResponse(result: HttpResult<any>, fallbackMessage: string): ApiResponse<any> {
+  return result.success
+    ? { success: true, message: result.message || fallbackMessage, data: result.data }
+    : { success: false, message: result.message, error: result.error, data: result.data };
 }
 
 export async function getTermsAndConditions(): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/termAndCondition`;
-  return makeGetRequest('Terms and Conditions', endpoint);
+  return toResponse(await apiRequest('GET', 'admin/termAndCondition'), 'Terms and Conditions fetched successfully');
 }
 
 export async function updateTermsAndConditions(termsAndConditions: string): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/termAndCondition`;
-  const requestBody = { termsAndConditions };
-  return makePostRequest('Terms and Conditions', endpoint, requestBody);
+  return toResponse(
+    await apiRequest('POST', 'admin/termAndCondition', { body: { termsAndConditions } }),
+    'Terms and Conditions updated successfully'
+  );
 }
 
 export async function getAboutUs(): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/aboutUs`;
-  return makeGetRequest('About Us', endpoint);
+  return toResponse(await apiRequest('GET', 'admin/aboutUs'), 'About Us fetched successfully');
 }
 
 export async function updateAboutUs(aboutUs: string): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/aboutUs`;
-  const requestBody = { aboutUs };
-  return makePostRequest('About Us', endpoint, requestBody);
+  return toResponse(await apiRequest('POST', 'admin/aboutUs', { body: { aboutUs } }), 'About Us updated successfully');
 }
 
 export async function getPrivacyPolicy(): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/privacyPolicy`;
-  return makeGetRequest('Privacy Policy', endpoint);
+  return toResponse(await apiRequest('GET', 'admin/privacyPolicy'), 'Privacy Policy fetched successfully');
 }
 
 export async function updatePrivacyPolicy(privacyPolicy: string): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/privacyPolicy`;
-  const requestBody = { privacyPolicy };
-  return makePostRequest('Privacy Policy', endpoint, requestBody);
+  return toResponse(
+    await apiRequest('POST', 'admin/privacyPolicy', { body: { privacyPolicy } }),
+    'Privacy Policy updated successfully'
+  );
 }
 
 export async function getCompetitionRules(): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/competitionRules`;
-  return makeGetRequest('Competition Rules', endpoint);
+  return toResponse(await apiRequest('GET', 'admin/competitionRules'), 'Competition Rules fetched successfully');
 }
 
 export async function updateCompetitionRules(competitionRules: string): Promise<ApiResponse<any>> {
-  const endpoint = `${BASE_URL}admin/competitionRules`;
-  const requestBody = { competitionRules };
-  return makePostRequest('Competition Rules', endpoint, requestBody);
+  return toResponse(
+    await apiRequest('POST', 'admin/competitionRules', { body: { competitionRules } }),
+    'Competition Rules updated successfully'
+  );
 }

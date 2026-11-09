@@ -4,7 +4,7 @@
 
 
 
-const { withAndroidManifest, withInfoPlist } = require('@expo/config-plugins');
+const { withAndroidManifest } = require('@expo/config-plugins');
 
 const withRazorpay = (config) => {
   

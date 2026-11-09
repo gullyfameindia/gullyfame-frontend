@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { AlertCircle, CheckCircle, XCircle, Eye, RefreshCw, Loader2, Filter, Search, FileText, User, MessageSquare } from 'lucide-react';
 import { getUserRole } from '@/lib/auth';
@@ -29,13 +29,18 @@ export default function ReportsPage() {
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+  // Only the newest request may update state (filter/page changes can overlap).
+  const latestRequest = useRef(0);
+  // Synchronous lock for the resolve/reject submit (state alone can't stop a same-tick double click).
+  const submittingRef = useRef(false);
+
   useEffect(() => {
     const role = getUserRole();
     if (role) setUserRole(role);
-    fetchReports();
-  }, [page, statusFilter, typeFilter]);
+  }, []);
 
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -54,6 +59,7 @@ export default function ReportsPage() {
       }
 
       const result = await getReports(params);
+      if (requestId !== latestRequest.current) return;
 
       if (result.success && result.data) {
         setReports(result.data.reports || []);
@@ -64,16 +70,22 @@ export default function ReportsPage() {
         setReports([]);
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching reports:', err);
       setError(err.message || 'Failed to load reports');
       setReports([]);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, [page, limit, statusFilter, typeFilter]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
 
   const handleUpdateStatus = async () => {
-    if (!selectedReport) return;
+    if (!selectedReport || submittingRef.current) return;
+    submittingRef.current = true;
 
     try {
       setUpdatingStatus(true);
@@ -94,6 +106,7 @@ export default function ReportsPage() {
       console.error('Error updating report status:', err);
       alert('Error updating report status: ' + err.message);
     } finally {
+      submittingRef.current = false;
       setUpdatingStatus(false);
     }
   };

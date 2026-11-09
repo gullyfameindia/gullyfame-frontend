@@ -1,11 +1,13 @@
 'use client';
 
 import DashboardLayout from '@/components/DashboardLayout';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Building2, Eye, Edit, Trash2, Plus, Mail, Lock, X, Save, CheckCircle, Copy, Check, RefreshCw, Loader2 } from 'lucide-react';
 import { getUserRole } from '@/lib/auth';
 import { getSponsors, createSponsor, updateSponsor, deleteSponsor, getSponsorById, type Sponsor } from '@/lib/sponsorApi';
 import { getCompetitions } from '@/lib/competitionApi';
+import { usePagedItems } from '@/lib/hooks';
+import Pagination from '@/components/Pagination';
 
 export default function SponsorsPage() {
   const userRole = getUserRole();
@@ -31,56 +33,77 @@ export default function SponsorsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [competitionsCount, setCompetitionsCount] = useState<{ [sponsorId: string]: number }>({});
 
-  useEffect(() => {
-    if (userRole === 'admin') {
-      fetchSponsors();
-    }
-  }, [userRole]);
+  // Synchronous lock for create/update/deactivate (state alone can't stop a same-tick double click).
+  const submitLock = useRef(false);
+  // Sponsors whose competition count has already been requested (avoids repeat calls).
+  const requestedCounts = useRef<Set<string>>(new Set());
+  const latestRequest = useRef(0);
 
-  const fetchSponsors = async () => {
+  const { page, setPage, totalPages, total, pageSize, pageItems } = usePagedItems(sponsors, 20);
+
+  const fetchSponsors = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
       const result = await getSponsors();
+      if (requestId !== latestRequest.current) return;
       if (result.success && result.data) {
+        requestedCounts.current.clear();
+        setCompetitionsCount({});
         setSponsors(result.data);
-        
-        await fetchCompetitionsCount(result.data);
       } else {
         setError(result.message || 'Failed to fetch sponsors');
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching sponsors:', err);
       setError(err.message || 'Failed to load sponsors');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchCompetitionsCount = async (sponsorsList: Sponsor[]) => {
-    try {
+  useEffect(() => {
+    if (userRole === 'admin') {
+      fetchSponsors();
+    }
+  }, [userRole, fetchSponsors]);
+
+  // Load competition counts only for the sponsors on the visible page (one request per
+  // visible row instead of one per sponsor in the whole list).
+  useEffect(() => {
+    const requested = requestedCounts.current;
+    const missing = pageItems
+      .map((sponsor) => sponsor.id || sponsor._id || '')
+      .filter((id) => id && !requested.has(id));
+    if (missing.length === 0) return;
+    missing.forEach((id) => requested.add(id));
+
+    let cancelled = false;
+    (async () => {
       const counts: { [sponsorId: string]: number } = {};
       await Promise.all(
-        sponsorsList.map(async (sponsor) => {
-          const sponsorId = sponsor.id || sponsor._id || '';
-          if (sponsorId) {
-            try {
-              const compResult = await getCompetitions({ sponsorId });
-              if (compResult.success && compResult.data) {
-                counts[sponsorId] = compResult.data.items?.length || 0;
-              }
-            } catch (err) {
-              console.error(`Error fetching competitions for sponsor ${sponsorId}:`, err);
-              counts[sponsorId] = 0;
+        missing.map(async (sponsorId) => {
+          try {
+            const compResult = await getCompetitions({ sponsorId });
+            if (compResult.success && compResult.data) {
+              counts[sponsorId] = compResult.data.items?.length || 0;
             }
+          } catch (err) {
+            console.error(`Error fetching competitions for sponsor ${sponsorId}:`, err);
+            counts[sponsorId] = 0;
           }
         })
       );
-      setCompetitionsCount(counts);
-    } catch (err) {
-      console.error('Error fetching competitions count:', err);
-    }
-  };
+      if (!cancelled) setCompetitionsCount((prev) => ({ ...prev, ...counts }));
+    })();
+    return () => {
+      cancelled = true;
+      // If this run was cancelled before it finished, let the next run request them again.
+      missing.forEach((id) => requested.delete(id));
+    };
+  }, [pageItems]);
 
   if (userRole === 'sponsor') {
     return (
@@ -139,7 +162,8 @@ export default function SponsorsPage() {
   };
 
   const handleCreateSponsor = async () => {
-    if (!validateForm()) return;
+    if (submitLock.current || !validateForm()) return;
+    submitLock.current = true;
     
     try {
       setSubmitting(true);
@@ -172,6 +196,7 @@ export default function SponsorsPage() {
     } catch (err: any) {
       alert('Error creating sponsor: ' + err.message);
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };
@@ -186,7 +211,8 @@ export default function SponsorsPage() {
   };
 
   const handleUpdateSponsor = async () => {
-    if (!editingSponsor || !validateEditForm()) return;
+    if (submitLock.current || !editingSponsor || !validateEditForm()) return;
+    submitLock.current = true;
     
     try {
       setSubmitting(true);
@@ -206,12 +232,15 @@ export default function SponsorsPage() {
     } catch (err: any) {
       alert('Error updating sponsor: ' + err.message);
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };
 
   const handleDeleteSponsor = async (sponsor: Sponsor) => {
+    if (submitLock.current) return;
     if (!confirm(`Are you sure you want to deactivate ${sponsor.email}?`)) return;
+    submitLock.current = true;
     
     try {
       setSubmitting(true);
@@ -227,6 +256,7 @@ export default function SponsorsPage() {
     } catch (err: any) {
       alert('Error deactivating sponsor: ' + err.message);
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   };
@@ -356,7 +386,7 @@ export default function SponsorsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sponsors.map((sponsor) => {
+                  {pageItems.map((sponsor) => {
                     const sponsorId = sponsor.id || sponsor._id || '';
                     const competitions = competitionsCount[sponsorId] || 0;
                     return (
@@ -412,6 +442,7 @@ export default function SponsorsPage() {
                   })}
                 </tbody>
               </table>
+              <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
             </div>
           </div>
         )}

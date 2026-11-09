@@ -44,7 +44,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
       } else {
         setProfileImage(null);
       }
-    } catch (error) {
+    } catch {
       setProfileImage(null);
       setIsLoggedIn(false);
     }
@@ -72,7 +72,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
           }
           return;
         }
-      } catch (e) {
+      } catch {
         if (onOpenDrawer && typeof onOpenDrawer === "function") {
           onOpenDrawer();
         }
@@ -87,11 +87,14 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
           setShowUpgrade(true);
           return;
         }
-      } catch (e) { /* intentionally ignored */
+      } catch { /* intentionally ignored */
       }
     }
 
-    setActiveTab(tabName);
+    // MyFame is pushed on top of this screen, so this screen stays mounted underneath. Marking it
+    // active would leave the highlight and the "already on this tab" check wrong after coming back
+    // (tapping MyFame again did nothing). The other tabs replace the screen, so they are safe to mark.
+    if (tabName !== "MyFame") setActiveTab(tabName);
 
     if (tabName === "Search") {
       router.replace("/(main)/search");
@@ -104,7 +107,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
       if (!role) {
         try {
           role = await AsyncStorage.getItem("userRole");
-        } catch (e) { /* intentionally ignored */
+        } catch { /* intentionally ignored */
         }
       }
       router.push(getProfileRoute(role || DEFAULT_ROLE, true));
@@ -142,6 +145,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
           return (
             <TouchableOpacity
               key={tab.name}
+              testID={`bottom-nav-${tab.name.toLowerCase()}`}
               style={styles.uploadButton}
               onPress={() => handlePress(tab.name)}
               activeOpacity={0.85}
@@ -168,6 +172,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
           return (
             <TouchableOpacity
               key={tab.name}
+              testID={`bottom-nav-${tab.name.toLowerCase()}`}
               style={styles.navItem}
               onPress={() => handlePress(tab.name)}
               activeOpacity={0.8}
@@ -184,6 +189,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
         return (
           <TouchableOpacity
             key={tab.name}
+              testID={`bottom-nav-${tab.name.toLowerCase()}`}
             style={styles.navItem}
             onPress={() => handlePress(tab.name)}
             activeOpacity={0.8}

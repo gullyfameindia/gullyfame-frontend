@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   StyleSheet,
   Text,
@@ -13,7 +14,6 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { showGuestModeUnavailable } from "@utils/guestMode";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { GoogleIcon, InstagramIcon, AppleIcon } from "@/icons";
 import { authService, AUTH_RULES } from "@api/services/authService";
 
@@ -55,7 +55,7 @@ export default function LoginViaOTP() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -92,6 +92,7 @@ export default function LoginViaOTP() {
               placeholderTextColor="#B0B0B0"
               value={emailOrMobile}
               onChangeText={setEmailOrMobile}
+              testID="otp-login-mobile"
               autoCapitalize="none"
               keyboardType="email-address"
             />
@@ -106,6 +107,7 @@ export default function LoginViaOTP() {
           <TouchableOpacity
             style={styles.passwordLoginButton}
             onPress={() => router.back()}
+            testID="otp-login-back"
             activeOpacity={0.7}
           >
             <Text style={styles.passwordLoginText}>
@@ -127,6 +129,7 @@ export default function LoginViaOTP() {
               isLoading && styles.sendOtpButtonDisabled,
             ]}
             onPress={handleSendOTP}
+            testID="otp-login-send"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -193,7 +196,7 @@ export default function LoginViaOTP() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

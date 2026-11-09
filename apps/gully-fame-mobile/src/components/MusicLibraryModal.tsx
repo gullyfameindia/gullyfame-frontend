@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   listAudio,
@@ -8,6 +8,7 @@ import {
   filterTracksBySearch,
   type AudioSortOption,
 } from '@/api/services/musicLibraryService';
+import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 interface MusicLibraryModalProps {
   visible: boolean;
@@ -209,9 +210,7 @@ export const MusicLibraryModal: React.FC<MusicLibraryModalProps> = ({
 
           {/* Track List or Loading */}
           {loading ? (
-            <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color="#EC9A15" />
-            </View>
+            <SkeletonList rows={7} avatarSize={48} avatarRadius={8} trailing style={{ paddingHorizontal: 16 }} />
           ) : error ? (
             <View style={styles.centerContainer}>
               <Ionicons name="cloud-offline-outline" size={48} color="#444" style={{ marginBottom: 12 }} />

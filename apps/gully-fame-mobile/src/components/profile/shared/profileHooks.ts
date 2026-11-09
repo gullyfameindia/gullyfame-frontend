@@ -35,7 +35,7 @@ export interface ProfileData {
     nextRank?: number;
     competitionsParticipated?: number;
     competitionsRequiredForNextRank?: number;
-    achievements?: Array<{id: string; name: string}>;
+    achievements?: { id: string; name: string }[];
     email?: string;
 }
 

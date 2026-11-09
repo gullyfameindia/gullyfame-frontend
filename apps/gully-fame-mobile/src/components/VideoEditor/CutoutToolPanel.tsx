@@ -94,7 +94,7 @@ export default function CutoutToolPanel({
         setBackgroundImage(result.assets[0].uri);
         setBackgroundColor("image");
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to select background image");
     } finally {
       setIsPickingImage(false);

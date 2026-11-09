@@ -35,7 +35,7 @@ interface OverlayToolPanelProps {
   existingOverlays?: OverlayItem[];
 }
 
-const BLEND_MODES: Array<{ id: OverlayItem["blendMode"]; label: string }> = [
+const BLEND_MODES: { id: OverlayItem["blendMode"]; label: string }[] = [
   { id: "normal", label: "Normal" },
   { id: "multiply", label: "Multiply" },
   { id: "screen", label: "Screen" },
@@ -93,7 +93,7 @@ export default function OverlayToolPanel({
 
         onAddOverlay(newOverlay);
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to add overlay");
     } finally {
       setIsPickingMedia(false);
@@ -139,7 +139,7 @@ export default function OverlayToolPanel({
 
         onAddOverlay(newOverlay);
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to add video overlay");
     } finally {
       setIsPickingMedia(false);

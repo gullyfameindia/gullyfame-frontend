@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect,  useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, Platform, Animated, ActivityIndicator } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,7 @@ import {
 } from "@/api/services/notificationIntegrationService";
 import { getErrorMessage } from "@/api/client";
 import { showToast, toastError, toastSuccess } from "@/components/ui/Toast";
+import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 
 const getDimensions = () => Dimensions.get("window");
@@ -42,7 +43,7 @@ export default function NotificationsScreen() {
   const [activeTab, setActiveTab] = useState<"Today" | "Past">("Today");
   const [dimensions, setDimensions] = useState(getDimensions());
   const insets = useSafeAreaInsets();
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [slideAnim] = useState(() => new Animated.Value(0));
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -124,7 +125,7 @@ export default function NotificationsScreen() {
       tension: 50,
       friction: 7,
     }).start();
-  }, [activeTab]);
+  }, [activeTab, slideAnim]);
 
   
   const now = new Date();
@@ -359,9 +360,7 @@ export default function NotificationsScreen() {
         contentContainerStyle={responsiveStyles.scrollContent}
       >
         {loading ? (
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 40 }}>
-            <ActivityIndicator size="large" color="#EC9A15" />
-          </View>
+          <SkeletonList rows={8} style={{ paddingTop: 8 }} />
         ) : loadError ? (
           <View style={{ paddingTop: 40, alignItems: "center" }}>
             <Text style={{ color: "#999", fontSize: 15, textAlign: "center" }}>{loadError}</Text>

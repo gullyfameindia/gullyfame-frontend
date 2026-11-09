@@ -1,4 +1,4 @@
-import { Dimensions, Platform, PixelRatio } from "react-native";
+import { Dimensions, Platform, PixelRatio, StatusBar } from "react-native";
 
 // Get window dimensions with orientation support
 const getDimensions = () => {
@@ -124,7 +124,6 @@ export const getStatusBarHeight = (): number => {
     return 44;
   } else {
     // Android: Use StatusBar.currentHeight or fallback
-    const { StatusBar } = require("react-native");
     return StatusBar?.currentHeight || scale(24);
   }
 };

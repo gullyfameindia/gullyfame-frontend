@@ -71,7 +71,7 @@ export function getVideoThumbnail(videoUrl: string): Promise<string | null> {
         memory.set(videoUrl, uri);
         AsyncStorage.setItem(STORAGE_PREFIX + videoUrl, uri).catch(() => {});
         resolve(uri);
-      } catch (e: any) {
+      } catch {
         failedThisSession.add(videoUrl);
         resolve(null);
       } finally {

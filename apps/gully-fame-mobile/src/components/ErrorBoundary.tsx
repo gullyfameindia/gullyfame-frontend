@@ -6,6 +6,7 @@
 import React, { ReactNode } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import type { ErrorResponse } from '@/api/errorHandler';
+import { reportError } from '@/utils/monitoring';
 
 interface Props {
   children: ReactNode;
@@ -36,8 +37,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-
     this.setState({ errorInfo });
+    reportError(error, 'error-boundary');
     this.props.onError?.(error, errorInfo);
   }
 
@@ -73,7 +74,7 @@ export function ErrorFallback({ error, onReset, onGoHome }: ErrorFallbackProps) 
           <Text style={styles.title}>Oops, Something Went Wrong</Text>
           <Text style={styles.message}>We encountered an unexpected error. Please try again.</Text>
 
-          {error && (
+          {__DEV__ && error && (
             <View style={styles.errorBox}>
               <Text style={styles.errorTitle}>Error Details:</Text>
               <Text style={styles.errorText} numberOfLines={3}>

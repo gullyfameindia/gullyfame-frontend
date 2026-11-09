@@ -5,17 +5,18 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
+  ActivityIndicator,
   TouchableOpacity,
   StatusBar,
   Platform,
-  Image,
   Dimensions,
-  ActivityIndicator,
 } from "react-native";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useInteractionReels } from "@/hooks/useInteractionReels";
+import { SkeletonGrid } from "@/components/Skeleton/Skeleton";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 60) / 2; 
@@ -82,56 +83,61 @@ export default function SavedScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {saved.loading ? (
-          <ActivityIndicator size="large" color="#EC9A15" style={{ marginTop: 48 }} />
-        ) : saved.error && filteredContent.length === 0 ? (
-          <TouchableOpacity onPress={saved.retry} style={styles.emptyState}>
-            <Text style={styles.emptyStateDesc}>{saved.error}</Text>
-            <Text style={[styles.emptyStateDesc, { color: "#EC9A15" }]}>Tap to retry</Text>
-          </TouchableOpacity>
-        ) : filteredContent.length > 0 ? (
-          <View style={styles.gridContainer}>
-            {filteredContent.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.card}
-                activeOpacity={0.8}
-                onPress={() => router.push({ pathname: "/(main)/reel", params: { startReelId: item.id } } as any)}
-              >
-                <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-                
-                {}
-                <View style={styles.typeBadge}>
-                  <Ionicons 
-                    name={item.type === 'reel' ? 'play-circle' : 'image'} 
-                    size={16} 
-                    color="#fff" 
-                  />
-                </View>
-
-                {}
-                <View style={styles.infoOverlay}>
-                  <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={styles.itemAuthor} numberOfLines={1}>{item.author}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconCircle}>
-              <Ionicons name="bookmark-outline" size={48} color="#EC9A15" />
+      <FlatList
+        data={saved.loading ? [] : filteredContent}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.gridRow}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onEndReached={saved.loadMore}
+        onEndReachedThreshold={0.5}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews
+        ListEmptyComponent={
+          saved.loading ? (
+            <SkeletonGrid count={6} aspectRatio={1 / 1.5} caption style={{ marginTop: 8 }} />
+          ) : saved.error ? (
+            <TouchableOpacity onPress={saved.retry} style={styles.emptyState}>
+              <Text style={styles.emptyStateDesc}>{saved.error}</Text>
+              <Text style={[styles.emptyStateDesc, { color: "#EC9A15" }]}>Tap to retry</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconCircle}>
+                <Ionicons name="bookmark-outline" size={48} color="#EC9A15" />
+              </View>
+              <Text style={styles.emptyStateTitle}>No Saved Items</Text>
+              <Text style={styles.emptyStateDesc}>
+                Jab aapko koi post ya reel pasand aaye, toh uspar bookmark icon dabayein, woh yahan save ho jayegi.
+              </Text>
             </View>
-            <Text style={styles.emptyStateTitle}>No Saved Items</Text>
-            <Text style={styles.emptyStateDesc}>
-              Jab aapko koi post ya reel pasand aaye, toh uspar bookmark icon dabayein, woh yahan save ho jayegi.
-            </Text>
-          </View>
-        )}
+          )
+        }
+        ListFooterComponent={
+          saved.loadingMore ? <ActivityIndicator color="#EC9A15" style={{ paddingVertical: 16 }} /> : null
+        }
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.card}
+            activeOpacity={0.8}
+            onPress={() => router.push({ pathname: "/(main)/reel", params: { startReelId: item.id } } as any)}
+          >
+            <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} contentFit="cover" cachePolicy="memory-disk" recyclingKey={item.id} />
 
-      </ScrollView>
+            <View style={styles.typeBadge}>
+              <Ionicons name={item.type === "reel" ? "play-circle" : "image"} size={16} color="#fff" />
+            </View>
+
+            <View style={styles.infoOverlay}>
+              <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.itemAuthor} numberOfLines={1}>{item.author}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
     </View>
   );
 }
@@ -192,11 +198,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
-  gridContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  gridRow: {
     justifyContent: "space-between",
-    gap: 16,
+    marginBottom: 16,
   },
   card: {
     width: CARD_WIDTH,

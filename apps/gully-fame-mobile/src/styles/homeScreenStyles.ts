@@ -214,8 +214,8 @@ export const homeScreenStyles = StyleSheet.create({
   },
   topBadge: {
     position: "absolute",
-    top: 0,
-    left: -width * 0.014,
+    top: scale(6),
+    left: scale(6),
     zIndex: 10,
     width: scale(35),
     height: scale(35),
@@ -241,7 +241,7 @@ export const homeScreenStyles = StyleSheet.create({
   trendingReelImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "contain",
+    resizeMode: "cover",
   },
   participateButtonContainer: {
     position: "absolute",
@@ -276,21 +276,6 @@ export const homeScreenStyles = StyleSheet.create({
     marginTop: scaleVertical(5),
     marginBottom: scaleVertical(10),
     fontFamily: "Inter_700Bold",
-  },
-  trendingReelStatsBelow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: scale(8),
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: scale(6),
-  },
-  statText: {
-    color: "#fff",
-    fontSize: getFontSize(12),
-    fontFamily: "Inter_500Medium",
   },
   // Trending Competitions - Enhanced Design
   trendingCompCard: {

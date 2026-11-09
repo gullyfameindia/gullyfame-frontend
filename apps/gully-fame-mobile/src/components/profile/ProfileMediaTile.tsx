@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { EyeIcon, PlayIcon } from "@/icons";
-import { MultiItemBadgeIcon, PhotoTabIcon } from "./profileIcons";
+import { MultiItemBadgeIcon } from "./profileIcons";
 import { formatCount, resolveMediaUrl } from "@/utils/mediaUrl";
 import { getCachedThumbnail, getVideoThumbnail } from "@/utils/videoThumbnailCache";
 
@@ -44,9 +44,12 @@ function ProfileMediaTileBase({ item, size, height, onPress, onLongPress }: Prop
     !serverThumb && videoUrl ? getCachedThumbnail(videoUrl) : null
   );
   const [failed, setFailed] = useState(false);
+  // A broken server thumbnail (404/403) falls back to a frame taken from the video itself.
+  const [serverThumbFailed, setServerThumbFailed] = useState(false);
+  const useServerThumb = !!serverThumb && !serverThumbFailed;
 
   useEffect(() => {
-    if (serverThumb || !videoUrl || generatedThumb) return;
+    if (useServerThumb || !videoUrl || generatedThumb) return;
     let active = true;
     getVideoThumbnail(videoUrl).then((uri) => {
       if (!active) return;
@@ -56,9 +59,10 @@ function ProfileMediaTileBase({ item, size, height, onPress, onLongPress }: Prop
     return () => {
       active = false;
     };
-  }, [serverThumb, videoUrl, generatedThumb]);
+  }, [useServerThumb, videoUrl, generatedThumb]);
 
-  const source = serverThumb || generatedThumb || (isPhoto ? resolveMediaUrl(item.uri) : null);
+  const source =
+    (useServerThumb ? serverThumb : null) || generatedThumb || (isPhoto ? resolveMediaUrl(item.uri) : null);
   const views = viewsOf(item);
   const isMulti = Array.isArray(item.media) && item.media.length > 1;
 
@@ -79,11 +83,21 @@ function ProfileMediaTileBase({ item, size, height, onPress, onLongPress }: Prop
           cachePolicy="memory-disk"
           transition={150}
           recyclingKey={item.id}
-          onError={() => setFailed(true)}
+          onError={() => {
+            if (useServerThumb && source === serverThumb) setServerThumbFailed(true);
+            else setFailed(true);
+          }}
         />
       ) : (
-        <View style={styles.fallback}>
-          {failed || (!source && !videoUrl) ? <PhotoTabIcon size={22} color="rgba(255,255,255,0.35)" /> : null}
+        <View style={styles.fallback} testID="profile-tile-fallback">
+          {failed || (!source && !videoUrl) ? (
+            <>
+              <PlayIcon size={26} color="rgba(255,255,255,0.7)" />
+              <Text style={styles.fallbackText}>
+                Unavailable
+              </Text>
+            </>
+          ) : null}
         </View>
       )}
 
@@ -126,7 +140,15 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     backgroundColor: "#4A3218",
+  },
+  fallbackText: {
+    alignSelf: "stretch",
+    textAlign: "center",
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 11,
+    paddingHorizontal: 4,
   },
   badge: {
     position: "absolute",

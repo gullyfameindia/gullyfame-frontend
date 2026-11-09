@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { safeDecode } from "@/utils/routeParams";
 import {
   View,
   Text,
@@ -22,11 +23,11 @@ const { width } = Dimensions.get("window");
 export default function OnboardingSelectCategory() {
   const params = useLocalSearchParams();
   const role = params.role ? String(params.role) : "participant";
-  const firstName = params.firstName ? decodeURIComponent(String(params.firstName)) : "";
-  const lastName = params.lastName ? decodeURIComponent(String(params.lastName)) : "";
-  const email = params.email ? decodeURIComponent(String(params.email)) : "";
-  const dob = params.dob ? decodeURIComponent(String(params.dob)) : "";
-  const gender = params.gender ? decodeURIComponent(String(params.gender)) : "";
+  const firstName = params.firstName ? safeDecode(String(params.firstName)) : "";
+  const lastName = params.lastName ? safeDecode(String(params.lastName)) : "";
+  const email = params.email ? safeDecode(String(params.email)) : "";
+  const dob = params.dob ? safeDecode(String(params.dob)) : "";
+  const gender = params.gender ? safeDecode(String(params.gender)) : "";
   const fromKycFlow = params.fromKycFlow === "true";
 
   const [options, setOptions] = useState<Category[]>([]);

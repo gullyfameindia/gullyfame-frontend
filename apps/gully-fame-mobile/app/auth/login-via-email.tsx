@@ -1,4 +1,5 @@
 import { useState } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   StyleSheet,
   Text,
@@ -59,7 +60,7 @@ export default function LoginViaEmail() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -202,7 +203,7 @@ export default function LoginViaEmail() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

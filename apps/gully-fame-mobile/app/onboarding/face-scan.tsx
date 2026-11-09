@@ -1,4 +1,5 @@
 import React from "react";
+import { safeDecode } from "@/utils/routeParams";
 import {
   View,
   Text,
@@ -19,14 +20,14 @@ const { width } = Dimensions.get("window");
 export default function OnboardingFaceScan() {
   const params = useLocalSearchParams();
   const role = params.role ? String(params.role) : "participant";
-  const firstName = params.firstName ? decodeURIComponent(String(params.firstName)) : "";
-  const lastName = params.lastName ? decodeURIComponent(String(params.lastName)) : "";
-  const email = params.email ? decodeURIComponent(String(params.email)) : "";
-  const dob = params.dob ? decodeURIComponent(String(params.dob)) : "";
-  const gender = params.gender ? decodeURIComponent(String(params.gender)) : "";
-  const categoriesParam = params.categories ? decodeURIComponent(String(params.categories)) : "[]";
-  const bio = params.bio ? decodeURIComponent(String(params.bio)) : "";
-  const profileImage = params.profileImage ? decodeURIComponent(String(params.profileImage)) : "";
+  const firstName = params.firstName ? safeDecode(String(params.firstName)) : "";
+  const lastName = params.lastName ? safeDecode(String(params.lastName)) : "";
+  const email = params.email ? safeDecode(String(params.email)) : "";
+  const dob = params.dob ? safeDecode(String(params.dob)) : "";
+  const gender = params.gender ? safeDecode(String(params.gender)) : "";
+  const categoriesParam = params.categories ? safeDecode(String(params.categories)) : "[]";
+  const bio = params.bio ? safeDecode(String(params.bio)) : "";
+  const profileImage = params.profileImage ? safeDecode(String(params.profileImage)) : "";
   const fromVerified = params.fromVerified === "true";
   const fromKycFlow = params.fromKycFlow === "true";
 
@@ -90,7 +91,7 @@ export default function OnboardingFaceScan() {
         ["userProfileImage", profileImage || ""],
       ]);
       router.replace("/onboarding/all-done");
-    } catch (error) {
+    } catch {
       Alert.alert("Save failed", "We couldn't finish onboarding. Please try again.");
     }
   };

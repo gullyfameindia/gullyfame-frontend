@@ -1,7 +1,15 @@
-import { getAuthHeaders } from './authApi';
 import type { ApiResponse } from './apiTypes';
+import { apiRequest } from './http';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.gullyfame.com/v1/api/';
+/**
+ * Home banners (admin). All requests go through lib/http.ts (base URL, admin token, timeout,
+ * JSON guard, normalized errors). Paths and fields as in the API collection:
+ *   POST   admin/banners        multipart: banner (file), title
+ *   GET    admin/banners        ?page&limit
+ *   GET    admin/banners/:id
+ *   PUT    admin/banners/:id    multipart: title, banner (file)
+ *   DELETE admin/banners/:id
+ */
 
 export interface Banner {
   id: string;
@@ -13,470 +21,92 @@ export interface Banner {
   [key: string]: any;
 }
 
-export async function createBanner(
-  title: string,
-  bannerFile: File
-): Promise<ApiResponse<Banner>> {
-  if (!title?.trim()) {
-    console.warn('[Banners API] POST Create Banner - Missing title');
-    return {
-      success: false,
-      message: 'Banner title is required',
-      error: 'MISSING_TITLE',
-    };
-  }
+const toBanner = (payload: any, fallback: { id?: string; title?: string } = {}): Banner => {
+  const p = payload && typeof payload === 'object' ? payload : {};
+  return {
+    id: p._id?.toString() || p.id?.toString() || fallback.id || '',
+    title: p.title || fallback.title || '',
+    banner: p.banner || p.imageUrl || '',
+    isActive: p.isActive,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+    ...p,
+  };
+};
 
-  if (!bannerFile) {
-    console.warn('[Banners API] POST Create Banner - Missing banner file');
-    return {
-      success: false,
-      message: 'Banner image file is required',
-      error: 'MISSING_FILE',
-    };
-  }
-
-  const endpoint = `${BASE_URL}admin/banners`;
-  
+export async function createBanner(title: string, bannerFile: File): Promise<ApiResponse<Banner>> {
+  if (!title?.trim()) return { success: false, message: 'Banner title is required', error: 'MISSING_TITLE' };
+  if (!bannerFile) return { success: false, message: 'Banner image file is required', error: 'MISSING_FILE' };
 
   const formData = new FormData();
   formData.append('title', title.trim());
   formData.append('banner', bannerFile);
 
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Banners API] POST Create Banner - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Banners API] POST Create Banner - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message: `Failed to create banner: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.code !== 1) {
-      console.error('[Banners API] POST Create Banner - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to create banner with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP_${httpResponse.status}`,
-        data: responseData.data,
-      };
-    }
-
-    const payload = responseData.data || {};
-    const banner: Banner = {
-      id: payload._id?.toString() || payload.id?.toString() || '',
-      title: payload.title || '',
-      banner: payload.banner || payload.imageUrl || '',
-      isActive: payload.isActive,
-      createdAt: payload.createdAt,
-      updatedAt: payload.updatedAt,
-      ...payload,
-    };
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Banner created successfully',
-      data: banner,
-    };
-  } catch (error: any) {
-    console.error('[Banners API] POST Create Banner - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
+  const result = await apiRequest<any>('POST', 'admin/banners', { formData });
+  return result.success
+    ? { success: true, message: result.message || 'Banner created successfully', data: toBanner(result.data) }
+    : { success: false, message: result.message || 'Failed to create banner', error: result.error };
 }
 
 export async function getBanners(
   page: number = 1,
-  limit: number = 50
+  limit: number = 10
 ): Promise<ApiResponse<{ items: Banner[]; total?: number; page?: number; limit?: number }>> {
-  const endpoint = `${BASE_URL}admin/banners?page=${page}&limit=${limit}`;
-
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'GET',
-      headers: getAuthHeaders({
-        Accept: 'application/json',
-      }),
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Banners API] GET Banners - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Banners API] GET Banners - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message: `Failed to fetch banners: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.code !== 1) {
-      console.error('[Banners API] GET Banners - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to fetch banners with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: responseData.data,
-      };
-    }
-
-    const payload = responseData.data || {};
-    let rawItems: any[] = [];
-
-    if (Array.isArray(payload.Banners)) {
-      rawItems = payload.Banners;
-    } else if (Array.isArray(payload.banners)) {
-      rawItems = payload.banners;
-    } else if (Array.isArray(payload)) {
-      rawItems = payload;
-    } else if (Array.isArray(payload.data)) {
-      rawItems = payload.data;
-    }
-
-    const items: Banner[] = rawItems.map((b) => ({
-      id: b._id?.toString() || b.id?.toString() || '',
-      title: b.title || '',
-      banner: b.banner || b.imageUrl || '',
-      isActive: b.isActive,
-      createdAt: b.createdAt,
-      updatedAt: b.updatedAt,
-      ...b,
-    }));
-
-    const result = {
-      items,
+  const result = await apiRequest<any>('GET', 'admin/banners', { query: { page, limit } });
+  if (!result.success) {
+    return { success: false, message: result.message || 'Failed to fetch banners', error: result.error };
+  }
+  const payload = result.data ?? {};
+  const rawItems: any[] = Array.isArray(payload.Banners)
+    ? payload.Banners
+    : Array.isArray(payload.banners)
+      ? payload.banners
+      : Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload.data)
+          ? payload.data
+          : [];
+  return {
+    success: true,
+    message: result.message || 'Banners fetched successfully',
+    data: {
+      items: rawItems.map((b) => toBanner(b)),
       total: payload.total,
       page: payload.page || page,
       limit: payload.limit || limit,
-    };
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Banners fetched successfully',
-      data: result,
-    };
-  } catch (error: any) {
-    console.error('[Banners API] GET Banners - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
+    },
+  };
 }
 
 export async function getBanner(id: string): Promise<ApiResponse<Banner>> {
-  if (!id) {
-    console.warn('[Banners API] GET Banner - Missing banner ID');
-    return {
-      success: false,
-      message: 'Banner ID is required',
-      error: 'MISSING_ID',
-    };
-  }
-
-  const safeId = encodeURIComponent(id.toString());
-  const endpoint = `${BASE_URL}admin/banners/${safeId}`;
-
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'GET',
-      headers: getAuthHeaders({
-        Accept: 'application/json',
-      }),
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Banners API] GET Banner - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Banners API] GET Banner - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message: `Failed to fetch banner: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.code !== 1) {
-      console.error('[Banners API] GET Banner - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to fetch banner with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-      };
-    }
-
-    const payload = responseData.data || {};
-    const banner: Banner = {
-      id: payload._id?.toString() || payload.id?.toString() || '',
-      title: payload.title || '',
-      banner: payload.banner || payload.imageUrl || '',
-      isActive: payload.isActive,
-      createdAt: payload.createdAt,
-      updatedAt: payload.updatedAt,
-      ...payload,
-    };
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Banner fetched successfully',
-      data: banner,
-    };
-  } catch (error: any) {
-    console.error('[Banners API] GET Banner - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
+  if (!id) return { success: false, message: 'Banner ID is required', error: 'MISSING_ID' };
+  const result = await apiRequest<any>('GET', `admin/banners/${encodeURIComponent(id.toString())}`);
+  return result.success
+    ? { success: true, message: result.message || 'Banner fetched successfully', data: toBanner(result.data, { id }) }
+    : { success: false, message: result.message || 'Failed to fetch banner', error: result.error };
 }
 
-export async function updateBanner(
-  id: string,
-  title?: string,
-  bannerFile?: File | null
-): Promise<ApiResponse<Banner>> {
-  if (!id) {
-    console.warn('[Banners API] PUT Update Banner - Missing banner ID');
-    return {
-      success: false,
-      message: 'Banner ID is required',
-      error: 'MISSING_ID',
-    };
-  }
-
-  const safeId = encodeURIComponent(id.toString());
-  const endpoint = `${BASE_URL}admin/banners/${safeId}`;
-  
-  if (bannerFile) {
-  }
+export async function updateBanner(id: string, title?: string, bannerFile?: File | null): Promise<ApiResponse<Banner>> {
+  if (!id) return { success: false, message: 'Banner ID is required', error: 'MISSING_ID' };
 
   const formData = new FormData();
+  if (title?.trim()) formData.append('title', title.trim());
+  if (bannerFile) formData.append('banner', bannerFile);
 
-  if (title?.trim()) {
-    formData.append('title', title.trim());
-  }
-
-  if (bannerFile) {
-    formData.append('banner', bannerFile);
-  }
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Banners API] PUT Update Banner - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Banners API] PUT Update Banner - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message: `Failed to update banner: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
+  const result = await apiRequest<any>('PUT', `admin/banners/${encodeURIComponent(id.toString())}`, { formData });
+  return result.success
+    ? {
+        success: true,
+        message: result.message || 'Banner updated successfully',
+        data: toBanner(result.data, { id, title: title || '' }),
       }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.code !== 1) {
-      console.error('[Banners API] PUT Update Banner - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to update banner with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: responseData.data,
-      };
-    }
-
-    const payload = responseData.data || {};
-    const banner: Banner = {
-      id: payload._id?.toString() || payload.id?.toString() || id,
-      title: payload.title || title || '',
-      banner: payload.banner || payload.imageUrl || '',
-      isActive: payload.isActive,
-      createdAt: payload.createdAt,
-      updatedAt: payload.updatedAt,
-      ...payload,
-    };
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Banner updated successfully',
-      data: banner,
-    };
-  } catch (error: any) {
-    console.error('[Banners API] PUT Update Banner - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
+    : { success: false, message: result.message || 'Failed to update banner', error: result.error };
 }
 
 export async function deleteBanner(id: string): Promise<ApiResponse<null>> {
-  if (!id) {
-    console.warn('[Banners API] DELETE Banner - Called without a valid id');
-    return {
-      success: false,
-      message: 'Banner ID is required to delete a banner.',
-      error: 'MISSING_ID',
-      data: null,
-    };
-  }
-
-  const safeId = encodeURIComponent(id.toString());
-  const endpoint = `${BASE_URL}admin/banners/${safeId}`;
-
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'DELETE',
-      headers: getAuthHeaders({
-        Accept: 'application/json',
-      }),
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Banners API] DELETE Banner - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Banners API] DELETE Banner - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message: `Failed to delete banner: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-          data: null,
-        };
-      }
-
-      return {
-        success: true,
-        message: 'Banner deleted successfully',
-        data: null,
-      };
-    }
-
-    if (!httpResponse.ok || responseData.code !== 1) {
-      console.error('[Banners API] DELETE Banner - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to delete banner with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: null,
-      };
-    }
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Banner deleted successfully',
-      data: null,
-    };
-  } catch (error: any) {
-    console.error('[Banners API] DELETE Banner - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-      data: null,
-    };
-  }
+  if (!id) return { success: false, message: 'Banner ID is required to delete a banner.', error: 'MISSING_ID', data: null };
+  const result = await apiRequest('DELETE', `admin/banners/${encodeURIComponent(id.toString())}`);
+  return result.success
+    ? { success: true, message: result.message || 'Banner deleted successfully', data: null }
+    : { success: false, message: result.message || 'Failed to delete banner', error: result.error, data: null };
 }
-

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { safeIdParam } from "@/utils/routeParams";
 import { Stack, router } from 'expo-router';
 import { registerDeviceForNotifications, setupNotificationListeners } from '@/api/services/notificationIntegrationService';
 import { socketChatService } from '@/api/services/socketChatService';
@@ -8,8 +9,10 @@ import { openCompetition } from "@/utils/openCompetition";
 // Push payloads from the backend carry ids (competitionId, reelId, fromUserId), not a type.
 const openFromPush = (data: Record<string, any> | undefined) => {
   if (!data) return;
-  if (data.competitionId) openCompetition(String(data.competitionId));
-  else if (data.reelId) router.push({ pathname: "/(main)/reel", params: { startReelId: String(data.reelId) } } as any);
+  const competitionId = safeIdParam(data.competitionId);
+  const reelId = safeIdParam(data.reelId);
+  if (competitionId) openCompetition(competitionId);
+  else if (reelId) router.push({ pathname: "/(main)/reel", params: { startReelId: reelId } } as any);
   else router.push("/(main)/settings/notifications" as any);
 };
 
@@ -60,3 +63,6 @@ export default function MainLayout() {
     </Stack>
   );
 }
+
+// Contains a crash to this section instead of taking down the whole app.
+export { RouteErrorBoundary as ErrorBoundary } from "@/components/RouteErrorBoundary";

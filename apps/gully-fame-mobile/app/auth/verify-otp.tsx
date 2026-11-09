@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { safeDecode } from "@/utils/routeParams";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   Dimensions,
   ScrollView,
@@ -26,10 +28,10 @@ export default function VerifyOtp() {
   const txnId = params.txnId ? String(params.txnId) : "";
   // "login" (default): OTP sign-in. "reset": step 2 of forgot password.
   const mode = params.mode === "reset" ? "reset" : "login";
-  const mobile = params.mobile ? decodeURIComponent(String(params.mobile)) : "";
+  const mobile = params.mobile ? safeDecode(String(params.mobile)) : "";
   // For reset mode the backend returns an already-masked email.
-  const maskedTarget = params.target ? decodeURIComponent(String(params.target)) : "";
-  const resetUserId = params.userId ? decodeURIComponent(String(params.userId)) : "";
+  const maskedTarget = params.target ? safeDecode(String(params.target)) : "";
+  const resetUserId = params.userId ? safeDecode(String(params.userId)) : "";
   const { setRole } = useUserRole();
 
   const [otp, setOtp] = useState("");
@@ -121,7 +123,7 @@ export default function VerifyOtp() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {}
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -222,7 +224,7 @@ export default function VerifyOtp() {
           )}
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

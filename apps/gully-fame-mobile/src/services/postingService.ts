@@ -149,7 +149,7 @@ async function run() {
                 createdAt: new Date().toISOString(),
               }
         );
-      } catch (cacheError) { /* intentionally ignored */
+      } catch { /* intentionally ignored */
       }
     }
 

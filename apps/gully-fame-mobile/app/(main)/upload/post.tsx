@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   Text,
@@ -28,7 +29,7 @@ import { startPosting } from "@/services/postingService";
 import { PHOTO_POST_SECONDS } from "@modules/video-editor/camera-module/utils/photoToVideo";
 import { MusicLibraryModal } from "@/components/MusicLibraryModal";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 interface PostVideoPreviewProps {
   videoUri: string;
@@ -104,16 +105,6 @@ export default function PostReelScreen() {
       })()
     : [];
 
-  const musicDataFromParams = params.musicData
-    ? (() => {
-        try {
-          return JSON.parse(params.musicData as string);
-        } catch {
-          return null;
-        }
-      })()
-    : null;
-
   const [caption, setCaption] = useState(params.caption ? String(params.caption) : "");
   const [hashtags, setHashtags] = useState<string[]>(() => {
     if (params.hashtags) {
@@ -172,10 +163,6 @@ export default function PostReelScreen() {
 
   const competitionId = params.competitionId ? String(params.competitionId) : null;
   const isPhoto = params.mediaType === "photo" || clipsFromParams[0]?.type === "photo";
-  const competitionName = params.competitionName
-    ? decodeURIComponent(String(params.competitionName))
-    : null;
-  const entryFee = params.entryFee ? decodeURIComponent(String(params.entryFee)) : null;
 
   const [turnOffCommenting, setTurnOffCommenting] = useState(
     params.allowComments === "false" ? false : true
@@ -188,7 +175,7 @@ export default function PostReelScreen() {
   // True while any post is uploading, so a second tap can't post twice.
   const isUploading = useAppSelector((state) => state.posting.phase === "running");
 
-  const slideAnim = useRef(new Animated.Value(height)).current;
+  const [slideAnim] = useState(() => new Animated.Value(height));
   const videoPlayer = useRef<ReturnType<typeof useVideoPlayer> | null>(null);
 
   const maxCaptionLength = 2200;
@@ -298,6 +285,7 @@ export default function PostReelScreen() {
   };
 
   return (
+    <KeyboardAvoidingScreen>
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
@@ -337,6 +325,7 @@ export default function PostReelScreen() {
           <TextInput
             style={styles.captionInput}
             placeholder="Write a caption..."
+            testID="upload-caption"
             placeholderTextColor="#666"
             value={caption}
             onChangeText={setCaption}
@@ -355,6 +344,7 @@ export default function PostReelScreen() {
             <TextInput
               style={styles.hashtagInput}
               placeholder="Type hashtags (e.g., #gullyfame or gullyfame)"
+              testID="upload-hashtag-input"
               placeholderTextColor="#666"
               value={hashtagInput}
               onChangeText={handleHashtagInputChange}
@@ -486,12 +476,13 @@ export default function PostReelScreen() {
       </ScrollView>
 
       <View style={styles.actionBar}>
-        <TouchableOpacity style={styles.saveDraftButton} onPress={handleSaveDraft}>
+        <TouchableOpacity style={styles.saveDraftButton} onPress={handleSaveDraft} testID="upload-save-draft">
           <Text style={styles.saveDraftText}>Save Draft</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.postButton, isUploading && styles.postButtonDisabled]} 
           onPress={handlePost}
+          testID="upload-post"
           disabled={isUploading}
         >
           <Text style={styles.postButtonText}>{isUploading ? 'Posting...' : 'Post Now'}</Text>
@@ -764,6 +755,7 @@ export default function PostReelScreen() {
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
+import { safeIdParam } from "@/utils/routeParams";
 import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View, ActivityIndicator, StatusBar } from "react-native";
+import { View, StatusBar } from "react-native";
 import { getProfileRoute, DEFAULT_ROLE } from "@/components/profile/shared/profileTypes";
+import { SkeletonLoader } from "@/components/Skeleton";
 
 export default function ProfileRouter() {
   const params = useLocalSearchParams();
@@ -10,7 +12,7 @@ export default function ProfileRouter() {
   const profileIdRef = useRef<string>("");
   const lastRefreshRef = useRef<string>("");
 
-  const profileId = (params.id as string) || (params.userId as string) || "";
+  const profileId = safeIdParam(params.id) || safeIdParam(params.userId);
   const role = (params.role as string) || DEFAULT_ROLE;
   const firstName = (params.firstName as string) || "";
   const lastName = (params.lastName as string) || "";
@@ -70,14 +72,14 @@ export default function ProfileRouter() {
           hasRouted.current = true;
           router.replace(route as any);
         }
-      } catch (error) {
+      } catch {
         try {
           const userRole =
             (await AsyncStorage.getItem("userRole")) || DEFAULT_ROLE;
           const fallbackRoute = getProfileRoute(userRole, true);
           hasRouted.current = true;
           router.replace(fallbackRoute as any);
-        } catch (fallbackError) { /* intentionally ignored */
+        } catch { /* intentionally ignored */
         }
       }
     };
@@ -86,16 +88,9 @@ export default function ProfileRouter() {
   }, [profileId, role, firstName, lastName, bio, avatar, username, refresh]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#3C2610",
-      }}
-    >
+    <View style={{ flex: 1, backgroundColor: "#3C2610" }}>
       <StatusBar barStyle="light-content" />
-      <ActivityIndicator size="large" color="#EC9A15" />
+      <SkeletonLoader />
     </View>
   );
 }

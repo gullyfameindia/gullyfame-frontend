@@ -37,7 +37,7 @@ export const saveReelToLocalCache = async (newReel: Reel) => {
     reelsList = [cleanedReel, ...reelsList.filter((r) => (r.id || r._id) !== newId)];
 
     await AsyncStorage.setItem(LOCAL_REELS_KEY, JSON.stringify(reelsList));
-  } catch (error) { /* intentionally ignored */
+  } catch { /* intentionally ignored */
   }
 };
 
@@ -123,7 +123,7 @@ export const useUserReels = (userId: string) => {
     try {
       const stored = await AsyncStorage.getItem(LOCAL_REELS_KEY);
       if (stored && isOwnProfile) cachedReels = JSON.parse(stored);
-    } catch (e) { /* intentionally ignored */
+    } catch { /* intentionally ignored */
     }
 
     // 2. Newly posted reel passed through route params

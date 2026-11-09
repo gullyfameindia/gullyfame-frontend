@@ -30,12 +30,18 @@ import { UserRoleProvider } from "@/contexts/UserRoleContext";
 import { Provider as ReduxProvider } from "react-redux";
 import { store } from "@/store";
 import PostingBanner from "@/components/PostingBanner";
+import OfflineBanner from "@/components/OfflineBanner";
 import ToastHost, { toastError } from "@/components/ui/Toast";
 import { installGlobalErrorHandlers } from "@/utils/globalErrorHandler";
+import { initMonitoring, reportError } from "@/utils/monitoring";
+import { config as appConfig } from "@/config/env";
 import { setUnauthorizedHandler, friendlyMessage } from "@/api/client";
 import { performLogout } from "@/utils/logout";
 
+initMonitoring();
 installGlobalErrorHandlers();
+// A production build with a bad API/socket URL falls back to the production backend; report it once.
+if (appConfig.problems.length) reportError(new Error(`API config: ${appConfig.problems.join("; ")}`), "config");
 
 // Any 401 / invalid token / deactivated account ends the session app-wide.
 setUnauthorizedHandler((reason) => {
@@ -104,6 +110,7 @@ export default function RootLayout() {
                                 />
                             </Stack>
                             <PostingBanner />
+                            <OfflineBanner />
                             <ToastHost />
                             <StatusBar style="light" />
                         </GestureHandlerRootView>

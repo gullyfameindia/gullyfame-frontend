@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { listStickers, searchStickers } from "@/api/services/stickerEmojiService";
+import { SkeletonGrid } from "@/components/Skeleton/Skeleton";
 
 export interface StickerItem {
   id: string;
@@ -55,9 +55,14 @@ export default function StickersToolPanel({
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  // Only the newest request may update state (category/search changes can overlap).
+  const latestRequest = useRef(0);
 
   useEffect(() => {
     fetchStickers();
+  // Category changes fetch immediately; search is debounced in the effect below. fetch* is
+  // re-created each render, so it is deliberately not a dependency (it would loop).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   useEffect(() => {
@@ -68,9 +73,11 @@ export default function StickersToolPanel({
       }
     }, 300);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see above: debounced on searchQuery only.
   }, [searchQuery]);
 
   const fetchStickers = async () => {
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -87,6 +94,7 @@ export default function StickersToolPanel({
         result = await listStickers();
       }
 
+      if (requestId !== latestRequest.current) return;
       if (result.success && result.data) {
         const stickerList = result.data;
 
@@ -106,11 +114,12 @@ export default function StickersToolPanel({
         setError(result.message || "Failed to load stickers");
         setStickers([]);
       }
-    } catch (err) {
+    } catch {
+      if (requestId !== latestRequest.current) return;
       setError("Failed to load stickers");
       setStickers([]);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
   };
 
@@ -197,10 +206,7 @@ export default function StickersToolPanel({
 
       {/* Stickers Grid */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-          <Text style={styles.loadingText}>Loading stickers...</Text>
-        </View>
+        <SkeletonGrid count={8} columns={4} aspectRatio={1} gap={10} style={{ padding: 16 }} />
       ) : error ? (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={48} color="#ff3b30" />

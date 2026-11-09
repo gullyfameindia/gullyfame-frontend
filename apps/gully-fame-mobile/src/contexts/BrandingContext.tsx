@@ -79,14 +79,14 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
                 setImagesPreloaded(true);
               }
             }
-          } catch (error) { /* intentionally ignored */
+          } catch { /* intentionally ignored */
           } finally {
             setIsLoading(false);
           }
         };
 
         await fetchBrandingAssets();
-      } catch (error) {
+      } catch {
         setIsLoading(false);
       }
     };

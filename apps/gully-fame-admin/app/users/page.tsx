@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { User as UserIcon, Key, Ban, Eye, Search, ChevronLeft, ChevronRight, Loader2, Shield, Calendar, Wallet } from 'lucide-react';
 import { getUserRole } from '@/lib/auth';
 import { getUsers, updateUserStatus, resetUserPassword, type User } from '@/lib/userApi';
 import { useRouter } from 'next/navigation';
+import { useBusyActions, useDebouncedValue } from '@/lib/hooks';
 
 export default function UsersPage() {
   const router = useRouter();
@@ -21,8 +22,14 @@ export default function UsersPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
+  // Search hits the API, so wait until the admin stops typing.
+  const debouncedSearch = useDebouncedValue(searchTerm, 400);
+  const { run, isBusy } = useBusyActions();
+  // Only the newest request may update state (typing/filtering can overlap requests).
+  const latestRequest = useRef(0);
 
   const fetchUsers = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -32,11 +39,12 @@ export default function UsersPage() {
         limit,
       };
       
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (filterRole !== 'all') params.role = filterRole;
       if (filterStatus !== 'all') params.status = filterStatus;
       
       const result = await getUsers(params);
+      if (requestId !== latestRequest.current) return;
       
       if (result.success && result.data) {
         setUsers(result.data.items || []);
@@ -47,13 +55,14 @@ export default function UsersPage() {
         setUsers([]);
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching users:', err);
       setError(err.message || 'Failed to load users');
       setUsers([]);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  }, [page, searchTerm, filterRole, filterStatus]);
+  }, [page, debouncedSearch, filterRole, filterStatus]);
 
   useEffect(() => {
     fetchUsers();
@@ -62,20 +71,22 @@ export default function UsersPage() {
   const handleStatusUpdate = async (userId: string, currentStatus: string) => {
     if (!confirm(`Change status for this user?`)) return;
     
-    try {
-      const newStatus = currentStatus === 'active' ? 'banned' : 'active';
-      const result = await updateUserStatus(userId, newStatus);
-      
-      if (result.success) {
-        alert(`User status updated to ${newStatus}`);
-        fetchUsers();
-      } else {
-        alert(result.message || 'Failed to update status');
+    await run(`status:${userId}`, async () => {
+      try {
+        const newStatus = currentStatus === 'active' ? 'banned' : 'active';
+        const result = await updateUserStatus(userId, newStatus);
+        
+        if (result.success) {
+          alert(`User status updated to ${newStatus}`);
+          fetchUsers();
+        } else {
+          alert(result.message || 'Failed to update status');
+        }
+      } catch (err: any) {
+        console.error('Error updating status:', err);
+        alert('Failed to update user status');
       }
-    } catch (err: any) {
-      console.error('Error updating status:', err);
-      alert('Failed to update user status');
-    }
+    });
   };
 
   const handlePasswordReset = async (userId: string, userName: string) => {
@@ -87,18 +98,20 @@ export default function UsersPage() {
     
     if (!confirm(`Reset password for ${userName}?`)) return;
     
-    try {
-      const result = await resetUserPassword(userId, newPassword);
-      
-      if (result.success) {
-        alert('Password reset successfully!');
-      } else {
-        alert(result.message || 'Failed to reset password');
+    await run(`reset:${userId}`, async () => {
+      try {
+        const result = await resetUserPassword(userId, newPassword);
+        
+        if (result.success) {
+          alert('Password reset successfully!');
+        } else {
+          alert(result.message || 'Failed to reset password');
+        }
+      } catch (err: any) {
+        console.error('Error resetting password:', err);
+        alert('Failed to reset password');
       }
-    } catch (err: any) {
-      console.error('Error resetting password:', err);
-      alert('Failed to reset password');
-    }
+    });
   };
 
   if (userRole !== 'admin') {
@@ -272,14 +285,16 @@ export default function UsersPage() {
                           </button>
                           <button
                             onClick={() => handlePasswordReset(user.id || user._id, getUserName(user))}
-                            className="text-green-600 hover:text-green-900"
+                            disabled={isBusy(`reset:${user.id || user._id}`)}
+                            className="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Reset Password"
                           >
                             <Key className="h-4 w-4 inline" />
                           </button>
                           <button
                             onClick={() => handleStatusUpdate(user.id || user._id, user.status || 'active')}
-                            className="text-red-600 hover:text-red-900"
+                            disabled={isBusy(`status:${user.id || user._id}`)}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                             title={user.status === 'active' ? 'Ban User' : 'Activate User'}
                           >
                             <Ban className="h-4 w-4 inline" />

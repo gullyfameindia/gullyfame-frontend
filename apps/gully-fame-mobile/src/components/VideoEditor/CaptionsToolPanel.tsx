@@ -73,9 +73,9 @@ export default function CaptionsToolPanel({
 
   // Global caption styles
   const [fontSize, setFontSize] = useState(20);
-  const [fontFamily, setFontFamily] = useState("System");
+  const [fontFamily] = useState("System");
   const [color, setColor] = useState("#FFFFFF");
-  const [backgroundColor, setBackgroundColor] = useState("rgba(0,0,0,0.7)");
+  const [backgroundColor] = useState("rgba(0,0,0,0.7)");
   const [position, setPosition] = useState<"top" | "center" | "bottom">("bottom");
   const [animation, setAnimation] = useState<"none" | "fade" | "slide" | "typewriter">("fade");
 
@@ -128,7 +128,7 @@ export default function CaptionsToolPanel({
       } else {
         Alert.alert("Info", result.message || "No speech detected in video");
       }
-    } catch (error: any) {
+    } catch {
 
       // For demo purposes, create sample captions if API fails
       if (__DEV__) {

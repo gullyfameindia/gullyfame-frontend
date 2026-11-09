@@ -106,15 +106,29 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // Release signing for local builds. Provide these via ~/.gradle/gradle.properties or
+        // -P flags (never commit them):
+        //   GF_UPLOAD_STORE_FILE, GF_UPLOAD_STORE_PASSWORD, GF_UPLOAD_KEY_ALIAS, GF_UPLOAD_KEY_PASSWORD
+        // EAS Build injects its own credentials and ignores this block.
+        if (findProperty('GF_UPLOAD_STORE_FILE')) {
+            release {
+                storeFile file(findProperty('GF_UPLOAD_STORE_FILE'))
+                storePassword findProperty('GF_UPLOAD_STORE_PASSWORD')
+                keyAlias findProperty('GF_UPLOAD_KEY_ALIAS')
+                keyPassword findProperty('GF_UPLOAD_KEY_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Never sign a release with the debug key (Google Play rejects it). Without the
+            // GF_UPLOAD_* properties the bundle is left unsigned for EAS / Play App Signing.
+            if (signingConfigs.findByName('release')) {
+                signingConfig signingConfigs.release
+            }
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds

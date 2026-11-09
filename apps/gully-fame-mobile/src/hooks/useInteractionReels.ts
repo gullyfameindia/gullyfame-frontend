@@ -95,8 +95,11 @@ export function useInteractionReels(kind: InteractionKind, enabled: boolean) {
     [enabled, fetchPage, kind]
   );
 
+  // Synchronous lock: onEndReached can fire twice before `loadingMore` state is applied.
+  const loadingMoreRef = useRef(false);
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || !cursorRef.current) return;
+    if (loadingMoreRef.current || loadingMore || !hasMore || !cursorRef.current) return;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
       const page = await fetchPage(cursorRef.current);
@@ -111,6 +114,7 @@ export function useInteractionReels(kind: InteractionKind, enabled: boolean) {
     } catch {
       if (mountedRef.current) setHasMore(false);
     } finally {
+      loadingMoreRef.current = false;
       if (mountedRef.current) setLoadingMore(false);
     }
   }, [loadingMore, hasMore, fetchPage]);

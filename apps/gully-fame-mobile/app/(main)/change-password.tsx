@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   Text,
@@ -44,7 +45,7 @@ export default function ChangePassword() {
       const mobile = await AsyncStorage.getItem("userMobile");
       setUserEmail(email || "");
       setUserMobile(mobile || "");
-    } catch (error) { /* intentionally ignored */
+    } catch { /* intentionally ignored */
     }
   };
 
@@ -140,7 +141,7 @@ export default function ChangePassword() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -305,7 +306,7 @@ export default function ChangePassword() {
           )}
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

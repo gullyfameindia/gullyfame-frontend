@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { listSoundFX, searchSoundFX } from "@/api/services/soundFXService";
+import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 interface SoundEffect {
   _id: string;
@@ -48,6 +48,8 @@ export default function SoundFXToolPanel({
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [previewingId, setPreviewingId] = useState<string | null>(null);
   const [sound, setSound] = useState<any>(null);
+  // Only the newest request may update state (category/search changes can overlap).
+  const latestRequest = useRef(0);
 
   useEffect(() => {
     fetchSoundEffects();
@@ -56,6 +58,9 @@ export default function SoundFXToolPanel({
         sound.unloadAsync();
       }
     };
+  // Category changes fetch immediately; search is debounced in the effect below. fetch* is
+  // re-created each render, so it is deliberately not a dependency (it would loop).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   useEffect(() => {
@@ -66,9 +71,11 @@ export default function SoundFXToolPanel({
       }
     }, 300);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- see above: debounced on searchQuery only.
   }, [searchQuery]);
 
   const fetchSoundEffects = async () => {
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -85,6 +92,7 @@ export default function SoundFXToolPanel({
         result = await listSoundFX();
       }
 
+      if (requestId !== latestRequest.current) return;
       if (result.success && result.data) {
         const sfxList = result.data;
 
@@ -103,11 +111,12 @@ export default function SoundFXToolPanel({
         setError(result.message || "Failed to load sound effects");
         setSoundEffects([]);
       }
-    } catch (err) {
+    } catch {
+      if (requestId !== latestRequest.current) return;
       setError("Failed to load sound effects");
       setSoundEffects([]);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
   };
 
@@ -135,7 +144,7 @@ export default function SoundFXToolPanel({
         let Audio;
         try {
           Audio = require('expo-audio').Audio;
-        } catch (e) {
+        } catch {
           Alert.alert("Info", "Audio preview not available in this build. Added to timeline instead.");
           onAddSoundFX({
             id: sfx._id,
@@ -160,14 +169,14 @@ export default function SoundFXToolPanel({
                 setPreviewingId(null);
               }
             });
-          } catch (playError) {
+          } catch {
             Alert.alert("Error", "Failed to play audio preview");
           }
         } else {
           Alert.alert("Info", "Audio preview not available");
         }
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to preview sound effect");
     }
   };
@@ -246,10 +255,7 @@ export default function SoundFXToolPanel({
 
       {/* Sound Effects List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-          <Text style={styles.loadingText}>Loading sound effects...</Text>
-        </View>
+        <SkeletonList rows={6} avatarSize={40} avatarRadius={8} trailing style={{ paddingHorizontal: 16 }} />
       ) : error ? (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={48} color="#ff3b30" />

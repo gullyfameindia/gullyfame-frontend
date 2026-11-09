@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { safeDecode } from "@/utils/routeParams";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
+import { validatePickedAsset } from "@/utils/fileValidation";
 import {
   View,
   Text,
@@ -28,7 +31,7 @@ export default function OnboardingUploadAvatar() {
   const params = useLocalSearchParams();
   const role = params.role ? String(params.role) : "participant";
   const categoriesParam = params.categories
-    ? decodeURIComponent(String(params.categories))
+    ? safeDecode(String(params.categories))
     : "[]";
   const categories: string[] = (() => {
     try {
@@ -38,14 +41,14 @@ export default function OnboardingUploadAvatar() {
     }
   })();
   const firstName = params.firstName
-    ? decodeURIComponent(String(params.firstName))
+    ? safeDecode(String(params.firstName))
     : "";
   const lastName = params.lastName
-    ? decodeURIComponent(String(params.lastName))
+    ? safeDecode(String(params.lastName))
     : "";
-  const email = params.email ? decodeURIComponent(String(params.email)) : "";
-  const dob = params.dob ? decodeURIComponent(String(params.dob)) : "";
-  const gender = params.gender ? decodeURIComponent(String(params.gender)) : "";
+  const email = params.email ? safeDecode(String(params.email)) : "";
+  const dob = params.dob ? safeDecode(String(params.dob)) : "";
+  const gender = params.gender ? safeDecode(String(params.gender)) : "";
   const fromKycFlow = params.fromKycFlow === "true";
 
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -120,6 +123,11 @@ export default function OnboardingUploadAvatar() {
   };
 
   const processImage = async (asset: ImagePicker.ImagePickerAsset) => {
+    const invalid = validatePickedAsset(asset, ["image"]);
+    if (invalid) {
+      setErrorMessage(invalid);
+      return;
+    }
     setProfileImage(asset.uri);
     setErrorMessage("");
   };
@@ -201,7 +209,7 @@ export default function OnboardingUploadAvatar() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -360,7 +368,7 @@ export default function OnboardingUploadAvatar() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

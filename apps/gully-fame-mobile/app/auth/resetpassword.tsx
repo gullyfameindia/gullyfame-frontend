@@ -1,4 +1,5 @@
 import { useState } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   Text,
@@ -114,7 +115,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -250,7 +251,7 @@ export default function ResetPassword() {
           )}
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

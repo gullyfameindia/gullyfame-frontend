@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, StatusBar, ActivityIndicator, LayoutAnimation } from "react-native";
+import { safeIdParam } from "@/utils/routeParams";
+import { View, Text, ScrollView, Image, TouchableOpacity, StatusBar, LayoutAnimation } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,6 +12,7 @@ import { openCompetition } from "@/utils/openCompetition";
 import { validateKycBeforeCompetition } from "@/utils/kycValidation";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
 import { upcomingCompetitionStyles as styles } from "@/styles/upcomingCompetitionStyles";
+import { SkeletonLoader } from "@/components/Skeleton";
 
 const formatCurrency = (amount: number): string => {
   if (!amount) return "₹0";
@@ -68,7 +70,7 @@ const formatDateShort = (dateString: string): string => {
 export default function UpcomingCompetitionScreen() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const competitionIdFromParams = String(params.id);
+  const competitionIdFromParams = safeIdParam(params.id);
 
   const [competitionData, setCompetitionData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -128,7 +130,7 @@ export default function UpcomingCompetitionScreen() {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
         {loading ? (
-          <ActivityIndicator size="large" color="#FFD700" />
+          <SkeletonLoader style={{ alignSelf: "stretch" }} />
         ) : (
           <>
             <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError || "Competition not found."}</Text>

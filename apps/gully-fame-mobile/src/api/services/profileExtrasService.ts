@@ -3,7 +3,7 @@
 // Replace each body with a real API call once the endpoint exists.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiDelete, toResult } from "../client";
+import { apiDelete, apiGet, toResult } from "../client";
 
 export interface FollowCounts {
   followers: number;
@@ -16,13 +16,36 @@ export interface ProfileInsights {
 
 type Result<T = undefined> = { success: boolean; message: string; data?: T };
 
-/**
- * Follower/following totals for a user. `null` means "unknown", which the UI shows as "–".
- */
-export async function getFollowCounts(_userId: string): Promise<FollowCounts | null> {
-  // BACKEND_PENDING: GET user/:id/follow-stats -> { followers: number, following: number }
-  // (user/followers, user/following and user/:id/follow-stats all return 404 today)
+/** Total from a paginated list response, whatever the backend names it; null if it sends none. */
+function pickTotal(data: unknown): number | null {
+  if (!data || typeof data !== "object") return null;
+  const record = data as Record<string, unknown>;
+  for (const key of ["total", "totalCount", "count", "totalFollowers", "totalFollowing", "followersCount", "followingCount"]) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0) return value;
+  }
   return null;
+}
+
+/**
+ * Follower/following totals for a user, from GET user/:id/followers and GET user/:id/following
+ * (?page=1&limit=1, only the total is needed). `null` means "unknown", which the UI shows as "–":
+ * returned when either request fails or the response carries no total.
+ */
+export async function getFollowCounts(userId: string): Promise<FollowCounts | null> {
+  if (!userId) return null;
+  const id = encodeURIComponent(userId);
+  try {
+    const [followersPage, followingPage] = await Promise.all([
+      apiGet<unknown>(`user/${id}/followers`, { params: { page: 1, limit: 1 } }),
+      apiGet<unknown>(`user/${id}/following`, { params: { page: 1, limit: 1 } }),
+    ]);
+    const followers = pickTotal(followersPage);
+    const following = pickTotal(followingPage);
+    return followers === null || following === null ? null : { followers, following };
+  } catch {
+    return null;
+  }
 }
 
 /**

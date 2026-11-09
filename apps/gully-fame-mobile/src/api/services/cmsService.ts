@@ -41,9 +41,10 @@ export interface SupportContact {
 
 export const getFaqs = (): Promise<ApiResult<RemoteFaq[]>> =>
   toResult(async () => {
-    const data = await apiGet<{ faqs?: Array<{ question?: string; answer?: string; isActive?: boolean }> }>(
-      "admin/faqs?isActive=true&limit=100",
-      { skipAuth: true }
+    const data = await apiGet<{ faqs?: { question?: string; answer?: string; isActive?: boolean }[] }>(
+      // Collection: GET admin/faqs ?page&limit&search (public read). Inactive FAQs are filtered below.
+      "admin/faqs",
+      { skipAuth: true, params: { page: 1, limit: 100 } }
     );
     return (data?.faqs ?? [])
       .filter((f) => f.isActive !== false && f.question && f.answer)

@@ -1,9 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { safeIdParam } from "@/utils/routeParams";
 import { openOwnProfile } from "@/utils/openProfile";
 import { useState, useEffect, useCallback } from "react";
 import { LeaderboardStyles as styles } from "@/components/TopTenLeaderboard/styles";
 import {
-  Dimensions,
   Image,
   ScrollView,
   StatusBar,
@@ -26,8 +26,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { getLeaderboard, LeaderboardRow } from "@/api/services/competitionService";
 import { getErrorMessage } from "@/api/client";
 import { toastError } from "@/components/ui/Toast";
+import { SkeletonLoader } from "@/components/Skeleton";
 
-const { width, height } = Dimensions.get("window");
 
 const tabs = [
   { name: "Home", icon: HomeIcon, label: "" },
@@ -39,7 +39,7 @@ const tabs = [
 
 export default function MyFameScreen() {
   const params = useLocalSearchParams();
-  const competitionId = String(params.id);
+  const competitionId = safeIdParam(params.id);
 
   const [activeTab, setActiveTab] = useState("Home");
   const [isLoading, setIsLoading] = useState(true);
@@ -107,16 +107,6 @@ export default function MyFameScreen() {
     }
   };
 
-  const handleTabPress = (tabName: string) => {
-    if (tabName === "Home") {
-      router.push("/(main)" as any);
-    } else if (tabName === "Community") {
-      router.push("/(main)/community" as any);
-    } else {
-      setActiveTab(tabName);
-    }
-  };
-
   const topThree = leaderboardData.filter((item) => item.isTop);
   const restOfList = leaderboardData.filter((item) => !item.isTop);
 
@@ -125,7 +115,7 @@ export default function MyFameScreen() {
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
         <StatusBar barStyle="light-content" />
         {isLoading ? (
-          <ActivityIndicator size="large" color="#EC9A15" />
+          <SkeletonLoader style={{ alignSelf: "stretch" }} />
         ) : (
           <>
             <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError}</Text>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   StyleSheet,
@@ -24,7 +25,6 @@ import {
   scale,
   getFontSize,
   spacing,
-  getResponsiveDimensions,
   scaleVertical,
 } from "@utils/responsive";
 
@@ -40,6 +40,7 @@ import { getErrorMessage } from "@/api/client";
 import { openUserProfile } from "@/utils/openProfile";
 import { openCompetition } from "@/utils/openCompetition";
 import { toastError } from "@/components/ui/Toast";
+import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 
 const getScreenDimensions = () => {
@@ -100,17 +101,26 @@ export default function SearchScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Only the newest search may write results; an older slow response is dropped.
+  const searchRequestRef = useRef(0);
+  const loadingMoreRef = useRef(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<any>(EMPTY_RESULTS);
   const [searchError, setSearchError] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
 
   const loadMoreResults = useCallback(async () => {
-    if (loadingMore || !searchResults.hasMore || activeSearchType === "all") return;
+    // The ref is a synchronous lock: state would not update before a second
+    // onEndReached event fired in the same frame.
+    if (loadingMoreRef.current || loadingMore || !searchResults.hasMore || activeSearchType === "all") return;
+    loadingMoreRef.current = true;
+    const requestId = searchRequestRef.current;
     setLoadingMore(true);
     try {
       const next = (searchResults.page || 1) + 1;
       const page = await fetchTypedPage(activeSearchType, searchQuery.trim(), next);
+      // The query or tab changed while this page was loading: drop it.
+      if (requestId !== searchRequestRef.current) return;
       setSearchResults((prev: any) => ({
         ...prev,
         results: [...prev.results, ...page.results],
@@ -118,8 +128,9 @@ export default function SearchScreen() {
         page: next,
       }));
     } catch (error) {
-      toastError(getErrorMessage(error));
+      if (requestId === searchRequestRef.current) toastError(getErrorMessage(error));
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
   }, [loadingMore, searchResults.hasMore, searchResults.page, activeSearchType, searchQuery]);
@@ -139,7 +150,7 @@ export default function SearchScreen() {
         if (history) {
           setSearchHistory(JSON.parse(history));
         }
-      } catch (error) { /* intentionally ignored */
+      } catch { /* intentionally ignored */
       }
     };
     loadSearchHistory();
@@ -157,14 +168,13 @@ export default function SearchScreen() {
         AsyncStorage.setItem("searchHistory", JSON.stringify(updated)).catch(() => undefined);
         return updated;
       });
-    } catch (error) { /* intentionally ignored */
+    } catch { /* intentionally ignored */
     }
   }, []);
 
-  const [screenDimensions, setScreenDimensions] = useState(
+  const [, setScreenDimensions] = useState(
     getScreenDimensions(),
   );
-  const responsiveDims = getResponsiveDimensions();
 
   const bottomNavBaseHeight = 80;
   const bottomNavPadding =
@@ -201,6 +211,7 @@ export default function SearchScreen() {
 
     // If query is empty, clear results immediately
     if (!searchQuery.trim()) {
+      searchRequestRef.current++;
       setSearchResults(EMPTY_RESULTS);
       setSearchError("");
       setIsLoading(false);
@@ -214,25 +225,29 @@ export default function SearchScreen() {
     setIsLoading(true);
 
     // Debounce API call by 400ms. GET /search?q&type (typed searches are paginated).
+    const requestId = ++searchRequestRef.current;
     debounceTimerRef.current = setTimeout(async () => {
       const q = searchQuery.trim();
       setSearchError("");
       try {
         if (activeSearchType === "all") {
           const data = await searchAll(q);
+          if (requestId !== searchRequestRef.current) return;
           setSearchResults({ ...EMPTY_RESULTS, ...data });
         } else {
           const page = await fetchTypedPage(activeSearchType, q, 1);
+          if (requestId !== searchRequestRef.current) return;
           setSearchResults({ ...EMPTY_RESULTS, results: page.results, hasMore: page.hasMore, page: 1 });
         }
       } catch (error) {
+        if (requestId !== searchRequestRef.current) return;
         setSearchResults(EMPTY_RESULTS);
         setSearchError(getErrorMessage(error));
       } finally {
-        setIsLoading(false);
+        if (requestId === searchRequestRef.current) setIsLoading(false);
       }
     }, 400);
-  }, [searchQuery, activeSearchType]);
+  }, [searchQuery, activeSearchType, addToSearchHistory]);
 
   const tabs = [
     { name: "Home", icon: HomeIconSVG, label: "" },
@@ -243,6 +258,7 @@ export default function SearchScreen() {
   ];
 
   return (
+    <KeyboardAvoidingScreen>
     <SafeAreaView style={styles.container} edges={[]}>
       {}
       <View
@@ -262,6 +278,7 @@ export default function SearchScreen() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search Gully Fame..."
+            testID="search-input"
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -288,6 +305,7 @@ export default function SearchScreen() {
                     isActive && styles.pillButtonActive,
                   ]}
                   onPress={() => setActiveSearchType(tab.id)}
+                  testID={`search-type-${tab.id}`}
                 >
                   <Text
                     style={[styles.pillText, isActive && styles.pillTextActive]}
@@ -303,16 +321,7 @@ export default function SearchScreen() {
 
       {}
       {isLoading ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: COLORS.background,
-          }}
-        >
-          <ActivityIndicator size="large" color={THEME_COLOR} />
-        </View>
+        <SkeletonList rows={8} style={{ flex: 1, padding: 16, backgroundColor: COLORS.background }} />
       ) : searchQuery.trim() === "" && searchHistory.length > 0 ? (
         // Show search history when no query is entered
         <ScrollView
@@ -602,6 +611,7 @@ export default function SearchScreen() {
         onClose={() => setDrawerVisible(false)}
       />
     </SafeAreaView>
+    </KeyboardAvoidingScreen>
   );
 }
 

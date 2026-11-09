@@ -1,4 +1,5 @@
 import { useState } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   Text,
@@ -54,7 +55,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {}
         <View style={styles.header}>
@@ -98,6 +99,7 @@ export default function ForgotPassword() {
             autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
+            testID="forgot-identifier"
           />
         </View>
 
@@ -118,6 +120,7 @@ export default function ForgotPassword() {
           style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
           activeOpacity={0.85}
           onPress={handleSend}
+          testID="forgot-submit"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -127,7 +130,7 @@ export default function ForgotPassword() {
           )}
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

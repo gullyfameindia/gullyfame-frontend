@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
@@ -45,7 +45,7 @@ const LensCarousel: React.FC<LensCarouselProps> = ({
 }) => {
   const { width } = useWindowDimensions();
   const sidePadding = (width - ITEM) / 2;
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const [scrollX] = useState(() => new Animated.Value(0));
   const listRef = useRef<Animated.FlatList<Lens>>(null);
   const lastIndex = useRef(-1);
 

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect,  useCallback } from "react";
+import { safeIdParam } from "@/utils/routeParams";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
     View,
@@ -14,7 +15,6 @@ import {
     Platform,
     Linking,
     LayoutAnimation,
-    ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,6 +28,7 @@ import {
 } from "@/icons";
 import { pastCompetitionStyles as styles } from "@/styles/pastCompetitionStyles";
 import TopPerformer from "@/components/home/TopDancers/TopPerformer";
+import { SkeletonLoader } from "@/components/Skeleton";
 import TopTenLeaderboard from "@/components/TopTenLeaderboard/TopTenLeaderboard";
 import SafeImage from "@/components/SafeImage";
 import { getCompetitionDetails } from "@/api/services/competitionService";
@@ -57,14 +58,14 @@ const formatCurrency = (amount: number): string => {
 
 export default function PastCompetitionScreen() {
     const params = useLocalSearchParams();
-    const competitionIdFromParams = String(params.id);
+    const competitionIdFromParams = safeIdParam(params.id);
 
     const [competitionData, setCompetitionData] = useState<any>(null);
     const [morePastComps, setMorePastComps] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [shareModalVisible, setShareModalVisible] = useState(false);
     const [isRulesExpanded, setIsRulesExpanded] = useState(false);
-    const shareSlideAnim = useRef(new Animated.Value(height)).current;
+    const [shareSlideAnim] = useState(() => new Animated.Value(height));
 
     const toggleRules = () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -151,7 +152,7 @@ export default function PastCompetitionScreen() {
                 duration: 300,
                 useNativeDriver: true,
             }).start(() => setShareModalVisible(false));
-        } catch (error) {
+        } catch {
             Alert.alert("Error", "Unable to share. Please try again.");
         }
     };
@@ -160,7 +161,7 @@ export default function PastCompetitionScreen() {
         return (
             <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
                 {loading ? (
-                    <ActivityIndicator size="large" color="#EC9A15" />
+                    <SkeletonLoader style={{ alignSelf: "stretch" }} />
                 ) : (
                     <>
                         <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError || "Competition not found."}</Text>

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Dimensions } from "react-native";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from "react-native";
 import { router } from "expo-router";
 import { getMyKyc } from "@/api/services/kycService";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -11,7 +11,6 @@ import {
   CheckIcon,
   VerifiedBadgeIcon as VerifiedBadge,
 } from "@/icons";
-const { width, height } = Dimensions.get("window");
 
 export default function VerifiedScreen() {
   const { profileData } = useOwnProfile();
@@ -24,18 +23,19 @@ export default function VerifiedScreen() {
     hasGender: false,
   });
 
+  // Avoid setting state after the screen is gone, and ignore a slow earlier
+  // check finishing after a newer one.
+  const isMounted = useRef(true);
+  const latestCheck = useRef(0);
   useEffect(() => {
-    checkVerificationStatus();
-  }, [profileData]);
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
-  
-  useFocusEffect(
-    useCallback(() => {
-      checkVerificationStatus();
-    }, [profileData]),
-  );
-
-  const checkVerificationStatus = async () => {
+  const checkVerificationStatus = useCallback(async () => {
+    const checkId = ++latestCheck.current;
     try {
       const bio = profileData?.bio || "";
       const profileImage = profileData?.profileImage || "";
@@ -51,6 +51,7 @@ export default function VerifiedScreen() {
 
       // "Verified" means an admin approved the KYC document on the backend.
       const kyc = await getMyKyc().catch(() => null);
+      if (!isMounted.current || checkId !== latestCheck.current) return;
       setVerificationStatus({
         isVerified: kyc?.status === "APPROVED",
         hasBio,
@@ -59,9 +60,16 @@ export default function VerifiedScreen() {
         hasDob,
         hasGender,
       });
-    } catch (error) { /* intentionally ignored */
+    } catch { /* intentionally ignored */
     }
-  };
+  }, [profileData]);
+
+  // Runs on focus and whenever the profile changes (the callback identity changes with it).
+  useFocusEffect(
+    useCallback(() => {
+      checkVerificationStatus();
+    }, [checkVerificationStatus]),
+  );
 
   const handleCompleteStep = async (step: string) => {
     const role = (await AsyncStorage.getItem("userRole")) || "participant";

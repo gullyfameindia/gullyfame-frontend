@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, CheckCircle, XCircle, FileText, Loader2, Shield, ShieldCheck, AlertTriangle, AlertCircle, Image as ImageIcon } from 'lucide-react';
@@ -23,13 +23,14 @@ export default function UserKycPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
-  useEffect(() => {
-    if (userId) {
-      fetchData();
-    }
-  }, [userId]);
+  // Synchronous lock for approve/reject (state alone can't stop a same-tick double click).
+  const actionLock = useRef(false);
+  // Only the newest request may update state.
+  const latestRequest = useRef(0);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!userId) return;
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -38,6 +39,7 @@ export default function UserKycPage() {
         getUserById(userId),
         getUserKyc(userId),
       ]);
+      if (requestId !== latestRequest.current) return;
       
       if (userResult.success && userResult.data) {
         setUser(userResult.data);
@@ -52,16 +54,23 @@ export default function UserKycPage() {
         setKyc(null);
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching KYC data:', err);
       setError(err.message || 'Failed to load KYC data');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleApprove = async () => {
     if (!confirm('Approve this KYC submission?')) return;
     
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setIsUpdating(true);
       const result = await updateUserKyc(userId, 'approved');
@@ -77,6 +86,7 @@ export default function UserKycPage() {
       console.error('Error approving KYC:', err);
       alert('Failed to approve KYC');
     } finally {
+      actionLock.current = false;
       setIsUpdating(false);
     }
   };
@@ -87,6 +97,8 @@ export default function UserKycPage() {
       return;
     }
     
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setIsUpdating(true);
       const result = await updateUserKyc(userId, 'rejected', rejectionReason);
@@ -104,6 +116,7 @@ export default function UserKycPage() {
       console.error('Error rejecting KYC:', err);
       alert('Failed to reject KYC');
     } finally {
+      actionLock.current = false;
       setIsUpdating(false);
     }
   };

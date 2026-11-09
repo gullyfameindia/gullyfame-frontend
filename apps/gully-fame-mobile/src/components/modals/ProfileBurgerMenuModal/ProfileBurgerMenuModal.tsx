@@ -140,7 +140,7 @@ function ProfileBurgerMenuModal({
             {/* Profile Management Section */}
             <Text style={styles.menuSectionTitle}>Profile Management</Text>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation(`/(main)/account-center`)}>
+            <TouchableOpacity testID="burger-menu-account-center" style={styles.menuItem} onPress={() => handleNavigation(`/(main)/account-center`)}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                 <Path d="M12 11v8M12 19l-3-3m3 3l3-3" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -148,7 +148,7 @@ function ProfileBurgerMenuModal({
               <Text style={styles.menuItemText}>Account Center</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/history")}>
+            <TouchableOpacity testID="burger-menu-history" style={styles.menuItem} onPress={() => handleNavigation("/(main)/history")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                 <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -156,7 +156,7 @@ function ProfileBurgerMenuModal({
               <Text style={styles.menuItemText}>History</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => {
+            <TouchableOpacity testID="burger-menu-leaderboard-rank" style={styles.menuItem} onPress={() => {
               onClose();
               setTimeout(() => openOwnProfile(), 120);
             }}>
@@ -173,7 +173,7 @@ function ProfileBurgerMenuModal({
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/history")}>
+            <TouchableOpacity testID="burger-menu-coins-earned" style={styles.menuItem} onPress={() => handleNavigation("/(main)/history")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
                 <Path d="M12 6v6l4 2" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
@@ -190,14 +190,14 @@ function ProfileBurgerMenuModal({
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/saved")}>
+            <TouchableOpacity testID="burger-menu-saved-posts-reels" style={styles.menuItem} onPress={() => handleNavigation("/(main)/saved")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
               </Svg>
               <Text style={styles.menuItemText}>Saved Posts / Reels</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/invite-friend")}>
+            <TouchableOpacity testID="burger-menu-invite-your-friend" style={styles.menuItem} onPress={() => handleNavigation("/(main)/invite-friend")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                 <Circle cx="9" cy="7" r="4" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -206,7 +206,7 @@ function ProfileBurgerMenuModal({
               <Text style={styles.menuItemText}>Invite Your Friend</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/downloads")}>
+            <TouchableOpacity testID="burger-menu-downloads" style={styles.menuItem} onPress={() => handleNavigation("/(main)/downloads")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                 <Polyline points="7 10 12 15 17 10" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -220,7 +220,7 @@ function ProfileBurgerMenuModal({
             {/* Settings & Help Section */}
             <Text style={styles.menuSectionTitle}>Settings & Help</Text>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/help-support")}>
+            <TouchableOpacity testID="burger-menu-help-and-support" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/help-support")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
                 <Path d="M12 16v-4M12 8h.01" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
@@ -228,7 +228,7 @@ function ProfileBurgerMenuModal({
               <Text style={styles.menuItemText}>Help & Support</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/faq")}>
+            <TouchableOpacity testID="burger-menu-faqs" style={styles.menuItem} onPress={() => handleNavigation("/(main)/faq")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
                 <SvgText x="12" y="16" textAnchor="middle" stroke="#EC9A15" fill="#EC9A15" fontSize="12" fontWeight="bold">?</SvgText>
@@ -237,14 +237,14 @@ function ProfileBurgerMenuModal({
               <Text style={styles.menuItemText}>FAQs</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/privacy-policy")}>
+            <TouchableOpacity testID="burger-menu-privacy-policy" style={styles.menuItem} onPress={() => handleNavigation("/(main)/privacy-policy")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
               </Svg>
               <Text style={styles.menuItemText}>Privacy Policy</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/terms-of-service")}>
+            <TouchableOpacity testID="burger-menu-terms-of-service" style={styles.menuItem} onPress={() => handleNavigation("/(main)/terms-of-service")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                 <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -253,7 +253,22 @@ function ProfileBurgerMenuModal({
             </TouchableOpacity>
             
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/kyc-status")}>
+            <TouchableOpacity testID="burger-menu-blocked-users" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/blocked-users")}>
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
+                <Path d="M4.9 4.9l14.2 14.2" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
+              </Svg>
+              <Text style={styles.menuItemText}>Blocked Users</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity testID="burger-menu-delete-account" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/delete-account")}>
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+              <Text style={styles.menuItemText}>Delete Account</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity testID="burger-menu-kyc-status" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/kyc-status")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M9 12l2 2 4-4" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                 <Path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -271,7 +286,7 @@ function ProfileBurgerMenuModal({
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/about")}>
+            <TouchableOpacity testID="burger-menu-about" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/about")}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
                 <Path d="M12 16v-4M12 8h.01" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
@@ -282,6 +297,7 @@ function ProfileBurgerMenuModal({
             <View style={styles.menuDivider} />
 
             <TouchableOpacity
+              testID="burger-menu-logout"
               style={[styles.menuItem, styles.logoutItem]}
               onPress={async () => {
                 onClose();

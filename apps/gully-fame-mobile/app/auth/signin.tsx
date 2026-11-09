@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView, Dimensions, Platform, TextInput } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { showGuestModeUnavailable } from "@utils/guestMode";
-import { ThemedView } from "@components/themed-view";
-import { ThemedText } from "@components/themed-text";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppleIcon, EyeIcon, EyeOffIcon } from "@/icons";
 import { authService, AUTH_RULES } from "@api/services/authService";
@@ -79,7 +78,7 @@ export default function SignIn() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -113,6 +112,7 @@ export default function SignIn() {
             <TextInput
               style={styles.input}
               placeholder="Enter your email or mobile number"
+              testID="signin-identifier"
               placeholderTextColor="#B0B0B0"
               value={emailOrMobile}
               onChangeText={setEmailOrMobile}
@@ -129,6 +129,7 @@ export default function SignIn() {
               <TextInput
                 style={styles.input}
                 placeholder="Enter your password"
+                testID="signin-password"
                 placeholderTextColor="#B0B0B0"
                 value={password}
                 onChangeText={setPassword}
@@ -138,6 +139,7 @@ export default function SignIn() {
                 <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
+                  testID="signin-toggle-password"
                 >
                   {showPassword ? (
                     <EyeOffIcon size={20} color="#9CA3AF" />
@@ -152,6 +154,7 @@ export default function SignIn() {
           <View style={styles.forgotContainer}>
             <TouchableOpacity
               onPress={() => router.push("/auth/forgotpassword")}
+              testID="signin-forgot-password"
               activeOpacity={0.7}
             >
               <Text style={styles.forgotText}>Forgot Password?</Text>
@@ -167,6 +170,7 @@ export default function SignIn() {
           <TouchableOpacity
             style={styles.otpLoginButton}
             onPress={() => router.push("/auth/login-via-otp")}
+            testID="signin-otp-login"
             activeOpacity={0.7}
           >
             <Text style={styles.otpLoginText}>
@@ -193,6 +197,7 @@ export default function SignIn() {
               isLoading && styles.signInButtonDisabled,
             ]}
             onPress={handleSignIn}
+            testID="signin-submit"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -240,6 +245,7 @@ export default function SignIn() {
             </Text>
             <TouchableOpacity
               onPress={() => router.push("/auth/createaccount")}
+              testID="signin-create-account"
               activeOpacity={0.7}
             >
               <Text style={styles.createAccountLink}>Create One</Text>
@@ -251,6 +257,7 @@ export default function SignIn() {
         <View style={styles.skipContainer}>
           <TouchableOpacity
             onPress={showGuestModeUnavailable}
+            testID="signin-skip"
           >
             <Text style={styles.skipText}>
               Let me have a look!{" "}
@@ -259,7 +266,7 @@ export default function SignIn() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

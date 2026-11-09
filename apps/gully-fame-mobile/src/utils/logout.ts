@@ -5,6 +5,7 @@ import { socketChatService } from "@api/services/socketChatService";
 import { store, resetStore } from "@/store";
 import { SESSION_CACHE_KEYS } from "./userSession";
 import { clearOwnProfileSnapshot } from "./ownProfileCache";
+import { resetBlockedUsersCache } from "./moderation";
 
 /**
  * Logout is local-only: the backend has no logout endpoint and its JWTs never
@@ -17,6 +18,8 @@ export const performLogout = async (): Promise<void> => {
     await removeAuthToken();
     clearOwnProfileSnapshot();
     await AsyncStorage.multiRemove([...SESSION_CACHE_KEYS, "termsAccepted"]);
+    // After the stored list is gone, so a listener cannot reload the previous account's blocks.
+    resetBlockedUsersCache();
     store.dispatch(resetStore());
   } finally {
     router.replace("/auth/signin");

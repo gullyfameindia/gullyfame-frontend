@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { safeDecode } from "@/utils/routeParams";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
   StatusBar,
   Platform,
@@ -13,7 +13,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 
-const { width, height } = Dimensions.get("window");
 
 export default function VerifyIdentityScreen() {
   const params = useLocalSearchParams();
@@ -21,8 +20,8 @@ export default function VerifyIdentityScreen() {
   const competitionNameParam = params.competitionName ? String(params.competitionName) : "";
   const entryFeeParam = params.entryFee ? String(params.entryFee) : "";
 
-  const competitionName = competitionNameParam ? decodeURIComponent(competitionNameParam) : "Gully Fame Competition";
-  const entryFee = entryFeeParam ? decodeURIComponent(entryFeeParam) : "Free Entry";
+  const competitionName = competitionNameParam ? safeDecode(competitionNameParam) : "Gully Fame Competition";
+  const entryFee = entryFeeParam ? safeDecode(entryFeeParam) : "Free Entry";
 
   const [hasVerified, setHasVerified] = useState(false);
 

@@ -1,6 +1,6 @@
 
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -33,33 +33,25 @@ export default function InviteFriendScreen() {
   
   const [userReferralCode, setUserReferralCode] = useState<string | null>(null);
   const [codeLoading, setCodeLoading] = useState(true);
-  const [codeError, setCodeError] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // The referral code comes from the signed-in user's profile. Nothing is hardcoded.
-  const loadReferralCode = useCallback(async () => {
-    setCodeLoading(true);
-    setCodeError(false);
-    try {
-      const result = await getCurrentUser();
-      const code = (result.data as any)?.referralCode;
-      if (result.success && typeof code === "string" && code.trim()) {
-        setUserReferralCode(code.trim());
-      } else {
-        setUserReferralCode(null);
-        setCodeError(true);
-      }
-    } catch {
-      setUserReferralCode(null);
-      setCodeError(true);
-    } finally {
-      setCodeLoading(false);
-    }
-  }, []);
-
+  // The referral code comes from the signed-in user's profile. Nothing is hardcoded. The API
+  // collection's user/profile has no referralCode field yet, so this normally ends in "coming soon".
   useEffect(() => {
-    loadReferralCode();
-  }, [loadReferralCode]);
+    let active = true;
+    getCurrentUser()
+      .then((result) => {
+        const code = (result.data as any)?.referralCode;
+        if (active && result.success && typeof code === "string" && code.trim()) setUserReferralCode(code.trim());
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setCodeLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const shareUrl = "https://gullyfame.com/download";
   const shareMessage = `Join me on Gully Fame!${userReferralCode ? ` My referral code: ${userReferralCode}` : ""}\n\nDownload now: ${shareUrl}`;
@@ -71,8 +63,8 @@ export default function InviteFriendScreen() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Sharing works without a code: the message then carries only the download link.
   const handleShare = async (platform: string) => {
-    if (!userReferralCode) return;
     try {
       switch (platform) {
         case "WhatsApp": {
@@ -121,7 +113,7 @@ export default function InviteFriendScreen() {
         default:
           await Share.share({ message: shareMessage, title: "Invite to Gully Fame" });
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Unable to share. Please try again.");
     }
   };
@@ -132,7 +124,7 @@ export default function InviteFriendScreen() {
 
       {}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} testID="invite-back">
           <Ionicons name="chevron-back" size={28} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Invite & Earn</Text>
@@ -163,13 +155,12 @@ export default function InviteFriendScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>{codeError ? "Referral code isn't available yet" : "No referral code yet"}</Text>
-              {codeError ? (
-                <TouchableOpacity style={styles.copyButton} onPress={loadReferralCode} activeOpacity={0.7}>
-                  <Text style={styles.copyText}>Retry</Text>
-                </TouchableOpacity>
-              ) : null}
+            <View style={styles.comingSoonBox} testID="invite-referral-coming-soon">
+              <Ionicons name="time-outline" size={22} color="#EC9A15" />
+              <Text style={styles.comingSoonTitle}>Referral codes are coming soon</Text>
+              <Text style={styles.comingSoonText}>
+                You can still invite friends now. The links below share the Gully Fame download page.
+              </Text>
             </View>
           )}
           {userReferralCode ? (
@@ -187,7 +178,7 @@ export default function InviteFriendScreen() {
                 key={platform.id}
                 style={styles.platformCard}
                 onPress={() => handleShare(platform.name)}
-                disabled={!userReferralCode}
+                testID={`invite-share-${platform.name.toLowerCase()}`}
                 activeOpacity={0.7}
               >
                 <View style={styles.iconContainer}>
@@ -242,6 +233,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(236, 154, 21, 0.4)",
     alignItems: "center",
+  },
+  comingSoonBox: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 6,
+  },
+  comingSoonTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  comingSoonText: {
+    color: "#aaa",
+    fontSize: 13,
+    textAlign: "center",
+    lineHeight: 18,
   },
   referralTitle: {
     alignSelf: "stretch",

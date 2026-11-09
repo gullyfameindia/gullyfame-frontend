@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+import { getWalletBalance } from "@/api/services/walletService";
+import { safeDecode } from "@/utils/routeParams";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
   Alert,
   Platform,
@@ -23,7 +24,6 @@ import Svg, { Path, Circle } from "react-native-svg";
 
 import { getUserSession } from "@utils/userSession";
 
-const { width } = Dimensions.get("window");
 
 
 const paymentMethods = [
@@ -38,13 +38,26 @@ export default function CompetitionPaymentScreen() {
   const competitionNameParam = params.competitionName ? String(params.competitionName) : "";
   const entryFeeParam = params.entryFee ? String(params.entryFee) : "";
 
-  const competitionName = competitionNameParam ? decodeURIComponent(competitionNameParam) : "Gully Fame Competition";
-  const entryFee = entryFeeParam ? decodeURIComponent(entryFeeParam) : "Free Entry";
+  const competitionName = competitionNameParam ? safeDecode(competitionNameParam) : "Gully Fame Competition";
+  const entryFee = entryFeeParam ? safeDecode(entryFeeParam) : "Free Entry";
   
   const [selectedMethod, setSelectedMethod] = useState("wallet");
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [userSession, setUserSession] = useState<any>(null);
+  const [, setUserSession] = useState<any>(null);
+  // Real wallet balance (null while loading, -1 if it could not be loaded).
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    getWalletBalance().then((result) => {
+      if (!active) return;
+      setWalletBalance(result.success && result.data ? result.data.balance : -1);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   
   useEffect(() => {
@@ -52,7 +65,7 @@ export default function CompetitionPaymentScreen() {
       try {
         const session = await getUserSession();
         setUserSession(session);
-      } catch (error) { /* intentionally ignored */
+      } catch { /* intentionally ignored */
       }
     };
     loadUserData();
@@ -133,9 +146,15 @@ export default function CompetitionPaymentScreen() {
         <View style={styles.walletCard}>
           <View>
             <Text style={styles.walletLabel}>Wallet Balance</Text>
-            <Text style={styles.walletValue}>₹ 2400.00</Text>
+            <Text style={styles.walletValue}>
+              {walletBalance === null ? "..." : walletBalance < 0 ? "Unavailable" : `${walletBalance.toLocaleString()} coins`}
+            </Text>
           </View>
-          <TouchableOpacity activeOpacity={0.8} style={styles.walletButton}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.walletButton}
+            onPress={() => router.push("/(main)/add-money" as any)}
+          >
             <Text style={styles.walletButtonText}>Add Coins</Text>
           </TouchableOpacity>
         </View>

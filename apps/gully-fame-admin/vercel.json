@@ -2,5 +2,5 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install --workspaces=false --include-workspace-root=false"
+  "installCommand": "cd ../.. && yarn install --frozen-lockfile --ignore-scripts"
 }

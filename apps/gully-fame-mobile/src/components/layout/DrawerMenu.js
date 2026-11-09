@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect,  useState } from "react";
 import { openOwnProfile } from "@/utils/openProfile";
 import {
   Animated,
@@ -28,7 +28,7 @@ import { performLogout } from "@utils/logout";
 const { width, height } = Dimensions.get("window");
 
 function DrawerMenu({ visible, onClose }) {
-  const slideAnim = useRef(new Animated.Value(-width * 0.8)).current;
+  const [slideAnim] = useState(() => new Animated.Value(-width * 0.8));
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [userName, setUserName] = useState("");
@@ -63,7 +63,7 @@ function DrawerMenu({ visible, onClose }) {
             setProfileImage(null);
             setUserName("");
           }
-        } catch (e) {
+        } catch {
           setIsLoggedIn(false);
           setProfileImage(null);
           setUserName("");
@@ -152,12 +152,13 @@ function DrawerMenu({ visible, onClose }) {
                   </View>
 
                   <View style={styles.loggedInMenuGroup}>
-                    <TouchableOpacity style={styles.loggedInMenuItem}>
+                    <TouchableOpacity testID="drawer-menu-search" style={styles.loggedInMenuItem}>
                       <SearchIcon color="white" />
                       <Text style={styles.loggedInMenuItemText}>Search</Text>
                     </TouchableOpacity>
                     <View style={styles.loggedInDivider} />
                     <TouchableOpacity
+                      testID="drawer-menu-home"
                       style={styles.loggedInMenuItem}
                       onPress={() => {
                         router.push("/(main)");
@@ -167,11 +168,12 @@ function DrawerMenu({ visible, onClose }) {
                       <HomeIcon color="white" />
                       <Text style={styles.loggedInMenuItemText}>Home</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.loggedInMenuItem}>
+                    <TouchableOpacity testID="drawer-menu-gullyreel" style={styles.loggedInMenuItem}>
                       <ReelIcon color="white" />
                       <Text style={styles.loggedInMenuItemText}>GullyReel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
+                      testID="drawer-menu-search-2"
                       style={styles.loggedInMenuItem}
                       onPress={() => {
                         router.push("/(main)/search");
@@ -182,6 +184,7 @@ function DrawerMenu({ visible, onClose }) {
                       <Text style={styles.loggedInMenuItemText}>Search</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
+                      testID="drawer-menu-my-fame"
                       style={styles.loggedInMenuItem}
                       onPress={() => {
                         openOwnProfile();
@@ -197,6 +200,7 @@ function DrawerMenu({ visible, onClose }) {
                 <View>
                   <View style={styles.loggedInMenuGroup}>
                     <TouchableOpacity
+                      testID="drawer-menu-profile"
                       onPress={() => {
                         openOwnProfile();
                         onClose();
@@ -224,6 +228,7 @@ function DrawerMenu({ visible, onClose }) {
 
                   <View style={styles.loggedInMenuGroup}>
                     <TouchableOpacity
+                      testID="drawer-menu-log-out"
                       style={styles.loggedInMenuItem}
                       onPress={handleLogout}
                     >
@@ -240,6 +245,7 @@ function DrawerMenu({ visible, onClose }) {
                 </Text>
                 <View style={styles.authButtons}>
                   <TouchableOpacity
+                    testID="drawer-menu-log-in"
                     style={styles.loginButton}
                     onPress={() => router.replace("/auth/signin")}
                   >
@@ -256,6 +262,7 @@ function DrawerMenu({ visible, onClose }) {
                 </View>
                 <View style={styles.menuItems}>
                   <TouchableOpacity
+                    testID="drawer-menu-community"
                     style={styles.menuItem}
                     onPress={() => {
                       router.push("/(main)/community");
@@ -267,6 +274,7 @@ function DrawerMenu({ visible, onClose }) {
                   </TouchableOpacity>
                   <View style={styles.divider} />
                   <TouchableOpacity
+                    testID="drawer-menu-home-2"
                     style={styles.menuItem}
                     onPress={() => {
                       router.push("/(main)");

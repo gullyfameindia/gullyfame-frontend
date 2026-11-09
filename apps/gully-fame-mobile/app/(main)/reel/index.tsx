@@ -28,8 +28,9 @@ import {
 
 import { H264_ENCODE, runFFmpeg } from "@modules/video-editor/camera-module/utils/ffmpeg";
 
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { VideoView, useVideoPlayer } from "expo-video";
+import { Image as ExpoImage } from "expo-image";
 import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
 import DrawerMenu from "@components/layout/DrawerMenu";
@@ -54,32 +55,7 @@ import {
 } from "@api/services/commentService";
 import { getErrorMessage } from "@api/client";
 import { showToast, toastError, toastSuccess } from "@/components/ui/Toast";
-
-// Turns the backend's flat comment list into top-level comments with replies.
-function groupComments(list: ReelComment[]) {
-  const toUi = (c: ReelComment, idx: number) => ({
-    id: parseInt(c._id.slice(-8), 16) || idx + 1,
-    _backendId: c._id,
-    username: commentAuthorName(c.author),
-    avatar: typeof c.author === "object" ? c.author.profileImage || undefined : undefined,
-    level: undefined,
-    comment: c.text,
-    likes: 0,
-    isLiked: false,
-    createdAt: c.createdAt,
-    parentId: c.parentComment,
-    replies: [] as any[],
-  });
-  const all = list.map(toUi);
-  const byId = new Map(all.map((c) => [c._backendId, c]));
-  const top: typeof all = [];
-  for (const c of all) {
-    const parent = c.parentId ? byId.get(c.parentId) : undefined;
-    if (parent) parent.replies.push(c);
-    else top.push(c);
-  }
-  return top;
-}
+import { blockUser, getBlockedUserIds, reportContent } from "@/utils/moderation";
 import {
   HomeIconSVG,
   ReelIconSVG,
@@ -101,8 +77,54 @@ import {
 } from "@/icons";
 import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
 import { saveDownload } from "@/services/downloadsStore";
+import { SkeletonLoader } from "@/components/Skeleton";
+import UserAvatar from "@/components/UserAvatar";
+
+// Turns the backend's flat comment list into top-level comments with replies.
+function groupComments(list: ReelComment[], blockedIds: Set<string> = new Set()) {
+  const toUi = (c: ReelComment, idx: number) => ({
+    id: parseInt(c._id.slice(-8), 16) || idx + 1,
+    _backendId: c._id,
+    username: commentAuthorName(c.author),
+    avatar: typeof c.author === "object" ? c.author.profileImage || undefined : undefined,
+    level: undefined,
+    comment: c.text,
+    likes: 0,
+    isLiked: false,
+    createdAt: c.createdAt,
+    parentId: c.parentComment,
+    replies: [] as any[],
+  });
+  // Comments from blocked users are hidden.
+  const all = list
+    .filter((c) => !(typeof c.author === "object" && c.author && blockedIds.has(c.author._id)))
+    .map(toUi);
+  const byId = new Map(all.map((c) => [c._backendId, c]));
+  const top: typeof all = [];
+  for (const c of all) {
+    const parent = c.parentId ? byId.get(c.parentId) : undefined;
+    if (parent) parent.replies.push(c);
+    else top.push(c);
+  }
+  return top;
+}
 
 const { width, height } = Dimensions.get("window");
+/** Extra feed pages (10 reels each) loaded to find a reel opened by id before giving up. */
+const MAX_PAGES_TO_FIND_START = 10;
+
+/** Thumbnail shown in place of a video that has not drawn its first frame (or is not mounted yet). */
+function ReelPoster({ uri }: { uri: string }) {
+  return (
+    <ExpoImage
+      source={{ uri }}
+      style={StyleSheet.absoluteFill}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      pointerEvents="none"
+    />
+  );
+}
 
 interface ReelVideoPlayerProps {
   reel: any;
@@ -116,12 +138,38 @@ function ReelVideoPlayer({ reel, isVisible, videoRefs }: ReelVideoPlayerProps) {
     player.muted = false;
   });
 
+  // A video that cannot be loaded (for example the server answers 403/404) used to leave a plain
+  // black screen. Track the player status so the user sees why, and can retry.
+  const [playbackFailed, setPlaybackFailed] = React.useState(false);
+  // The poster covers the player until the first frame is drawn, so the reel never shows a
+  // blank black screen while the video downloads.
+  const [firstFrameShown, setFirstFrameShown] = React.useState(false);
+  const [isBuffering, setIsBuffering] = React.useState(player.status === "loading");
   React.useEffect(() => {
-    videoRefs.current.set(reel.id, player);
+    const sub = player.addListener("statusChange", ({ status }) => {
+      setIsBuffering(status === "loading");
+      if (status === "error") setPlaybackFailed(true);
+      else if (status === "readyToPlay") setPlaybackFailed(false);
+    });
+    return () => sub.remove();
+  }, [player]);
+
+  const retryPlayback = React.useCallback(() => {
+    setPlaybackFailed(false);
+    setFirstFrameShown(false);
+    player.replace(reel.video);
+    player.play();
+  }, [player, reel.video]);
+
+  const poster = resolveMediaUrl(reel.thumbnail);
+
+  React.useEffect(() => {
+    const registry = videoRefs.current;
+    registry.set(reel.id, player);
     return () => {
-      videoRefs.current.delete(reel.id);
+      registry.delete(reel.id);
     };
-  }, [player, reel.id]);
+  }, [player, reel.id, videoRefs]);
 
   React.useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -143,24 +191,43 @@ function ReelVideoPlayer({ reel, isVisible, videoRefs }: ReelVideoPlayerProps) {
 
   
   return (
-    <VideoView
-      style={styles.reelImage}
-      player={player}
-      contentFit="cover"
-      nativeControls={false} // 🛠️ FIX 2: Default video player controls ko hide karega
-    />
+    <>
+      <VideoView
+        style={styles.reelImage}
+        player={player}
+        contentFit="cover"
+        nativeControls={false} // 🛠️ FIX 2: Default video player controls ko hide karega
+        onFirstFrameRender={() => setFirstFrameShown(true)}
+      />
+      {!firstFrameShown && poster ? (
+        <ReelPoster uri={poster} />
+      ) : null}
+      {isVisible && !playbackFailed && (!firstFrameShown || isBuffering) ? (
+        <View style={styles.reelBuffering} pointerEvents="none" testID="reel-buffering">
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      ) : null}
+      {playbackFailed ? (
+        <View style={styles.playbackFailed} testID="reel-playback-error">
+          <Text style={styles.playbackFailedTitle}>This video can&apos;t be played right now</Text>
+          <Text style={styles.playbackFailedText}>The video file could not be loaded. Check your connection and try again.</Text>
+          <TouchableOpacity style={styles.playbackFailedButton} onPress={retryPlayback} testID="reel-playback-retry">
+            <Text style={styles.playbackFailedButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+    </>
   );
 }
 
 
 export default function GullyReelScreen() {
   const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
   const [activeTab, setActiveTab] = useState("Reel");
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [showVotePopup, setShowVotePopup] = useState<number | null>(null);
-  const votePopupAnim = useRef(new Animated.Value(0)).current;
+  const [votePopupAnim] = useState(() => new Animated.Value(0));
   const [reels, setReels] = useState<any[]>([]);
   const [isLoadingReels, setIsLoadingReels] = useState(true);
   const [reelsError, setReelsError] = useState("");
@@ -183,7 +250,7 @@ export default function GullyReelScreen() {
     id: null,
   });
 
-  const threeDotsSlideAnim = useRef(new Animated.Value(height)).current;
+  const [threeDotsSlideAnim] = useState(() => new Animated.Value(height));
   const [tipModalVisible, setTipModalVisible] = useState(false);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
   const walletBalance = useWalletBalance();
@@ -198,17 +265,19 @@ export default function GullyReelScreen() {
   } | null>(null);
   const playPauseIconTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoPlayingStates = useRef<Map<number, boolean>>(new Map());
-  const playPauseIconOpacity = useRef(new Animated.Value(0)).current;
+  const [playPauseIconOpacity] = useState(() => new Animated.Value(0));
   const THEME_COLOR = "#EC9A15";
 
   // The signed-in user, to show their real profile photo and hide Follow on their own reels.
   const [myUserId, setMyUserId] = useState("");
   const [myAvatar, setMyAvatar] = useState<string | null>(null);
+  const [myName, setMyName] = useState("");
   useEffect(() => {
-    AsyncStorage.multiGet(["userId", "userProfileImage"])
-      .then(([[, id], [, img]]) => {
+    AsyncStorage.multiGet(["userId", "userProfileImage", "userFirstName"])
+      .then(([[, id], [, img], [, first]]) => {
         setMyUserId(id || "");
         setMyAvatar(resolveMediaUrl(img));
+        setMyName(first || "");
       })
       .catch(() => {});
   }, []);
@@ -239,11 +308,16 @@ export default function GullyReelScreen() {
   // per-user reels endpoint, so the feed is filtered on the device.
   const fetchPage = useCallback(
     async (cursor: string | null | undefined) => {
+      // Reels from users the viewer has blocked are never shown.
+      const blocked = await getBlockedUserIds();
+      const hideBlocked = <T extends { userId?: string }>(items: T[]) =>
+        blocked.size === 0 ? items : items.filter((r) => !r.userId || !blocked.has(r.userId));
       if (params.competitionId) {
         const res = await getCompetitionReels(String(params.competitionId), cursor, 10);
-        return { reels: res.reels.map(toUiReel), nextCursor: res.nextCursor, hasMore: res.hasMore };
+        return { reels: hideBlocked(res.reels.map(toUiReel)), nextCursor: res.nextCursor, hasMore: res.hasMore };
       }
-      return listUiReels(cursor, 10);
+      const page = await listUiReels(cursor, 10);
+      return { ...page, reels: hideBlocked(page.reels) };
     },
     [params.competitionId]
   );
@@ -253,8 +327,17 @@ export default function GullyReelScreen() {
       if (mode === "initial") setIsLoadingReels(true);
       setReelsError("");
       try {
-        const page = await fetchPage(null);
-        const list = params.userId ? page.reels.filter((r) => r.userId === params.userId) : page.reels;
+        let page = await fetchPage(null);
+        let list = params.userId ? page.reels.filter((r) => r.userId === params.userId) : page.reels;
+        // A reel opened from elsewhere (e.g. Home's Trending) may be older than the first page:
+        // keep paging until it is loaded, so it opens instead of the newest reel.
+        const startId = params.startReelId ? String(params.startReelId) : null;
+        for (let extra = 0; startId && extra < MAX_PAGES_TO_FIND_START && page.hasMore && page.nextCursor; extra++) {
+          if (list.some((r) => r._backendId === startId)) break;
+          page = await fetchPage(page.nextCursor);
+          const more = params.userId ? page.reels.filter((r) => r.userId === params.userId) : page.reels;
+          list = [...list, ...more];
+        }
         setReels(list);
         setCurrentCursor(page.nextCursor || undefined);
         setHasMoreReels(page.hasMore);
@@ -268,7 +351,7 @@ export default function GullyReelScreen() {
         setIsLoadingReels(false);
       }
     },
-    [params.userId, fetchPage]
+    [params.userId, params.startReelId, fetchPage]
   );
 
   useFocusEffect(
@@ -287,7 +370,7 @@ export default function GullyReelScreen() {
       try {
         const page = await listComments(currentReelBackendId, 1, 50);
         if (!active) return;
-        setComments(groupComments(page.comments));
+        setComments(groupComments(page.comments, await getBlockedUserIds()));
       } catch (error) {
         if (active) {
           setComments([]);
@@ -330,27 +413,48 @@ export default function GullyReelScreen() {
     };
   }, []);
 
+  // Position the feed ONCE per "feed identity" (start target + first reel). Appending the next
+  // page must not move the list or reset the active index: that made the video the user was
+  // watching stop playing, and re-scrolled back to the start reel on every page load.
+  const positionedFeedKeyRef = useRef<string | null>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    },
+    []
+  );
+
   useEffect(() => {
-    const startIndex = params.startReelId ? reels.findIndex((r) => r._backendId === params.startReelId) : -1;
-    if (startIndex >= 0 && flatListRef.current) {
-      const reelIndex = startIndex;
-      if (reelIndex >= 0 && reelIndex < reels.length) {
-        setCurrentVisibleIndex(reelIndex);
-        setTimeout(() => {
-          flatListRef.current?.scrollToIndex({
-            index: reelIndex,
-            animated: false,
-          });
-          const videoRef = videoRefs.current.get(reels[reelIndex].id);
-          if (videoRef && AppState.currentState === "active") {
-            videoRef.play();
-          }
-        }, 50);
-      }
-    } else {
-      setCurrentVisibleIndex(0);
+    if (reels.length === 0) {
+      positionedFeedKeyRef.current = null;
+      return;
     }
-  }, [params.startReelId, reels.length]);
+    const startReelId = params.startReelId ? String(params.startReelId) : "";
+    const feedKey = `${startReelId}|${reels[0]?._backendId ?? ""}`;
+    if (positionedFeedKeyRef.current === feedKey) return;
+
+    if (startReelId) {
+      const reelIndex = reels.findIndex((r) => r._backendId === startReelId);
+      // The target is not loaded yet: wait for a later page instead of resetting to 0.
+      if (reelIndex < 0 || !flatListRef.current) return;
+      positionedFeedKeyRef.current = feedKey;
+      setCurrentVisibleIndex(reelIndex);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        flatListRef.current?.scrollToIndex({ index: reelIndex, animated: false });
+        const videoRef = videoRefs.current.get(reels[reelIndex]?.id);
+        if (videoRef && AppState.currentState === "active") {
+          videoRef.play();
+        }
+      }, 50);
+      return;
+    }
+
+    positionedFeedKeyRef.current = feedKey;
+    setCurrentVisibleIndex(0);
+  }, [params.startReelId, reels]);
 
   useFocusEffect(
     useCallback(() => {
@@ -386,13 +490,18 @@ export default function GullyReelScreen() {
   const [commentLikes, setCommentLikes] = useState<
     Map<number, { likes: number; isLiked: boolean }>
   >(new Map());
-  const slideAnim = useRef(new Animated.Value(height)).current;
+  const [slideAnim] = useState(() => new Animated.Value(height));
   const shareScrollViewRef = useRef<ScrollView>(null);
 
   const executeDownloadWithWatermark = async (reelData: any) => {
     setIsDownloading(true);
+    // Temp files are removed in `finally`, so a failed download does not leave them behind.
+    let videoUri = "";
+    let outputUri = "";
     try {
-      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync();
+      // Write-only access: saving needs no read permission, so the app does not have to request
+      // READ_MEDIA_IMAGES / READ_MEDIA_VIDEO (restricted by Google Play policy).
+      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync(true);
       if (status !== "granted" && !canAskAgain) {
         showPermissionSettingsAlert("Photo library access");
         setIsDownloading(false);
@@ -407,25 +516,30 @@ export default function GullyReelScreen() {
 
       const remoteUri: string = reelData.video?.uri || "";
       if (!remoteUri) throw new Error("No video to download");
-      const videoUri = `${FileSystem.cacheDirectory}gully_reel_${Date.now()}.mp4`;
+      videoUri = `${FileSystem.cacheDirectory}gully_reel_${Date.now()}.mp4`;
       await FileSystem.downloadAsync(remoteUri, videoUri);
 
       const watermarkAsset = Asset.fromModule(require("@assets/images/gfi.png"));
       await watermarkAsset.downloadAsync();
       const watermarkUri = watermarkAsset.localUri || watermarkAsset.uri;
 
-      const outputUri = `${FileSystem.cacheDirectory}gully_watermarked_${Date.now()}.mp4`;
+      outputUri = `${FileSystem.cacheDirectory}gully_watermarked_${Date.now()}.mp4`;
 
       const ffmpegCommand = `-i ${videoUri} -i ${watermarkUri} -filter_complex "[1:v]scale=120:-1,format=rgba,colorchannelmixer=aa=0.6[wm];[0:v][wm]overlay=W-w-20:H-h-20" ${H264_ENCODE} -c:a copy ${outputUri}`;
 
       await runFFmpeg(ffmpegCommand, "watermark reel");
       const asset = await MediaLibrary.createAssetAsync(outputUri);
-      const existingAlbum = await MediaLibrary.getAlbumAsync("GullyFame");
-
-      if (existingAlbum) {
-        await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
-      } else {
-        await MediaLibrary.createAlbumAsync("GullyFame", asset, false);
+      // Grouping into a "GullyFame" album needs read access to the library. It is best-effort:
+      // without read access the video is still saved to the gallery.
+      try {
+        const existingAlbum = await MediaLibrary.getAlbumAsync("GullyFame");
+        if (existingAlbum) {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], existingAlbum, false);
+        } else {
+          await MediaLibrary.createAlbumAsync("GullyFame", asset, false);
+        }
+      } catch {
+        // Album grouping is optional.
       }
 
       // Keep a copy in the app's Downloads (listed on the Downloads screen).
@@ -435,12 +549,12 @@ export default function GullyReelScreen() {
         sourceUri: outputUri,
       });
 
-      await FileSystem.deleteAsync(outputUri, { idempotent: true });
-      await FileSystem.deleteAsync(videoUri, { idempotent: true });
       toastSuccess("Saved to your gallery and Downloads");
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Something went wrong during download.");
     } finally {
+      if (outputUri) await FileSystem.deleteAsync(outputUri, { idempotent: true }).catch(() => {});
+      if (videoUri) await FileSystem.deleteAsync(videoUri, { idempotent: true }).catch(() => {});
       setIsDownloading(false);
       setDownloadModalVisible(false);
       setSelectedReelForDownload(null);
@@ -507,7 +621,7 @@ export default function GullyReelScreen() {
         setShareModalVisible(false);
         setShowMoreShareOptions(false);
       });
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Unable to share. Please try again.");
     }
   };
@@ -635,9 +749,9 @@ export default function GullyReelScreen() {
           setShowPlayPauseIcon(null);
         });
       }, 1000);
-    } catch (error) { /* intentionally ignored */
+    } catch { /* intentionally ignored */
     }
-  }, []);
+  }, [playPauseIconOpacity]);
 
   const handleDoubleTap = useCallback(
     (id: number) => {
@@ -682,10 +796,13 @@ export default function GullyReelScreen() {
     [reels, handleLike]
   );
 
+  // Synchronous lock: state alone would not stop two onEndReached events in the same frame.
+  const isLoadingMoreRef = useRef(false);
   const handleEndReached = useCallback(() => {
-    if (isLoadingMore || !hasMoreReels || !currentCursor) {
+    if (isLoadingMoreRef.current || isLoadingMore || !hasMoreReels || !currentCursor) {
       return;
     }
+    isLoadingMoreRef.current = true;
 
     const fetchMoreReels = async () => {
       setIsLoadingMore(true);
@@ -701,6 +818,7 @@ export default function GullyReelScreen() {
       } catch (error) {
         toastError(getErrorMessage(error));
       } finally {
+        isLoadingMoreRef.current = false;
         setIsLoadingMore(false);
       }
     };
@@ -721,7 +839,7 @@ export default function GullyReelScreen() {
       await addComment(currentReelBackendId, text, parent?._backendId);
       // Re-read so the new comment shows with its author populated.
       const page = await listComments(currentReelBackendId, 1, 50);
-      setComments(groupComments(page.comments));
+      setComments(groupComments(page.comments, await getBlockedUserIds()));
       setReels((prev) =>
         prev.map((r) => (r._backendId === currentReelBackendId ? { ...r, comments: (r.comments || 0) + 1 } : r))
       );
@@ -742,7 +860,7 @@ export default function GullyReelScreen() {
   }, []);
 
   // POST /user/:userId/follow toggles; the response says the new state.
-  const handleToggleFollow = async (userId: string, username: string, reelId: number) => {
+  const handleToggleFollow = useCallback(async (userId: string, username: string, _reelId: number) => {
     if (!userId) return;
     try {
       const { following } = await toggleFollow(userId);
@@ -753,7 +871,7 @@ export default function GullyReelScreen() {
     } catch (error) {
       toastError(getErrorMessage(error));
     }
-  };
+  }, []);
   const handleFollowUser = handleToggleFollow;
   const handleUnfollowUser = handleToggleFollow;
 
@@ -800,7 +918,7 @@ export default function GullyReelScreen() {
         setCurrentTipCreatorId(creatorId);
         setTipModalVisible(true);
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to check balance. Please try again.");
     } finally {
       setIsFetchingBalance(false);
@@ -847,7 +965,11 @@ export default function GullyReelScreen() {
                 videoRefs={videoRefs}
               />
             ) : (
-              <View style={[styles.reelImage, { backgroundColor: "#111" }]} />
+              <View style={[styles.reelImage, { backgroundColor: "#111" }]}>
+                {resolveMediaUrl(reel.thumbnail) ? (
+                  <ReelPoster uri={resolveMediaUrl(reel.thumbnail) as string} />
+                ) : null}
+              </View>
             )}
 
             {showAnimation && (
@@ -963,14 +1085,9 @@ export default function GullyReelScreen() {
               <View style={styles.bottomInfoContainer}>
                 <View style={styles.profileRow}>
                   <TouchableOpacity style={styles.profileImageContainer}>
-                    <Image
-                      source={
-                        reel.userId && reel.userId === myUserId && myAvatar
-                          ? { uri: myAvatar }
-                          : resolveMediaUrl(reel.profileImage)
-                            ? { uri: resolveMediaUrl(reel.profileImage) as string }
-                            : require("@assets/images/user1.png")
-                      }
+                    <UserAvatar
+                      uri={reel.userId && reel.userId === myUserId && myAvatar ? myAvatar : resolveMediaUrl(reel.profileImage)}
+                      name={reel.userId && reel.userId === myUserId && myName ? myName : reel.username}
                       style={styles.profileImage}
                     />
                     {reel.userId !== myUserId && (
@@ -1122,15 +1239,27 @@ export default function GullyReelScreen() {
     [
       currentVisibleIndex,
       showStarAnimation,
-      showVotePopup, 
+      showVotePopup,
       handleDoubleTap,
       handleLike,
       handleSave,
       handleSupportPress,
-      reels,
       myUserId,
       myAvatar,
+      myName,
       followingStates,
+      BOTTOM_NAV_HEIGHT,
+      expandedCaptions,
+      handleFollowUser,
+      handleUnfollowUser,
+      handleVideoTap,
+      isFetchingBalance,
+      isFocused,
+      playPauseIconOpacity,
+      showPlayPauseIcon,
+      slideAnim,
+      threeDotsSlideAnim,
+      votePopupAnim,
     ]
   );
 
@@ -1153,9 +1282,7 @@ export default function GullyReelScreen() {
       </View>
 
       {isLoadingReels && reels.length === 0 ? (
-        <View style={feedStateStyles.center}>
-          <ActivityIndicator size="large" color={THEME_COLOR} />
-        </View>
+        <SkeletonLoader style={feedStateStyles.center} />
       ) : reels.length === 0 ? (
         <View style={feedStateStyles.center}>
           <Text style={feedStateStyles.title}>
@@ -1188,11 +1315,13 @@ export default function GullyReelScreen() {
         viewabilityConfig={{
           itemVisiblePercentThreshold: 50,
         }}
-        windowSize={1}
-        maxToRenderPerBatch={1}
+        // Keep one reel above and below mounted so their players start buffering before the
+        // swipe (renderReel only creates players within ±1 of the visible reel).
+        windowSize={3}
+        maxToRenderPerBatch={2}
         updateCellsBatchingPeriod={50}
         removeClippedSubviews={true}
-        initialNumToRender={1}
+        initialNumToRender={2}
         maintainVisibleContentPosition={null}
         onScrollToIndexFailed={(info) => {
           const wait = new Promise((resolve) => setTimeout(resolve, 500));
@@ -1282,10 +1411,7 @@ export default function GullyReelScreen() {
                       return (
                         <View key={comment.id} style={styles.cleanCommentRow}>
                           <View style={styles.commentItemInner}>
-                            <Image
-                              source={resolveMediaUrl(comment.avatar) ? { uri: resolveMediaUrl(comment.avatar) as string } : require("@assets/images/user1.png")}
-                              style={styles.commentAvatar}
-                            />
+                            <UserAvatar uri={resolveMediaUrl(comment.avatar)} name={comment.username} style={styles.commentAvatar} />
                             <View style={styles.commentContent}>
                               <View style={styles.usernameRow}>
                                 <Text style={styles.commentUsername}>{comment.username}</Text>
@@ -1369,10 +1495,7 @@ export default function GullyReelScreen() {
                                   };
                                   return (
                                     <View key={reply.id} style={styles.cleanReplyRow}>
-                                      <Image
-                                        source={resolveMediaUrl(reply.avatar) ? { uri: resolveMediaUrl(reply.avatar) as string } : require("@assets/images/user1.png")}
-                                        style={styles.replyAvatar}
-                                      />
+                                      <UserAvatar uri={resolveMediaUrl(reply.avatar)} name={reply.username} style={styles.replyAvatar} />
                                       <View style={styles.replyContent}>
                                         <View style={styles.usernameRow}>
                                           <Text style={styles.replyUsername}>{reply.username}</Text>
@@ -1417,10 +1540,7 @@ export default function GullyReelScreen() {
 
                   <View style={styles.gamifiedInputWrapper}>
                     <View style={styles.gamifiedInputContainer}>
-                      <Image
-                        source={myAvatar ? { uri: myAvatar } : require("@assets/images/user1.png")}
-                        style={styles.commentInputAvatar}
-                      />
+                      <UserAvatar uri={myAvatar} name={myName} style={styles.commentInputAvatar} />
                       <TextInput
                         style={styles.commentInput}
                         placeholder="Add a comment..."
@@ -1829,11 +1949,8 @@ export default function GullyReelScreen() {
                       useNativeDriver: true,
                     }).start(() => {
                       setShowThreeDotsMenu(false);
-                      // There is no report endpoint on the backend yet.
-                      Alert.alert(
-                        "Reporting not available yet",
-                        "To report this reel, please contact support@gullyfame.com."
-                      );
+                      // No backend report endpoint yet: opens a pre-filled email to support.
+                      if (menuReel?._backendId) reportContent("reel", menuReel._backendId);
                     });
                   }}
                 >
@@ -1849,6 +1966,42 @@ export default function GullyReelScreen() {
                   </View>
                   <Text style={[styles.commandItemText, styles.commandTextDanger]}>Report</Text>
                 </TouchableOpacity>
+                )}
+                {!menuReelIsMine && !!menuReel?.userId && (
+                  <TouchableOpacity
+                    style={[styles.commandItem, styles.commandItemDanger]}
+                    onPress={() => {
+                      Animated.timing(threeDotsSlideAnim, {
+                        toValue: height,
+                        duration: 300,
+                        useNativeDriver: true,
+                      }).start(() => {
+                        setShowThreeDotsMenu(false);
+                        const target = menuReel;
+                        Alert.alert(
+                          `Block ${target.username || "this user"}?`,
+                          "You won't see their reels or comments. You can unblock them from Settings & Help > Blocked Users.",
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: "Block",
+                              style: "destructive",
+                              onPress: async () => {
+                                await blockUser(target.userId, target.username);
+                                setReels((prev) => prev.filter((r) => r.userId !== target.userId));
+                                toastSuccess("User blocked");
+                              },
+                            },
+                          ]
+                        );
+                      });
+                    }}
+                  >
+                    <View style={[styles.commandIconBox, { backgroundColor: "rgba(255, 59, 48, 0.15)" }]}>
+                      <MaterialCommunityIcons name="block-helper" size={20} color="#FF3B30" />
+                    </View>
+                    <Text style={[styles.commandItemText, styles.commandTextDanger]}>Block user</Text>
+                  </TouchableOpacity>
                 )}
               </View>
 
@@ -1941,7 +2094,7 @@ export default function GullyReelScreen() {
                       : reel
                   )
                 );
-              } catch (error) { /* intentionally ignored */
+              } catch { /* intentionally ignored */
               }
             }
           }}
@@ -2216,6 +2369,29 @@ const styles = StyleSheet.create({
     position: "relative",
     backgroundColor: "#000",
     overflow: "hidden",
+  },
+  playbackFailed: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "#111",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    gap: 10,
+  },
+  playbackFailedTitle: { color: "#fff", fontSize: 18, fontWeight: "700", textAlign: "center" },
+  playbackFailedText: { color: "#aaa", fontSize: 14, textAlign: "center", lineHeight: 20 },
+  playbackFailedButton: {
+    marginTop: 8,
+    backgroundColor: "#EC9A15",
+    borderRadius: 24,
+    paddingHorizontal: 28,
+    paddingVertical: 10,
+  },
+  playbackFailedButtonText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  reelBuffering: {
+    ...StyleSheet.absoluteFill,
+    alignItems: "center",
+    justifyContent: "center",
   },
   reelImage: {
     width: "100%",

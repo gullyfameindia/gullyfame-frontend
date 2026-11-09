@@ -20,11 +20,20 @@ import BottomNav from "@components/layout/BottomNav";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
 import { resolveMediaUrl } from "@/utils/mediaUrl";
 import { useOwnProfile } from "@/components/profile/shared/profileHooks";
-import { BIO_MAX_LENGTH, getProfileRoute, limitBio } from "@/components/profile/shared/profileTypes";
-import { LevelUpSection, StatsSection, UserInfoSection } from "@/components/profile/shared/ProfileComponents";
+import {
+  BIO_MAX_LENGTH,
+  getProfileRoute,
+  limitBio,
+} from "@/components/profile/shared/profileTypes";
+import {
+  LevelUpSection,
+  StatsSection,
+  UserInfoSection,
+} from "@/components/profile/shared/ProfileComponents";
 import { participantSelfProfileScreenStyles as pStyles } from "@/styles/participantSelfProfileScreenStyles";
 import { fanSelfProfileScreenStyles as fStyles } from "@/styles/fanSelfProfileScreenStyles";
 import { UserIconSVG, HomeIconSVG, ReelIconSVG, SearchIconSVG, BackIcon, SaveIcon } from "@/icons";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import ProfileBurgerMenuModal from "@/components/modals/ProfileBurgerMenuModal/ProfileBurgerMenuModal";
 import UpgradeFanToParticipantModal from "@/components/modals/UpgradeFanToParticipantModal/UpgradeFanToParticipantModal";
 import ProfileView, { ProfileTab } from "@/components/profile/ProfileView";
@@ -80,12 +89,16 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   const { profileData, setProfileData, isLoading, reloadProfile } = useOwnProfile();
   const savedRole = (profileData.role || "").toLowerCase();
   const effectiveRole: "fan" | "participant" = savedRole
-    ? savedRole.startsWith("fan") ? "fan" : "participant"
+    ? savedRole.startsWith("fan")
+      ? "fan"
+      : "participant"
     : role;
   const isFan = effectiveRole === "fan";
   useEffect(() => {
     if (!isLoading && savedRole && effectiveRole !== role) {
-      router.replace(getProfileRoute(effectiveRole === "fan" ? "fan" : "participants", true) as any);
+      router.replace(
+        getProfileRoute(effectiveRole === "fan" ? "fan" : "participants", true) as any
+      );
     }
   }, [isLoading, savedRole, effectiveRole, role]);
   const styles = isFan ? fStyles : pStyles;
@@ -123,7 +136,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
     useCallback(() => {
       reloadProfile();
       refetchReels();
-    }, [profileData.firstName, profileData.lastName, reloadProfile, refetchReels])
+    }, [reloadProfile, refetchReels])
   );
 
   const openFollowers = useCallback(
@@ -136,7 +149,10 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
 
   const openEdit = useCallback(() => {
     setTempBio(limitBio(profileData.bio || ""));
-    const words = (profileData.threeWords || "").split("|").map((w) => w.trim()).filter(Boolean);
+    const words = (profileData.threeWords || "")
+      .split("|")
+      .map((w) => w.trim())
+      .filter(Boolean);
     setTempThreeWords([words[0] || "", words[1] || "", words[2] || ""]);
     setTempInsta(profileData.instagramLink || "");
     setTempX(profileData.xLink || "");
@@ -169,7 +185,10 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   };
 
   const displayName = [profileData.firstName, profileData.lastName].filter(Boolean).join(" ");
-  const posts = useMemo(() => reels.reels.filter((r) => !!r.id).map((r) => ({ ...r, id: String(r.id) })), [reels.reels]);
+  const posts = useMemo(
+    () => reels.reels.filter((r) => !!r.id).map((r) => ({ ...r, id: String(r.id) })),
+    [reels.reels]
+  );
   const videos = useMemo(() => posts.filter((p) => !isPhotoItem(p)), [posts]);
 
   const postsSource = {
@@ -193,18 +212,36 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
       Icon: ReelsTabIcon,
       source: { ...postsSource, items: videos },
       emptyTitle: "No reels yet",
-      emptyText: isFan ? "Upgrade to Participant to start posting." : "Share your talent with the Gully Fame community.",
+      emptyText: isFan
+        ? "Upgrade to Participant to start posting."
+        : "Share your talent with the Gully Fame community.",
       ownContent: true,
     },
-    { key: "saved", label: "Saved", Icon: BookmarkTabIcon, source: saved, emptyTitle: "Nothing saved yet" },
+    {
+      key: "saved",
+      label: "Saved",
+      Icon: BookmarkTabIcon,
+      source: saved,
+      emptyTitle: "Nothing saved yet",
+    },
   ];
 
   const avatar = avatarSource(profileData.profileImage);
   // Disk-cached so the photo shows straight away on later visits.
   const avatarImage = avatar ? (
-    <ExpoImage source={avatar} style={styles.gamifiedProfileImage} cachePolicy="memory-disk" contentFit="cover" />
+    <ExpoImage
+      source={avatar}
+      style={styles.gamifiedProfileImage}
+      cachePolicy="memory-disk"
+      contentFit="cover"
+    />
   ) : (
-    <View style={[styles.gamifiedProfileImage, { backgroundColor: "#5A3C1C", alignItems: "center", justifyContent: "center" }]}>
+    <View
+      style={[
+        styles.gamifiedProfileImage,
+        { backgroundColor: "#5A3C1C", alignItems: "center", justifyContent: "center" },
+      ]}
+    >
       <Text style={{ color: "#EC9A15", fontSize: 40, fontWeight: "700" }}>
         {displayName.charAt(0).toUpperCase()}
       </Text>
@@ -214,10 +251,20 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   const top = (
     <View>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.replace("/(main)" as any)} style={styles.backButton} accessibilityLabel="Back">
+        <TouchableOpacity
+          onPress={() => router.replace("/(main)" as any)}
+          style={styles.backButton}
+          accessibilityLabel="Back"
+          testID="profile-back"
+        >
           <BackIcon color="white" size={24} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.menuButton} accessibilityLabel="Menu">
+        <TouchableOpacity
+          onPress={() => setMenuVisible(true)}
+          style={styles.menuButton}
+          accessibilityLabel="Menu"
+          testID="profile-menu"
+        >
           <View style={styles.hamburgerIcon}>
             <View style={styles.hamburgerLine} />
             <View style={styles.hamburgerLine} />
@@ -236,7 +283,12 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
           >
             {avatarImage}
           </LinearGradient>
-          <View style={[styles.rankBadgeContainer, { backgroundColor: "#4B5563", borderColor: "#E3E4E5" }]}>
+          <View
+            style={[
+              styles.rankBadgeContainer,
+              { backgroundColor: "#4B5563", borderColor: "#E3E4E5" },
+            ]}
+          >
             <Text style={[styles.rankBadgeText, { color: "#fff" }]}>FAN</Text>
           </View>
         </View>
@@ -281,7 +333,11 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
           <TouchableOpacity
             style={styles.socialIconButton}
             accessibilityLabel="Instagram"
-            onPress={() => Linking.openURL(`https://instagram.com/${cleanHandle(profileData.instagramLink)}`).catch(() => {})}
+            onPress={() =>
+              Linking.openURL(
+                `https://instagram.com/${cleanHandle(profileData.instagramLink)}`
+              ).catch(() => {})
+            }
           >
             <InstagramIconSVG width={22} height={22} color="#fff" />
           </TouchableOpacity>
@@ -290,14 +346,20 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
           <TouchableOpacity
             style={styles.socialIconButton}
             accessibilityLabel="X"
-            onPress={() => Linking.openURL(`https://x.com/${cleanHandle(profileData.xLink)}`).catch(() => {})}
+            onPress={() =>
+              Linking.openURL(`https://x.com/${cleanHandle(profileData.xLink)}`).catch(() => {})
+            }
           >
             <XIconSVG width={20} height={20} color="#fff" />
           </TouchableOpacity>
         ) : null}
       </View>
 
-      <LinearGradient colors={["rgba(41, 33, 24, 0.2)", "#3C2610"]} locations={[0.0, 0.4]} style={styles.contentContainer}>
+      <LinearGradient
+        colors={["rgba(41, 33, 24, 0.2)", "#3C2610"]}
+        locations={[0.0, 0.4]}
+        style={styles.contentContainer}
+      >
         <StatsSection
           photos={reels.loading && posts.length === 0 ? null : posts.length}
           followers={followCounts ? followCounts.followers : null}
@@ -322,9 +384,12 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
             />
             <View style={pStyles.progressContainer}>
               <View style={pStyles.progressHeader}>
-                <Text style={pStyles.progressText}>Next Rank: {profileData.nextRank || "Superstar"}</Text>
+                <Text style={pStyles.progressText}>
+                  Next Rank: {profileData.nextRank || "Superstar"}
+                </Text>
                 <Text style={pStyles.progressFraction}>
-                  {profileData.competitionsParticipated || 0}/{profileData.competitionsRequiredForNextRank || 5} Comps
+                  {profileData.competitionsParticipated || 0}/
+                  {profileData.competitionsRequiredForNextRank || 5} Comps
                 </Text>
               </View>
               <View style={pStyles.progressBarBackground}>
@@ -332,12 +397,19 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
                   colors={["#FFE066", "#EC9A15"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={[pStyles.progressBarFill, { width: `${profileData.levelPercentage || 0}%` }]}
+                  style={[
+                    pStyles.progressBarFill,
+                    { width: `${profileData.levelPercentage || 0}%` },
+                  ]}
                 />
               </View>
               <Text style={pStyles.progressHint}>
                 Just{" "}
-                {Math.max(0, (profileData.competitionsRequiredForNextRank || 5) - (profileData.competitionsParticipated || 0))}{" "}
+                {Math.max(
+                  0,
+                  (profileData.competitionsRequiredForNextRank || 5) -
+                    (profileData.competitionsParticipated || 0)
+                )}{" "}
                 more competitions to level up!
               </Text>
             </View>
@@ -350,14 +422,13 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   return (
     <View style={{ flex: 1, backgroundColor: "#3C2610" }}>
       <StatusBar barStyle="light-content" />
-      <ProfileView
-        top={top}
-        tabs={tabs}
-        canCreatePost={!isFan}
-        ownerId={userId}
-      />
+      <ProfileView top={top} tabs={tabs} canCreatePost={!isFan} ownerId={userId} />
 
-      <ProfileBurgerMenuModal isVisible={menuVisible} onClose={() => setMenuVisible(false)} profileData={profileData} />
+      <ProfileBurgerMenuModal
+        isVisible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        profileData={profileData}
+      />
       {isFan ? (
         <UpgradeFanToParticipantModal
           isVisible={upgradeVisible}
@@ -366,8 +437,17 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
         />
       ) : null}
 
-      <Modal visible={levelUpVisible} transparent animationType="slide" onRequestClose={() => setLevelUpVisible(false)}>
-        <TouchableOpacity style={pStyles.modalOverlay} activeOpacity={1} onPress={() => setLevelUpVisible(false)}>
+      <Modal
+        visible={levelUpVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLevelUpVisible(false)}
+      >
+        <TouchableOpacity
+          style={pStyles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setLevelUpVisible(false)}
+        >
           <View style={pStyles.levelUpModalContainer}>
             <View style={pStyles.levelUpModalContent}>
               <Text style={pStyles.levelUpModalTitle}>How to Level Up</Text>
@@ -385,9 +465,13 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
                 ))}
               </View>
               <Text style={pStyles.levelUpModalNote}>
-                If your fans upgrade your profile to Participant, your level-up progress will increase.
+                If your fans upgrade your profile to Participant, your level-up progress will
+                increase.
               </Text>
-              <TouchableOpacity style={pStyles.levelUpModalCloseButton} onPress={() => setLevelUpVisible(false)}>
+              <TouchableOpacity
+                style={pStyles.levelUpModalCloseButton}
+                onPress={() => setLevelUpVisible(false)}
+              >
                 <Text style={pStyles.levelUpModalCloseButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
@@ -395,29 +479,49 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
         </TouchableOpacity>
       </Modal>
 
-      <Modal visible={editVisible} transparent animationType="fade" onRequestClose={() => setEditVisible(false)}>
-        <View style={pStyles.editBioOverlay}>
-          <ScrollView style={{ width: "100%" }} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", width: "100%" }} keyboardShouldPersistTaps="handled">
-            <View style={pStyles.editBioContainer}>
-              <View style={pStyles.editBioHeader}>
-                <Text style={pStyles.editBioTitle}>Edit profile</Text>
-                <TouchableOpacity onPress={() => setEditVisible(false)} accessibilityLabel="Close">
-                  <Text style={pStyles.editBioClose}>✕</Text>
-                </TouchableOpacity>
-              </View>
+      <Modal
+        visible={editVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditVisible(false)}
+      >
+        {/* The sheet shrinks above the keyboard: header and Cancel/Save stay fixed, only the fields
+            scroll. Before, Save sat under the Android keyboard and could not be reached. */}
+        <KeyboardAvoidingScreen style={pStyles.editBioOverlay}>
+          <View style={[pStyles.editBioContainer, { maxHeight: "100%", flexShrink: 1 }]}>
+            <View style={pStyles.editBioHeader}>
+              <Text style={pStyles.editBioTitle}>Edit profile</Text>
+              <TouchableOpacity
+                onPress={() => setEditVisible(false)}
+                accessibilityLabel="Close"
+                testID="profile-edit-close"
+              >
+                <Text style={pStyles.editBioClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              keyboardShouldPersistTaps="handled"
+              testID="profile-edit-scroll"
+            >
               <Text style={pStyles.editLabel}>Bio</Text>
               <TextInput
                 style={pStyles.editBioInput}
                 value={tempBio}
+                testID="profile-edit-bio"
                 onChangeText={(text) => setTempBio(limitBio(text))}
                 placeholder="Write something about yourself..."
                 placeholderTextColor="#999"
                 multiline
                 maxLength={BIO_MAX_LENGTH}
               />
-              <Text style={pStyles.bioCharCount}>{tempBio.length}/{BIO_MAX_LENGTH}</Text>
+              <Text style={pStyles.bioCharCount}>
+                {tempBio.length}/{BIO_MAX_LENGTH}
+              </Text>
 
-              <Text style={[pStyles.editLabel, { marginTop: 20 }]}>Describe yourself in three words</Text>
+              <Text style={[pStyles.editLabel, { marginTop: 20 }]}>
+                Describe yourself in three words
+              </Text>
               <View style={pStyles.threeWordsEditContainer}>
                 {[0, 1, 2].map((i) => (
                   <React.Fragment key={i}>
@@ -427,6 +531,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
                       placeholder={["1st word", "2nd word", "3rd word"][i]}
                       placeholderTextColor="#999"
                       value={tempThreeWords[i]}
+                      testID={`profile-edit-word-${i + 1}`}
                       onChangeText={(text) => {
                         const next = [...tempThreeWords];
                         next[i] = text;
@@ -448,6 +553,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
                     placeholder="Instagram handle"
                     placeholderTextColor="#999"
                     value={tempInsta}
+                    testID="profile-edit-instagram"
                     autoCapitalize="none"
                     autoCorrect={false}
                     onChangeText={setTempInsta}
@@ -462,27 +568,41 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
                     placeholder="X (Twitter) handle"
                     placeholderTextColor="#999"
                     value={tempX}
+                    testID="profile-edit-x"
                     autoCapitalize="none"
                     autoCorrect={false}
                     onChangeText={setTempX}
                   />
                 </View>
               </View>
+            </ScrollView>
 
-              <View style={pStyles.editBioButtons}>
-                <TouchableOpacity style={pStyles.cancelButton} onPress={() => setEditVisible(false)}>
-                  <Text style={pStyles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={pStyles.saveButton} onPress={saveEdit}>
-                  <Text style={pStyles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={pStyles.editBioButtons}>
+              <TouchableOpacity
+                style={pStyles.cancelButton}
+                onPress={() => setEditVisible(false)}
+                testID="profile-edit-cancel"
+              >
+                <Text style={pStyles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={pStyles.saveButton}
+                onPress={saveEdit}
+                testID="profile-edit-save"
+              >
+                <Text style={pStyles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
             </View>
-          </ScrollView>
-        </View>
+          </View>
+        </KeyboardAvoidingScreen>
       </Modal>
 
-      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} tabs={profileTabs} onOpenDrawer={() => {}} />
+      <BottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={profileTabs}
+        onOpenDrawer={() => {}}
+      />
     </View>
   );
 }

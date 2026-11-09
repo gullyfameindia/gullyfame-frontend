@@ -1,7 +1,13 @@
-import { getAuthHeaders } from './authApi';
 import type { ApiResponse } from './apiTypes';
+import { apiRequest } from './http';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.gullyfame.com/v1/api/';
+/**
+ * Categories (admin). All requests go through lib/http.ts (base URL, admin token, timeout, JSON
+ * guard, normalized errors). Paths and fields as in the API collection:
+ *   POST   admin/categories        multipart: name, icon (file)
+ *   GET    admin/categories        ?page&limit
+ *   DELETE admin/categories/:id
+ */
 
 export interface Category {
   id: string;
@@ -9,273 +15,62 @@ export interface Category {
   [key: string]: any;
 }
 
-export async function createCategory(
-  name: string,
-  iconFile?: File | null
-): Promise<ApiResponse<Category>> {
-  const endpoint = `${BASE_URL}admin/categories`;
+const toCategory = (raw: any): Category => ({
+  id: raw?.id?.toString?.() || raw?._id?.toString?.() || raw?.categoryId?.toString?.() || '',
+  name: raw?.name || raw?.title || '',
+  ...(raw && typeof raw === 'object' ? raw : {}),
+});
 
-  if (iconFile) {
+export async function createCategory(name: string, iconFile?: File | null): Promise<ApiResponse<Category>> {
+  const formData = new FormData();
+  formData.append('name', name);
+  if (iconFile) formData.append('icon', iconFile);
+
+  const result = await apiRequest<any>('POST', 'admin/categories', { formData });
+  if (!result.success) {
+    return { success: false, message: result.message || 'Failed to create category', error: result.error, data: result.data };
   }
-
-  try {
-    const formData = new FormData();
-    formData.append('name', name);
-    if (iconFile) {
-      formData.append('icon', iconFile);
-    }
-
-    const httpResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: formData,
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Categories API] POST Create Category - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Categories API] POST Create Category - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message:
-            `Failed to create category: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.success === false) {
-      console.error('[Categories API] POST Create Category - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to create category with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: responseData.data,
-      };
-    }
-
-    const payload = responseData.data || responseData;
-    const rawCategory = payload.category || payload;
-
-    const category: Category = {
-      id:
-        rawCategory.id?.toString?.() ||
-        rawCategory._id?.toString?.() ||
-        rawCategory.categoryId?.toString?.() ||
-        '',
-      name: rawCategory.name || rawCategory.title || '',
-      ...rawCategory,
-    };
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Category created successfully',
-      data: category,
-    };
-  } catch (error: any) {
-    console.error('[Categories API] POST Create Category - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
+  const payload = result.data ?? {};
+  return {
+    success: true,
+    message: result.message || 'Category created successfully',
+    data: toCategory(payload.category || payload),
+  };
 }
 
 export async function getCategories(
   page: number = 1,
   limit: number = 50
 ): Promise<ApiResponse<{ items: Category[]; total?: number; page?: number; limit?: number }>> {
-  const endpoint = `${BASE_URL}admin/categories?page=${page}&limit=${limit}`;
-
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'GET',
-      headers: getAuthHeaders({
-        Accept: 'application/json',
-      }),
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Categories API] GET Categories - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Categories API] GET Categories - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message:
-            `Failed to fetch categories: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    if (!httpResponse.ok || responseData.success === false) {
-      console.error('[Categories API] GET Categories - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to fetch categories with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: responseData.data,
-      };
-    }
-
-    let payload = responseData.data || responseData;
-    let rawItems: any[] = [];
-
-    if (Array.isArray(payload)) {
-      rawItems = payload;
-    } else if (Array.isArray(payload.items)) {
-      rawItems = payload.items;
-    } else if (Array.isArray(payload.categories)) {
-      rawItems = payload.categories;
-    } else if (Array.isArray(payload.data)) {
-      rawItems = payload.data;
-    }
-
-    const items: Category[] = rawItems.map((c) => ({
-      id:
-        c.id?.toString?.() ||
-        c._id?.toString?.() ||
-        c.categoryId?.toString?.() ||
-        '',
-      name: c.name || c.title || '',
-      ...c,
-    }));
-
-    const result = {
-      items,
-      total: payload.total,
-      page: payload.page,
-      limit: payload.limit,
-    };
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Categories fetched successfully',
-      data: result,
-    };
-  } catch (error: any) {
-    console.error('[Categories API] GET Categories - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
+  const result = await apiRequest<any>('GET', 'admin/categories', { query: { page, limit } });
+  if (!result.success) {
+    return { success: false, message: result.message || 'Failed to fetch categories', error: result.error, data: result.data };
   }
+
+  const payload = result.data ?? {};
+  const rawItems: any[] = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload.items)
+      ? payload.items
+      : Array.isArray(payload.categories)
+        ? payload.categories
+        : Array.isArray(payload.data)
+          ? payload.data
+          : [];
+
+  return {
+    success: true,
+    message: result.message || 'Categories fetched successfully',
+    data: { items: rawItems.map(toCategory), total: payload.total, page: payload.page, limit: payload.limit },
+  };
 }
 
 export async function deleteCategory(id: string): Promise<ApiResponse<null>> {
   if (!id) {
-    console.warn('[Categories API] DELETE Category - Called without a valid id');
-    return {
-      success: false,
-      message: 'Category ID is required to delete a category.',
-      error: 'MISSING_ID',
-      data: null,
-    };
+    return { success: false, message: 'Category ID is required to delete a category.', error: 'MISSING_ID', data: null };
   }
-
-  const safeId = encodeURIComponent(id.toString());
-  const endpoint = `${BASE_URL}admin/categories/${safeId}`;
-
-
-  try {
-    const httpResponse = await fetch(endpoint, {
-      method: 'DELETE',
-      headers: getAuthHeaders({
-        Accept: 'application/json',
-      }),
-    });
-
-    const responseText = await httpResponse.text();
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error('[Categories API] DELETE Category - Parse error:', parseError);
-
-      if (!httpResponse.ok) {
-        console.error('[Categories API] DELETE Category - Error:', httpResponse.status, httpResponse.statusText);
-        return {
-          success: false,
-          message:
-            `Failed to delete category: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-          data: null,
-        };
-      }
-
-      return {
-        success: true,
-        message: 'Category deleted successfully',
-        data: null,
-      };
-    }
-
-    if (!httpResponse.ok || responseData.success === false) {
-      console.error('[Categories API] DELETE Category - API Error:', responseData);
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.error ||
-          `Failed to delete category with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: null,
-      };
-    }
-
-
-    return {
-      success: true,
-      message: responseData.message || 'Category deleted successfully',
-      data: null,
-    };
-  } catch (error: any) {
-    console.error('[Categories API] DELETE Category - Network error:', error);
-
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-      data: null,
-    };
-  }
+  const result = await apiRequest('DELETE', `admin/categories/${encodeURIComponent(id.toString())}`);
+  return result.success
+    ? { success: true, message: result.message || 'Category deleted successfully', data: null }
+    : { success: false, message: result.message || 'Failed to delete category', error: result.error, data: null };
 }
-

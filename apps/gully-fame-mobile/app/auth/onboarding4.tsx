@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect,  useState } from "react";
 import {
   StyleSheet,
   ImageBackground,
@@ -24,8 +24,8 @@ export default function Onboarding4() {
   const { splashImages } = useBranding();
   
   const backgroundImage = splashImages[3] ? { uri: splashImages[3] } : DEFAULT_ONBOARDING4;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(50));
 
   useEffect(() => {
     Animated.parallel([
@@ -40,7 +40,7 @@ export default function Onboarding4() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

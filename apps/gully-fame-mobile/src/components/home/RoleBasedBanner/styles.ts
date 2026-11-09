@@ -1,6 +1,6 @@
 import { Dimensions, StyleSheet } from "react-native";
 const getDimensions = () => Dimensions.get("window");
-const { width, height } = getDimensions();
+const { width } = getDimensions();
 export const styles = StyleSheet.create({
   communityBannerSection: {
     marginBottom: 0,

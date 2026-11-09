@@ -18,11 +18,13 @@ const Button = memo(function Button({
   onPress,
   primary,
   disabled,
+  testID,
 }: {
   label: string;
   onPress: () => void;
   primary?: boolean;
   disabled?: boolean;
+  testID?: string;
 }) {
   return (
     <TouchableOpacity
@@ -31,6 +33,7 @@ const Button = memo(function Button({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      testID={testID}
     >
       <Text
         style={[styles.buttonText, primary && styles.buttonTextPrimary]}
@@ -68,9 +71,9 @@ export const OwnProfileActions = memo(function OwnProfileActions({
   return (
     <>
       <View style={styles.row}>
-        <Button label="Edit profile" onPress={onEditProfile ?? (() => router.push("/(main)/account-center" as any))} />
-        <Button label="Share profile" onPress={share} disabled={!userId} />
-        <Button label="Contact" onPress={() => setContactVisible(true)} />
+        <Button testID="profile-edit" label="Edit profile" onPress={onEditProfile ?? (() => router.push("/(main)/account-center" as any))} />
+        <Button testID="profile-share" label="Share profile" onPress={share} disabled={!userId} />
+        <Button testID="profile-contact" label="Contact" onPress={() => setContactVisible(true)} />
       </View>
       <ContactSheet
         visible={contactVisible}
@@ -102,14 +105,15 @@ export const OtherProfileActions = memo(function OtherProfileActions({
     <View style={styles.row}>
       {onToggleFollow ? (
         <Button
+          testID="profile-follow"
           label={isFollowing ? "Following" : "Follow"}
           primary={!isFollowing}
           disabled={followBusy}
           onPress={onToggleFollow}
         />
       ) : null}
-      {onMessage ? <Button label="Message" onPress={onMessage} /> : null}
-      {onSupport ? <Button label="Support" onPress={onSupport} /> : null}
+      {onMessage ? <Button testID="profile-message" label="Message" onPress={onMessage} /> : null}
+      {onSupport ? <Button testID="profile-support" label="Support" onPress={onSupport} /> : null}
     </View>
   );
 });

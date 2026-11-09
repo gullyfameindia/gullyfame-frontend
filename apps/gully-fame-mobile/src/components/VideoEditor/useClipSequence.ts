@@ -39,7 +39,9 @@ export function useClipSequence(clips: Clip[]): ClipSequence {
   const [isPlaying, setIsPlaying] = useState(false);
   const [localTime, setLocalTime] = useState(0);
   const localTimeRef = useRef(0);
-  localTimeRef.current = localTime;
+  useEffect(() => {
+    localTimeRef.current = localTime;
+  }, [localTime]);
   // Where to start the next clip that loads (seconds into that clip's trimmed range).
   const pendingOffset = useRef(0);
 
@@ -150,7 +152,6 @@ export function useClipSequence(clips: Clip[]): ClipSequence {
       }
     }, TICK * 1000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clip, isPlaying, advance]);
 
   const seek = useCallback(

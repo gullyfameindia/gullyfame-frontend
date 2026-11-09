@@ -1,0 +1,14 @@
+[
+  {
+    "method": "DELETE",
+    "path": "reels/:reelId",
+    "usedBy": "apps/gully-fame-mobile/src/api/services/profileExtrasService.ts (deletePost: owner deletes their own reel)",
+    "reason": "Used by the app but missing from the Postman collection. Backend team: add it to the collection or confirm it is gone."
+  },
+  {
+    "method": "GET",
+    "path": "admin/competitions/:id",
+    "usedBy": "apps/gully-fame-admin/lib/competitionApi.ts (getCompetitionById: competition detail, edit, participants and leaderboard pages)",
+    "reason": "The collection only has PUT and DELETE on this path. Backend team: add the GET to the collection or point the admin to another detail endpoint."
+  }
+]

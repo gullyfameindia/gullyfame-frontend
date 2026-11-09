@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Plus, Edit, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { getUserRole } from '@/lib/auth';
 import { getCompetitions, deleteCompetition, type Competition } from '@/lib/competitionApi';
 import { getStoredAdmin } from '@/lib/authApi';
+import { useBusyActions, usePagedItems } from '@/lib/hooks';
+import Pagination from '@/components/Pagination';
 
 export default function CompetitionsPage() {
   const userRole = getUserRole();
@@ -15,11 +17,13 @@ export default function CompetitionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  useEffect(() => {
-    fetchCompetitions();
-  }, [statusFilter]);
+  const { run, isBusy } = useBusyActions();
+  const { page, setPage, totalPages, total, pageSize, pageItems } = usePagedItems(competitions, 20);
+  // Only the newest request may update state (filter changes can overlap).
+  const latestRequest = useRef(0);
 
-  const fetchCompetitions = async () => {
+  const fetchCompetitions = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -34,15 +38,7 @@ export default function CompetitionsPage() {
         const adminData = getStoredAdmin();
         
         const sponsorId = adminData?._id || adminData?.id || adminData?.sponsorCode;
-        
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Competitions] Sponsor filtering:', {
-            adminData,
-            sponsorId,
-            email: adminData?.email,
-          });
-        }
-        
+
         if (sponsorId) {
           params.sponsorId = sponsorId;
         } else {
@@ -51,6 +47,7 @@ export default function CompetitionsPage() {
       }
       
       const result = await getCompetitions(params);
+      if (requestId !== latestRequest.current) return;
       
       if (result.success && result.data) {
         let allCompetitions = result.data.items || [];
@@ -79,18 +76,7 @@ export default function CompetitionsPage() {
                 ? c.sponsorId._id 
                 : (c.sponsorId || '');
               
-              const matches = compSponsorId === sponsorId || compSponsorId === adminData?.sponsorCode;
-              
-              if (process.env.NODE_ENV === 'development' && !matches) {
-                console.log('[Competitions] Competition filtered out:', {
-                  compId: c.id,
-                  compSponsorId,
-                  userSponsorId: sponsorId,
-                  matches,
-                });
-              }
-              
-              return matches;
+              return compSponsorId === sponsorId || compSponsorId === adminData?.sponsorCode;
             })
           : allCompetitions;
         
@@ -99,27 +85,33 @@ export default function CompetitionsPage() {
         setError(result.message || 'Failed to fetch competitions');
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching competitions:', err);
       setError(err.message || 'Failed to load competitions');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, [statusFilter, userRole]);
+
+  useEffect(() => {
+    fetchCompetitions();
+  }, [fetchCompetitions]);
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this competition?')) {
+    if (!confirm('Are you sure you want to delete this competition?')) return;
+    await run(`delete:${id}`, async () => {
       try {
         const result = await deleteCompetition(id);
         if (result.success) {
           alert('Competition deleted successfully!');
-          fetchCompetitions(); 
+          fetchCompetitions();
         } else {
           alert(result.message || 'Failed to delete competition');
         }
       } catch (err: any) {
         alert('Error deleting competition: ' + err.message);
       }
-    }
+    });
   };
 
   const formatDate = (dateString?: string) => {
@@ -203,7 +195,7 @@ export default function CompetitionsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {competitions.map((comp) => (
+              {pageItems.map((comp) => (
                 <tr key={comp.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="text-xs font-medium text-gray-900">{comp.title}</div>
@@ -249,7 +241,8 @@ export default function CompetitionsPage() {
                     {userRole === 'admin' && (
                       <button
                         onClick={() => handleDelete(comp.id)}
-                        className="text-red-600 hover:text-red-900"
+                        disabled={isBusy(`delete:${comp.id}`)}
+                        className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Delete Competition"
                       >
                         <Trash2 className="h-4 w-4 inline" />
@@ -260,6 +253,7 @@ export default function CompetitionsPage() {
               ))}
             </tbody>
           </table>
+          <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
         </div>
         )}
       </div>

@@ -1,7 +1,6 @@
-import { getAuthHeaders } from './authApi';
+import { apiRequest } from './http';
 import type { ApiResponse } from './apiTypes';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.gullyfame.com/v1/api/';
 
 
 
@@ -90,132 +89,37 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+/** Collection: PUT admin/users/:id/kyc { status, reason }. */
 export interface UpdateKycRequest {
   status: 'approved' | 'rejected';
-  rejectionReason?: string;
+  reason?: string;
 }
 
 
 
+/**
+ * Every request goes through lib/http.ts: base URL from lib/config.ts, admin token, timeout,
+ * JSON guard and normalized errors. A success with no `data` (e.g. a DELETE) is still a success.
+ */
 async function makeRequest<T>(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   endpoint: string,
   body?: any
 ): Promise<ApiResponse<T>> {
-  const startTime = Date.now();
-  const logPrefix = `[userApi] ${method} ${endpoint}`;
-  
-  try {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`${logPrefix} - Starting request`);
-      if (body) {
-        console.log(`${logPrefix} - Request body:`, JSON.stringify(body, null, 2));
-      }
-    }
-
-    const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
-    const headers = getAuthHeaders({
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    });
-
-    const options: RequestInit = {
-      method,
-      headers,
-    };
-
-    if (body && method !== 'GET') {
-      options.body = JSON.stringify(body);
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`${logPrefix} - Full URL:`, url);
-      console.log(`${logPrefix} - Request headers:`, { ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined });
-    }
-
-    const httpResponse = await fetch(url, options);
-    const responseTime = Date.now() - startTime;
-    const responseText = await httpResponse.text();
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`${logPrefix} - Response received in ${responseTime}ms`);
-      console.log(`${logPrefix} - Response status:`, httpResponse.status);
-      console.log(`${logPrefix} - Response text:`, responseText);
-    }
-
-    let responseData: any;
-    try {
-      responseData = responseText ? JSON.parse(responseText) : {};
-    } catch (parseError) {
-      console.error(`${logPrefix} - ❌ Parse error:`, parseError);
-      
-      if (!httpResponse.ok) {
-        return {
-          success: false,
-          message: `Failed: ${httpResponse.statusText} (Status: ${httpResponse.status})`,
-          error: `HTTP ${httpResponse.status}`,
-        };
-      }
-
-      return {
-        success: false,
-        message: 'Invalid response format from server',
-        error: 'INVALID_JSON',
-      };
-    }
-
-    const successFlag = responseData.code === 1 || responseData.rCode === 1;
-
-    if (!httpResponse.ok || !successFlag) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`${logPrefix} - ⚠️ API Error:`, {
-          status: httpResponse.status,
-          successFlag,
-          responseData: JSON.stringify(responseData, null, 2),
-        });
-      }
-      return {
-        success: false,
-        message:
-          responseData.message ||
-          responseData.msg ||
-          responseData.error ||
-          `Failed with status ${httpResponse.status}`,
-        error: responseData.error || `HTTP ${httpResponse.status}`,
-        data: responseData.data || responseData.rData,
-      };
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`${logPrefix} - ✅ Success:`, {
-        hasData: !!(responseData.data || responseData.rData),
-        dataType: Array.isArray(responseData.data || responseData.rData) ? 'array' : typeof (responseData.data || responseData.rData),
-        arrayLength: Array.isArray(responseData.data || responseData.rData) ? (responseData.data || responseData.rData).length : undefined,
-        message: responseData.message || responseData.msg,
-      });
-    }
-    
-    return {
-      success: true,
-      message: responseData.message || responseData.msg || 'Success',
-      data: (responseData.data || responseData.rData) as T,
-    };
-  } catch (error: any) {
-    const responseTime = Date.now() - startTime;
-    console.error(`${logPrefix} - ❌ Network error after ${responseTime}ms:`, {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
-    return {
-      success: false,
-      message: error.message || 'Network error occurred',
-      error: error.message || 'NETWORK_ERROR',
-    };
-  }
+  const result = await apiRequest<T>(method, endpoint, { body });
+  return result.success
+    ? { success: true, data: result.data as T, message: result.message }
+    : { success: false, message: result.message, error: result.error };
 }
 
-
+/**
+ * The backend stores `isActive` (boolean) on users; the panel shows a `status` label. Derive the
+ * label when the server does not send one, so the table and the ban toggle reflect reality.
+ */
+function withStatus<T extends Record<string, any>>(user: T): T & { status: string } {
+  const status = user?.status || (user?.isActive === false ? 'banned' : 'active');
+  return { ...user, status };
+}
 
 export async function getUsers(params?: UserListParams): Promise<ApiResponse<UserListResponse>> {
   const page = params?.page || 1;
@@ -226,7 +130,7 @@ export async function getUsers(params?: UserListParams): Promise<ApiResponse<Use
   if (params?.status) queryParams += `&status=${encodeURIComponent(params.status)}`;
   if (params?.role) queryParams += `&role=${encodeURIComponent(params.role)}`;
   
-  const endpoint = `${BASE_URL}admin/users?${queryParams}`;
+  const endpoint = `admin/users?${queryParams}`;
   const result = await makeRequest<any>('GET', endpoint);
   
   if (result.success && result.data) {
@@ -245,7 +149,7 @@ export async function getUsers(params?: UserListParams): Promise<ApiResponse<Use
       success: true,
       message: result.message || 'Users fetched successfully',
       data: {
-        items,
+        items: items.map(withStatus) as User[],
         total: data.total || items.length,
         page: data.page || page,
         limit: data.limit || limit,
@@ -260,7 +164,7 @@ export async function getUsers(params?: UserListParams): Promise<ApiResponse<Use
 
 
 export async function getUserById(userId: string): Promise<ApiResponse<UserDetail>> {
-  const endpoint = `${BASE_URL}admin/users/${userId}`;
+  const endpoint = `admin/users/${userId}`;
   const result = await makeRequest<any>('GET', endpoint);
   
   if (result.success && result.data) {
@@ -269,7 +173,7 @@ export async function getUserById(userId: string): Promise<ApiResponse<UserDetai
       success: true,
       message: result.message || 'User fetched successfully',
       data: {
-        ...user,
+        ...withStatus(user),
         id: user.id || user._id,
       } as UserDetail,
     };
@@ -284,8 +188,15 @@ export async function updateUserStatus(
   userId: string,
   status: 'active' | 'inactive' | 'banned'
 ): Promise<ApiResponse<User>> {
-  const endpoint = `${BASE_URL}admin/users/${userId}/status`;
-  return makeRequest<User>('PUT', endpoint, { status });
+  // Collection: PUT admin/users/:id/status { isActive: boolean }.
+  const endpoint = `admin/users/${userId}/status`;
+  const result = await makeRequest<User>('PUT', endpoint, { isActive: status === 'active' });
+  if (!result.success) return result;
+  const updated: Record<string, any> = result.data ?? {};
+  return {
+    ...result,
+    data: withStatus({ ...updated, isActive: updated.isActive ?? status === 'active' }) as unknown as User,
+  };
 }
 
 
@@ -294,14 +205,14 @@ export async function resetUserPassword(
   userId: string,
   newPassword: string
 ): Promise<ApiResponse<{ message: string }>> {
-  const endpoint = `${BASE_URL}admin/users/${userId}/reset-password`;
+  const endpoint = `admin/users/${userId}/reset-password`;
   return makeRequest<{ message: string }>('POST', endpoint, { newPassword });
 }
 
 
 
 export async function getUserKyc(userId: string): Promise<ApiResponse<KycStatus>> {
-  const endpoint = `${BASE_URL}admin/users/${userId}/kyc`;
+  const endpoint = `admin/users/${userId}/kyc`;
   const result = await makeRequest<any>('GET', endpoint);
   
   if (result.success && result.data) {
@@ -322,10 +233,10 @@ export async function updateUserKyc(
   status: 'approved' | 'rejected',
   rejectionReason?: string
 ): Promise<ApiResponse<KycStatus>> {
-  const endpoint = `${BASE_URL}admin/users/${userId}/kyc`;
+  const endpoint = `admin/users/${userId}/kyc`;
   const body: UpdateKycRequest = { status };
   if (status === 'rejected' && rejectionReason) {
-    body.rejectionReason = rejectionReason;
+    body.reason = rejectionReason;
   }
   return makeRequest<KycStatus>('PUT', endpoint, body);
 }
@@ -333,7 +244,7 @@ export async function updateUserKyc(
 
 
 export async function getUserEarnings(userId: string): Promise<ApiResponse<UserEarningsResponse>> {
-  const endpoint = `${BASE_URL}admin/users/${userId}/earnings`;
+  const endpoint = `admin/users/${userId}/earnings`;
   const result = await makeRequest<any>('GET', endpoint);
   
   if (result.success && result.data) {

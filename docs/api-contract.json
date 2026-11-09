@@ -1,0 +1,3761 @@
+{
+  "source": "Gully Fame API Production.postman_collection.json",
+  "generatedFrom": "Postman collection (structure only; no values)",
+  "requestsInCollection": 165,
+  "endpoints": [
+    {
+      "folder": "Admin APIs / CMS / aboutUs",
+      "name": "Get",
+      "method": "GET",
+      "path": "admin/aboutUs",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / CMS / aboutUs",
+      "name": "Add/Update",
+      "method": "POST",
+      "path": "admin/aboutUs",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "aboutUs"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Audio Management",
+      "name": "Create Audio",
+      "method": "POST",
+      "path": "admin/audio",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "title",
+          "artist",
+          "duration",
+          "audio (file)",
+          "coverImage (file)"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Audio Management",
+      "name": "Delete Audio",
+      "method": "DELETE",
+      "path": "admin/audio/:audioId",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Audio Management",
+      "name": "Update Audio",
+      "method": "PUT",
+      "path": "admin/audio/:audioId",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "title"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Banners",
+      "name": "Get all",
+      "method": "GET",
+      "path": "admin/banners",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "page",
+          "limit",
+          "total",
+          "Banners"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Banners",
+      "name": "Add",
+      "method": "POST",
+      "path": "admin/banners",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "banner (file)",
+          "title"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "title",
+          "banner",
+          "isActive",
+          "_id",
+          "createdAt",
+          "updatedAt",
+          "__v"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Banners",
+      "name": "Delete",
+      "method": "DELETE",
+      "path": "admin/banners/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Banners",
+      "name": "Detail",
+      "method": "GET",
+      "path": "admin/banners/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "_id",
+          "title",
+          "banner",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Banners",
+      "name": "Activate / Deactivate (toggle)",
+      "method": "PATCH",
+      "path": "admin/banners/:id",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "bannerId"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Banners",
+      "name": "Update",
+      "method": "PUT",
+      "path": "admin/banners/:id",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "title",
+          "banner (file)"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "_id",
+          "title",
+          "banner",
+          "isActive",
+          "createdAt",
+          "updatedAt",
+          "__v"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Categories",
+      "name": "List",
+      "method": "GET",
+      "path": "admin/categories",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": true,
+        "dataKeys": [
+          "_id",
+          "name",
+          "icon",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Categories",
+      "name": "Add",
+      "method": "POST",
+      "path": "admin/categories",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "name",
+          "icon (file)"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "name",
+          "icon",
+          "isActive",
+          "_id",
+          "createdAt",
+          "updatedAt",
+          "__v"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Categories",
+      "name": "Delete",
+      "method": "DELETE",
+      "path": "admin/categories/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Categories",
+      "name": "Detail",
+      "method": "GET",
+      "path": "admin/categories/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Categories",
+      "name": "Activate / Deactivate",
+      "method": "PATCH",
+      "path": "admin/categories/:id",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "isActive"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Change Password",
+      "method": "PATCH",
+      "path": "admin/changePassword",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "currentPassword",
+          "newPassword",
+          "confirmPassword"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / CMS / competitionRules",
+      "name": "Get",
+      "method": "GET",
+      "path": "admin/competitionRules",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / CMS / competitionRules",
+      "name": "Add/Update",
+      "method": "POST",
+      "path": "admin/competitionRules",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "competitionRules"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "List Competitions",
+      "method": "GET",
+      "path": "admin/competitions",
+      "query": [
+        "sponsorId"
+      ],
+      "body": {
+        "kind": "raw",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Create Competitions",
+      "method": "POST",
+      "path": "admin/competitions",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "title",
+          "description",
+          "sponsorId",
+          "entryFee",
+          "prizePool",
+          "startDate",
+          "endDate"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "title",
+          "description",
+          "sponsorId",
+          "entryFee",
+          "prizePool",
+          "startDate",
+          "endDate",
+          "status",
+          "participants",
+          "isActive",
+          "isDeleted",
+          "_id",
+          "winners",
+          "createdAt",
+          "updatedAt",
+          "__v"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Soft Delete Competition",
+      "method": "DELETE",
+      "path": "admin/competitions/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Update Competition",
+      "method": "PUT",
+      "path": "admin/competitions/:id",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "prizePool"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Approve Competition",
+      "method": "POST",
+      "path": "admin/competitions/:id/active",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Declare Winners",
+      "method": "POST",
+      "path": "admin/competitions/:id/declare-winners",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "winners"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Get Leaderboard",
+      "method": "GET",
+      "path": "admin/competitions/:id/leaderboard",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Get Participants",
+      "method": "GET",
+      "path": "admin/competitions/:id/participants",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Compitition Managment",
+      "name": "Reject Competition",
+      "method": "POST",
+      "path": "admin/competitions/:id/reject",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Contact Us",
+      "name": "Get Contact Us",
+      "method": "GET",
+      "path": "admin/contactUs",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Contact Us",
+      "name": "Update Contact Us",
+      "method": "POST",
+      "path": "admin/contactUs",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "contactUs",
+          "contactUs.email",
+          "contactUs.phone"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Dashboard",
+      "name": "Dashboard (summary)",
+      "method": "GET",
+      "path": "admin/dashboard",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Dashboard",
+      "name": "quick-stats",
+      "method": "GET",
+      "path": "admin/dashboard/quick-stats",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "totalUsers",
+          "activeCompetitions",
+          "totalCompetitions",
+          "activeSponsors",
+          "tipsGiven",
+          "totalReels"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Dashboard",
+      "name": "recent-activity",
+      "method": "GET",
+      "path": "admin/dashboard/recent-activity",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "newUsers",
+          "latestCompetitions",
+          "contestJoined",
+          "totalCompleted",
+          "newCompetitionHeld"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Earnings adn winnings",
+      "name": "List All Earnings",
+      "method": "GET",
+      "path": "admin/earnings",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Earnings adn winnings",
+      "name": "Get User Earnings",
+      "method": "GET",
+      "path": "admin/earnings/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Edit Profile",
+      "method": "PUT",
+      "path": "admin/editProfile",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "name"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / FAQs",
+      "name": "List FAQs",
+      "method": "GET",
+      "path": "admin/faqs",
+      "query": [
+        "page",
+        "limit",
+        "search"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / FAQs",
+      "name": "Add / Update FAQ",
+      "method": "POST",
+      "path": "admin/faqs",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "question",
+          "answer"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / FAQs",
+      "name": "Delete FAQ",
+      "method": "DELETE",
+      "path": "admin/faqs/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / FAQs",
+      "name": "FAQ Detail",
+      "method": "GET",
+      "path": "admin/faqs/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / FAQs",
+      "name": "Activate / Deactivate (toggle)",
+      "method": "PATCH",
+      "path": "admin/faqs/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Filters Management",
+      "name": "Create Filter",
+      "method": "POST",
+      "path": "admin/filters",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "name",
+          "asset (file)",
+          "thumbnail (file)"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Filters Management",
+      "name": "Delete Filter",
+      "method": "DELETE",
+      "path": "admin/filters/:filterId",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Filters Management",
+      "name": "Update Filter",
+      "method": "PUT",
+      "path": "admin/filters/:filterId",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "name"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Forgot Password",
+      "method": "POST",
+      "path": "admin/forgotPassword",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Detail",
+      "method": "GET",
+      "path": "admin/getDetails",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "admin"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Login",
+      "method": "POST",
+      "path": "admin/login",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email",
+          "password",
+          "role"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "admin",
+          "token"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Notification",
+      "name": "sendNotification",
+      "method": "POST",
+      "path": "admin/notification",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "userId",
+          "message",
+          "title"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": true,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / CMS / privacyPolicy",
+      "name": "Get",
+      "method": "GET",
+      "path": "admin/privacyPolicy",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / CMS / privacyPolicy",
+      "name": "Add/Update",
+      "method": "POST",
+      "path": "admin/privacyPolicy",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "privacyPolicy"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Register",
+      "method": "POST",
+      "path": "admin/register",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email",
+          "password"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Reports Managment",
+      "name": "List Reports (with USER filter)",
+      "method": "GET",
+      "path": "admin/reports",
+      "query": [
+        "type"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Reports Managment",
+      "name": "Update Report Status",
+      "method": "PUT",
+      "path": "admin/reports/:id/status",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "status",
+          "resolutionNotes"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Resend OTP",
+      "method": "PUT",
+      "path": "admin/resendOtp",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Reset Password (after OTP)",
+      "method": "PATCH",
+      "path": "admin/resetPassword",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "newPassword",
+          "confirmPassword"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Sound FX Management",
+      "name": "Create Sound FX",
+      "method": "POST",
+      "path": "admin/soundfx",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "name",
+          "category",
+          "duration",
+          "audio (file)"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Sound FX Management",
+      "name": "Delete Sound FX",
+      "method": "DELETE",
+      "path": "admin/soundfx/:soundfxId",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Sound FX Management",
+      "name": "Update Sound FX",
+      "method": "PUT",
+      "path": "admin/soundfx/:soundfxId",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "name"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Sponsers Managment",
+      "name": "get sponsers",
+      "method": "GET",
+      "path": "admin/sponsors",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Sponsers Managment",
+      "name": "create sponsors",
+      "method": "POST",
+      "path": "admin/sponsors",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email",
+          "password"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Sponsers Managment",
+      "name": "Delete (Deactivate) Sponsor",
+      "method": "DELETE",
+      "path": "admin/sponsors/:id",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Sponsers Managment",
+      "name": "get sponsers by id",
+      "method": "GET",
+      "path": "admin/sponsors/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Sponsers Managment",
+      "name": "update sponsors",
+      "method": "PUT",
+      "path": "admin/sponsors/:id",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Stickers Management",
+      "name": "Create Sticker",
+      "method": "POST",
+      "path": "admin/stickers",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "name",
+          "category",
+          "image (file)"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Stickers Management",
+      "name": "Delete Sticker",
+      "method": "DELETE",
+      "path": "admin/stickers/:stickerId",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Stickers Management",
+      "name": "Update Sticker",
+      "method": "PUT",
+      "path": "admin/stickers/:stickerId",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "name"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / CMS / Term and conditions",
+      "name": "Get",
+      "method": "GET",
+      "path": "admin/termAndCondition",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / CMS / Term and conditions",
+      "name": "Add/Update",
+      "method": "POST",
+      "path": "admin/termAndCondition",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "termsAndConditions"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / User Managment",
+      "name": "List Users (pagination + filters)",
+      "method": "GET",
+      "path": "admin/users",
+      "query": [
+        "page",
+        "limit",
+        "search",
+        "status",
+        "role"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 2,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "users",
+          "total",
+          "page",
+          "limit"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / User Managment",
+      "name": "Users by Id",
+      "method": "GET",
+      "path": "admin/users/:id",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "location",
+          "kycDocs",
+          "walletBalance",
+          "_id",
+          "firstName",
+          "lastName",
+          "email",
+          "profileImage",
+          "gender",
+          "role",
+          "dob",
+          "mobile",
+          "isActive",
+          "isDeleted",
+          "notificationAllowed",
+          "googleId",
+          "appleId",
+          "device_token",
+          "device_type",
+          "createdAt",
+          "updatedAt",
+          "__v",
+          "kycRejectionReason",
+          "kycStatus"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / User Managment",
+      "name": "Get User Earnings",
+      "method": "GET",
+      "path": "admin/users/:id/earnings",
+      "query": [],
+      "body": {
+        "kind": "raw",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": true,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / User Managment",
+      "name": "Get User KYC",
+      "method": "GET",
+      "path": "admin/users/:id/kyc",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "kycDocs",
+          "_id",
+          "kycRejectionReason",
+          "kycStatus"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / User Managment",
+      "name": "Update User KYC",
+      "method": "PUT",
+      "path": "admin/users/:id/kyc",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "status",
+          "reason"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 2,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "kycStatus",
+          "kycRejectionReason"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / User Managment",
+      "name": "reset user password",
+      "method": "POST",
+      "path": "admin/users/:id/reset-password",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "newPassword"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / User Managment",
+      "name": "update user by Id",
+      "method": "PUT",
+      "path": "admin/users/:id/status",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "isActive"
+        ]
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": true,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "location",
+          "kycDocs",
+          "walletBalance",
+          "_id",
+          "firstName",
+          "lastName",
+          "email",
+          "profileImage",
+          "gender",
+          "role",
+          "dob",
+          "mobile",
+          "isActive",
+          "isDeleted",
+          "notificationAllowed",
+          "googleId",
+          "appleId",
+          "device_token",
+          "device_type",
+          "createdAt",
+          "updatedAt",
+          "__v",
+          "kycRejectionReason",
+          "kycStatus"
+        ]
+      }
+    },
+    {
+      "folder": "Admin APIs / Auth",
+      "name": "Verify OTP (forgot password)",
+      "method": "POST",
+      "path": "admin/verifyOtp",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "email",
+          "otp"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Admin APIs / Earnings adn winnings",
+      "name": "List Winners",
+      "method": "GET",
+      "path": "admin/winners",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Earnings adn winnings",
+      "name": "Top Earners",
+      "method": "GET",
+      "path": "admin/winners/top-earners",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "admin",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "rCode",
+          "msg",
+          "rData"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Forgot password (Send Email OTP)",
+      "method": "POST",
+      "path": "auth/forgot-password",
+      "query": [],
+      "body": {
+        "kind": "raw",
+        "fields": [
+          "userId"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "txnId",
+          "email",
+          "emailSent",
+          "expiresIn"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Forgot password - Set New Password",
+      "method": "POST",
+      "path": "auth/forgot-password/reset",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "resetToken",
+          "password"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Forgot password - Verify OTP",
+      "method": "POST",
+      "path": "auth/forgot-password/verify-otp",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "txnId",
+          "otp"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "resetToken",
+          "expiresIn"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Login",
+      "method": "POST",
+      "path": "auth/login",
+      "query": [],
+      "body": {
+        "kind": "raw",
+        "fields": [
+          "userId",
+          "viaPassword",
+          "password"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "user",
+          "token"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Social login",
+      "method": "POST",
+      "path": "auth/login/social",
+      "query": [],
+      "body": {
+        "kind": "raw",
+        "fields": [
+          "googleId",
+          "appleId",
+          "email",
+          "firstName",
+          "lastName",
+          "device_token",
+          "device_type"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "user",
+          "token"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Register",
+      "method": "POST",
+      "path": "auth/register",
+      "query": [],
+      "body": {
+        "kind": "raw",
+        "fields": [
+          "firstName",
+          "lastName",
+          "mobile",
+          "email",
+          "password",
+          "role"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Resend otp",
+      "method": "POST",
+      "path": "auth/resendOtp",
+      "query": [],
+      "body": {
+        "kind": "raw",
+        "fields": [
+          "userId",
+          "countryCode"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "txnId"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Reset password",
+      "method": "PUT",
+      "path": "auth/reset-password",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "password"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "VerifyOtp",
+      "method": "POST",
+      "path": "auth/verifyOtp",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "txnId",
+          "otp"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "token",
+          "userId"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Chats",
+      "name": "Archive / Unarchive Chat",
+      "method": "POST",
+      "path": "chat/archive",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "chatterId",
+          "archived"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Chats",
+      "name": "Chat Details",
+      "method": "GET",
+      "path": "chat/chatDetails",
+      "query": [
+        "chatterId",
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "page",
+          "totalMessageCount",
+          "limit",
+          "messages"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Chats",
+      "name": "Chat List",
+      "method": "GET",
+      "path": "chat/chatlist",
+      "query": [
+        "view"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 2,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "chatlist"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Chats",
+      "name": "Toggle React",
+      "method": "POST",
+      "path": "chat/message/:messageId/react",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "emoji"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "_id",
+          "reactions"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Chats",
+      "name": "Delete Message",
+      "method": "POST",
+      "path": "chat/message/delete",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "message_ids",
+          "delete_type"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "User APIs / Chats",
+      "name": "Mark as Read",
+      "method": "PUT",
+      "path": "chat/read",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "sender_id"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "modifiedCount"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Chats",
+      "name": "sendChat",
+      "method": "POST",
+      "path": "chat/sendChat",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "receiver_id",
+          "message",
+          "reply_to",
+          "is_forwarded"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Competitions",
+      "name": "Competition Details",
+      "method": "GET",
+      "path": "competitions/:competitionId",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "_id",
+          "title",
+          "subtitle",
+          "description",
+          "status",
+          "prizePool",
+          "entryFee",
+          "startDate",
+          "endDate",
+          "image",
+          "totalViews",
+          "participantsCount",
+          "leaderboard"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Competitions",
+      "name": "Invite To Competition (Rap Battle)",
+      "method": "POST",
+      "path": "competitions/:competitionId/invite",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "toUserId"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Competitions",
+      "name": "Join Competition",
+      "method": "POST",
+      "path": "competitions/:competitionId/join",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Competitions",
+      "name": "Competition Leaderboard",
+      "method": "GET",
+      "path": "competitions/:competitionId/leaderboard",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "page",
+          "limit",
+          "total",
+          "leaderboard"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Competitions",
+      "name": "Competition Reels",
+      "method": "GET",
+      "path": "competitions/:competitionId/reels",
+      "query": [
+        "cursor",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "reels",
+          "next_cursor",
+          "has_more"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Feed",
+      "name": "Feed Matrix",
+      "method": "GET",
+      "path": "feed/matrix",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "page",
+          "limit",
+          "total",
+          "competitions"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Notifications",
+      "name": "Mark Notification As Read",
+      "method": "PUT",
+      "path": "notification/:notificationId/read",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Notifications",
+      "name": "Notifications - Today",
+      "method": "GET",
+      "path": "notification/notification",
+      "query": [
+        "time",
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 2,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "page",
+          "limit",
+          "time",
+          "totalNotifications",
+          "unreadCount",
+          "notifications"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Notifications",
+      "name": "Mark All Notifications As Read",
+      "method": "PUT",
+      "path": "notification/read-all",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Webhooks",
+      "name": "Razorpay Webhook",
+      "method": "POST",
+      "path": "payments/razorpay/webhook",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "entity",
+          "event",
+          "payload",
+          "payload.payment",
+          "payload.payment.entity",
+          "payload.payment.entity.id",
+          "payload.payment.entity.order_id",
+          "payload.payment.entity.amount",
+          "payload.payment.entity.currency",
+          "payload.payment.entity.status"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "status"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Public APIs / CMS",
+      "name": "About Us",
+      "method": "GET",
+      "path": "public/aboutUs",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / Audio",
+      "name": "List Audio",
+      "method": "GET",
+      "path": "public/audio",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / CMS",
+      "name": "Competition Rules",
+      "method": "GET",
+      "path": "public/competitionRules",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / Filters",
+      "name": "List Filters",
+      "method": "GET",
+      "path": "public/filters",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / Logos",
+      "name": "Logo",
+      "method": "GET",
+      "path": "public/logo",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Admin APIs / Add public",
+      "name": "Add logo",
+      "method": "POST",
+      "path": "public/logo",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "logo (file) (optional)",
+          "splash (file)"
+        ]
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / CMS",
+      "name": "Privacy Policy",
+      "method": "GET",
+      "path": "public/privacyPolicy",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / Sound FX",
+      "name": "List Sound FX",
+      "method": "GET",
+      "path": "public/soundfx",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / Logos",
+      "name": "Splash Logs",
+      "method": "GET",
+      "path": "public/splash",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": true,
+        "dataKeys": []
+      }
+    },
+    {
+      "folder": "Public APIs / Stickers",
+      "name": "List Stickers",
+      "method": "GET",
+      "path": "public/stickers",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "Public APIs / CMS",
+      "name": "Term and Conditions",
+      "method": "GET",
+      "path": "public/termAndCondition",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "List Reels",
+      "method": "GET",
+      "path": "reels",
+      "query": [
+        "limit",
+        "cursor (optional)"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Toggle Action",
+      "method": "POST",
+      "path": "reels/:reelId/action",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "action_type"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "action",
+          "toggled",
+          "stats"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "List Comments",
+      "method": "GET",
+      "path": "reels/:reelId/comments",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Add Comment",
+      "method": "POST",
+      "path": "reels/:reelId/comments",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "text"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Start Export (Server-side Render)",
+      "method": "POST",
+      "path": "reels/:reelId/export",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Get Export Status",
+      "method": "GET",
+      "path": "reels/:reelId/export/status",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Tip Creator",
+      "method": "POST",
+      "path": "reels/:reelId/tip",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "amount"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Auto Caption",
+      "method": "POST",
+      "path": "reels/auto-caption",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "videoUrl"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Delete Comment",
+      "method": "DELETE",
+      "path": "reels/comments/:commentId",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Get Draft",
+      "method": "GET",
+      "path": "reels/draft",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Save Draft",
+      "method": "POST",
+      "path": "reels/draft",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "video_url",
+          "caption",
+          "editState",
+          "editState.adjustments",
+          "editState.adjustments.brightness",
+          "editState.adjustments.contrast",
+          "editState.adjustments.highlights",
+          "editState.adjustments.shadows",
+          "editState.filter",
+          "editState.filter.name",
+          "editState.overlays",
+          "editState.stickers",
+          "editState.soundFx",
+          "voiceOver",
+          "voiceOver.url",
+          "voiceOver.volume",
+          "ctaLink",
+          "ctaLink.label",
+          "ctaLink.url"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 2,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Publish Reel",
+      "method": "POST",
+      "path": "reels/publish",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "video_url",
+          "thumbnail_url",
+          "caption",
+          "competitionId",
+          "music",
+          "music.id",
+          "music.name"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Reels",
+      "name": "Get Upload URL",
+      "method": "POST",
+      "path": "reels/upload-url",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "fileName",
+          "fileType",
+          "assetType"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 2,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Search",
+      "name": "Search All",
+      "method": "GET",
+      "path": "search",
+      "query": [
+        "q",
+        "type",
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 4,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "users",
+          "competitions",
+          "reels"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Follow",
+      "name": "2. Toggle Follow",
+      "method": "POST",
+      "path": "user/:otherUserId/follow",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 3,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Follow",
+      "name": "5. Other User's Followers",
+      "method": "GET",
+      "path": "user/:otherUserId/followers",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Follow",
+      "name": "6. Other User's Following",
+      "method": "GET",
+      "path": "user/:otherUserId/following",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Audio",
+      "name": "Save/Unsave Audio",
+      "method": "POST",
+      "path": "user/audio/:audioId/save",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Audio",
+      "name": "Get Saved Audio",
+      "method": "GET",
+      "path": "user/audio/saved",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Categories",
+      "name": "Get Categories",
+      "method": "GET",
+      "path": "user/categories",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "page",
+          "limit",
+          "totalCategories",
+          "categories"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Champions",
+      "name": "Champions",
+      "method": "GET",
+      "path": "user/champaigns",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Champions",
+      "name": "Champions list",
+      "method": "GET",
+      "path": "user/champions",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Tranding",
+      "name": "Get Tranding (My Competitions)",
+      "method": "GET",
+      "path": "user/competitions",
+      "query": [
+        "page",
+        "limit",
+        "status (optional)"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Gamification",
+      "name": "Get Daily Mission (Vote on 5 videos)",
+      "method": "GET",
+      "path": "user/daily-mission",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Follow",
+      "name": "3. My Followers",
+      "method": "GET",
+      "path": "user/followers",
+      "query": [
+        "page",
+        "limit"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Follow",
+      "name": "4. My Following",
+      "method": "GET",
+      "path": "user/following",
+      "query": [
+        "page",
+        "limit",
+        "search"
+      ],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 2,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Home Screen",
+      "name": "Home screen",
+      "method": "GET",
+      "path": "user/homeScreen",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "banners",
+          "categories",
+          "trending",
+          "upcomingCompetitions",
+          "pastCompetitions",
+          "topCompetitors"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / KYC",
+      "name": "Get My KYC",
+      "method": "GET",
+      "path": "user/kyc",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / KYC",
+      "name": "Submit KYC",
+      "method": "POST",
+      "path": "user/kyc",
+      "query": [],
+      "body": {
+        "kind": "formdata",
+        "fields": [
+          "docType",
+          "frontImage (file)",
+          "backImage (file)"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Notifications",
+      "name": "Turn notifications on/off (toggle)",
+      "method": "GET",
+      "path": "user/notifications/switch",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Detail",
+      "method": "GET",
+      "path": "user/profile",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 2,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "location",
+          "_id",
+          "firstName",
+          "lastName",
+          "email",
+          "profileImage",
+          "gender",
+          "role",
+          "dob",
+          "isActive",
+          "isDeleted",
+          "notificationAllowed",
+          "googleId",
+          "appleId",
+          "device_token",
+          "device_type",
+          "createdAt",
+          "updatedAt",
+          "__v"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Auth",
+      "name": "Update Profile",
+      "method": "PUT",
+      "path": "user/profile",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "none",
+      "authOmittedInCollection": true,
+      "bodyOmittedInCollection": true,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Gamification",
+      "name": "Get Progress (XP / Level / Streak)",
+      "method": "GET",
+      "path": "user/progress",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Wallet",
+      "name": "Get Wallet",
+      "method": "GET",
+      "path": "user/wallet",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": null
+    },
+    {
+      "folder": "User APIs / Wallet",
+      "name": "Recharge Wallet (Create Razorpay Order)",
+      "method": "POST",
+      "path": "user/wallet/recharge",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "amount"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "keyId",
+          "orderId",
+          "amount",
+          "amountPaise",
+          "currency",
+          "receipt"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Wallet",
+      "name": "Recharge Order Status",
+      "method": "GET",
+      "path": "user/wallet/recharge/:razorpayOrderId",
+      "query": [],
+      "body": {
+        "kind": "none",
+        "fields": []
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "orderId",
+          "paymentId",
+          "amount",
+          "currency",
+          "status",
+          "failureReason",
+          "paidAt",
+          "createdAt"
+        ]
+      }
+    },
+    {
+      "folder": "User APIs / Wallet",
+      "name": "Verify Recharge Payment",
+      "method": "POST",
+      "path": "user/wallet/recharge/verify",
+      "query": [],
+      "body": {
+        "kind": "json",
+        "fields": [
+          "razorpay_order_id",
+          "razorpay_payment_id",
+          "razorpay_signature"
+        ]
+      },
+      "auth": "user",
+      "authOmittedInCollection": false,
+      "bodyOmittedInCollection": false,
+      "fromLiteralIdExample": false,
+      "variants": 1,
+      "response": {
+        "top": [
+          "code",
+          "message",
+          "data"
+        ],
+        "dataIsArray": false,
+        "dataKeys": [
+          "orderId",
+          "paymentId",
+          "status",
+          "credited",
+          "alreadyProcessed",
+          "balance"
+        ]
+      }
+    }
+  ]
+}

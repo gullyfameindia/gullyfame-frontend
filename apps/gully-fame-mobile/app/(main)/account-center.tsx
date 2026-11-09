@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
+import { validatePickedAsset } from "@/utils/fileValidation";
 import {
   View,
   Text,
@@ -11,7 +13,6 @@ import {
   Image,
   Alert,
   ActivityIndicator,
-  Dimensions,
   Modal,
   Animated,
 } from "react-native";
@@ -29,7 +30,6 @@ import { authService } from "@api/services/authService";
 import { BackIcon, CameraIcon, EditIcon, LockIcon } from "@/icons";
 import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
 
-const { width } = Dimensions.get("window");
 
 export default function AccountCenterScreen() {
   const params = useLocalSearchParams();
@@ -49,7 +49,7 @@ export default function AccountCenterScreen() {
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
   const [selfieVisible, setSelfieVisible] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const slideAnim = React.useRef(new Animated.Value(0)).current;
+  const [slideAnim] = React.useState(() => new Animated.Value(0));
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -78,19 +78,27 @@ export default function AccountCenterScreen() {
     loadUserData();
   }, []);
 
+  // handlePickImage is re-created every render; the focus effect reads the latest one through a ref.
+  const handlePickImageRef = React.useRef<() => void>(() => {});
+
   useFocusEffect(
     React.useCallback(() => {
       if (!isEditingRef.current) loadUserData();
 
+      let kycTimer: ReturnType<typeof setTimeout> | null = null;
       if (fromKycFlow && kycStep) {
-        setTimeout(() => {
+        kycTimer = setTimeout(() => {
           if (kycStep === "bio" && !bioRef.current.trim()) {
             setIsEditing(true);
           } else if (kycStep === "image" && !profileImageRef.current) {
-            handlePickImage();
+            handlePickImageRef.current();
           }
         }, 500);
       }
+      // Cancel the pending prompt if the user leaves the screen first.
+      return () => {
+        if (kycTimer) clearTimeout(kycTimer);
+      };
     }, [fromKycFlow, kycStep]),
   );
 
@@ -230,7 +238,7 @@ export default function AccountCenterScreen() {
         if (__DEV__) { /* intentionally ignored */
         }
       }
-    } catch (error) {
+    } catch {
       
       setIsLoading(false);
     }
@@ -304,9 +312,6 @@ export default function AccountCenterScreen() {
         updateData.gender = toBackendGender(gender);
       }
       // Bio and three words are not stored by the backend yet; they stay on this device.
-      const threeWordsFormatted = threeWords
-        .filter((w) => w.trim())
-        .join(" | ");
 
       if (profileImage !== (originalData.profileImage || "")) {
         updateData.profileImage = profileImage || undefined;
@@ -423,6 +428,10 @@ export default function AccountCenterScreen() {
       friction: 11,
     }).start();
   };
+  // Keep the ref pointing at the latest handler (effect, not render, so refs stay render-pure).
+  React.useEffect(() => {
+    handlePickImageRef.current = handlePickImage;
+  });
 
   const closeImagePicker = () => {
     Animated.timing(slideAnim, {
@@ -508,6 +517,11 @@ export default function AccountCenterScreen() {
   };
 
   const processImage = async (asset: ImagePicker.ImagePickerAsset) => {
+    const invalid = validatePickedAsset(asset, ["image"]);
+    if (invalid) {
+      Alert.alert("Can't use this file", invalid);
+      return;
+    }
     try {
       const imageUri = asset.uri;
       let base64Image = asset.base64;
@@ -669,7 +683,7 @@ export default function AccountCenterScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
 
       {}
@@ -1281,7 +1295,7 @@ export default function AccountCenterScreen() {
           </View>
         </Modal>
       )}
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

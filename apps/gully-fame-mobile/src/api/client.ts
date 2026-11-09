@@ -9,6 +9,14 @@ import axios, {
 } from "axios";
 import * as SecureStore from "expo-secure-store";
 import NetInfo from "@react-native-community/netinfo";
+import { API_BASE_URL, SOCKET_URL as CONFIG_SOCKET_URL } from "@/config/env";
+import {
+  MAX_GET_RETRIES,
+  RETRYABLE_STATUS,
+  backoffDelayMs,
+  parseRetryAfterMs,
+} from "./retryPolicy";
+
 
 /**
  * The single HTTP client for the app. Every backend call goes through here.
@@ -23,13 +31,10 @@ import NetInfo from "@react-native-community/netinfo";
  * always means "log in again".
  */
 
-export const BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://backend.gullyfame.com/v1/api").replace(
-  /\/+$/,
-  ""
-);
-
-// Socket.IO is served from the API host itself (default namespace).
-export const SOCKET_URL = BASE_URL.replace(/\/v1\/api$/, "");
+// Both come from src/config/env.ts (validated, HTTPS only). BASE_URL ends with exactly one "/",
+// and request paths are written without a leading slash, exactly as in the API collection.
+export const BASE_URL = API_BASE_URL;
+export const SOCKET_URL = CONFIG_SOCKET_URL;
 
 const TOKEN_STORAGE_KEY = "authToken";
 const REQUEST_TIMEOUT_MS = 30000;
@@ -49,6 +54,8 @@ export class ApiError extends Error {
   isNetworkError: boolean;
   isCancelled: boolean;
   isOffline: boolean;
+  /** Set on HTTP 429: how long the server asked the client to wait. */
+  retryAfterMs: number | null;
 
   constructor(
     message: string,
@@ -63,6 +70,7 @@ export class ApiError extends Error {
     this.isNetworkError = !!opts.isNetworkError;
     this.isCancelled = !!opts.isCancelled;
     this.isOffline = !!opts.isOffline;
+    this.retryAfterMs = opts.retryAfterMs ?? null;
   }
 }
 
@@ -357,7 +365,20 @@ declare module "axios" {
   }
 }
 
-type RetryableConfig = InternalAxiosRequestConfig & { _getRetried?: boolean };
+type RetryableConfig = InternalAxiosRequestConfig & { _retryCount?: number };
+
+/**
+ * Auth rule from the API collection: public/* and auth/* endpoints are called WITHOUT a token
+ * (login, OTP, CMS pages, media libraries), except auth/reset-password, which acts on the signed-in
+ * user. Everything else carries the user token. Enforced here so a service cannot get it wrong.
+ */
+export function requiresUserToken(url: string | undefined): boolean {
+  const path = String(url ?? "").replace(/^https?:\/\/[^/]+/i, "").replace(/^\/+(v1\/api\/)?/, "").replace(/^\/+/, "");
+  if (path.startsWith("auth/reset-password")) return true;
+  return !(path.startsWith("public/") || path.startsWith("auth/"));
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 // Double-submit protection: identical write requests that are still in flight
 // share one network call instead of creating duplicates (double-tap on "Post",
@@ -365,9 +386,29 @@ type RetryableConfig = InternalAxiosRequestConfig & { _getRetried?: boolean };
 const defaultAdapter = getAdapter(axios.defaults.adapter);
 const inflightWrites = new Map<string, Promise<AxiosResponse>>();
 
+const inflightReads = new Map<string, Promise<AxiosResponse>>();
+
 const dedupeAdapter: AxiosAdapter = (config) => {
   const method = (config.method || "get").toLowerCase();
-  if (method === "get" || method === "head" || method === "options") {
+  if (method === "get") {
+    // Identical concurrent reads (two components asking for the same data) share one network call.
+    // A request with its own abort signal is never shared: cancelling it must not cancel the other caller.
+    if (config.signal || config.cancelToken) return defaultAdapter(config);
+    let params = "";
+    try {
+      params = config.params ? JSON.stringify(config.params) : "";
+    } catch {
+      return defaultAdapter(config);
+    }
+    const auth = String((config.headers as any)?.Authorization ?? "");
+    const readKey = `${config.baseURL || ""}${config.url} ${params} ${auth}`;
+    const existingRead = inflightReads.get(readKey);
+    if (existingRead) return existingRead;
+    const pendingRead = defaultAdapter(config).finally(() => inflightReads.delete(readKey));
+    inflightReads.set(readKey, pendingRead);
+    return pendingRead;
+  }
+  if (method === "head" || method === "options") {
     return defaultAdapter(config);
   }
   const body = typeof config.data === "string" ? config.data : "";
@@ -397,10 +438,12 @@ apiClient.interceptors.request.use(async (config) => {
       isOffline: true,
     });
   }
-  if (config.url && !/^https?:/i.test(config.url) && !config.url.startsWith("/")) {
-    config.url = `/${config.url}`;
+  // Paths are relative to BASE_URL (which ends with "/"): drop any leading slash so
+  // "user/profile" and "/user/profile" both resolve to BASE_URL + "user/profile".
+  if (config.url && !/^https?:/i.test(config.url)) {
+    config.url = config.url.replace(/^\/+/, "");
   }
-  if (!config.skipAuth) {
+  if (!config.skipAuth && requiresUserToken(config.url)) {
     const token = await getAuthToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
@@ -431,13 +474,17 @@ apiClient.interceptors.response.use(
 
     const config = error.config as RetryableConfig | undefined;
 
+    const method = (config?.method || "get").toLowerCase();
+    const attempt = config?._retryCount ?? 0;
+    const canRetry =
+      !!config && method === "get" && attempt < MAX_GET_RETRIES && !config.signal?.aborted && isDeviceOnline();
+
     if (!error.response) {
-      const method = (config?.method || "get").toLowerCase();
-      // Retry a GET once after a short network blip. Never replay writes.
-      if (config && method === "get" && !config._getRetried) {
-        config._getRetried = true;
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return apiClient(config);
+      // Network blip or timeout: retry GETs with exponential backoff and jitter. Never replay writes.
+      if (canRetry) {
+        config!._retryCount = attempt + 1;
+        await sleep(backoffDelayMs(attempt));
+        return apiClient(config!);
       }
       const timedOut = error.code === "ECONNABORTED" || error.code === "ETIMEDOUT";
       throw new ApiError(
@@ -449,12 +496,24 @@ apiClient.interceptors.response.use(
     }
 
     const status = error.response.status;
+    const retryAfterMs =
+      status === 429 ? parseRetryAfterMs((error.response.headers as any)?.["retry-after"]) : null;
+
+    // Rate limited / temporarily unavailable: GETs wait (honouring Retry-After for 429) and try again.
+    if (canRetry && RETRYABLE_STATUS.has(status)) {
+      config!._retryCount = attempt + 1;
+      await sleep(retryAfterMs ?? backoffDelayMs(attempt));
+      return apiClient(config!);
+    }
     const body = error.response.data as Partial<ApiEnvelope> | string | undefined;
     const rawMessage = typeof body === "object" && body ? String(body.message ?? "") : "";
     const key = backendKeyFor(rawMessage);
     const backendCode = typeof body === "object" && body && typeof body.code === "number" ? body.code : null;
 
-    const isSessionError = !config?.skipAuth && (status === 401 || key === "invalid_token" || key === "ac_deactivated");
+    const isSessionError =
+      !config?.skipAuth &&
+      requiresUserToken(config?.url) &&
+      (status === 401 || key === "invalid_token" || key === "ac_deactivated");
     if (isSessionError) {
       const deactivated = key === "ac_deactivated";
       await fireUnauthorized(deactivated ? "ac_deactivated" : "invalid_token");
@@ -470,6 +529,7 @@ apiClient.interceptors.response.use(
       if (status >= 500) message = "The server ran into a problem. Please try again shortly.";
       else if (status === 404) message = "This item could not be found.";
       else if (status === 403) message = friendlyMessage("forbidden");
+      else if (status === 429) message = "You're doing that too often. Please wait a moment and try again.";
       else message = GENERIC_MESSAGE;
     } else {
       message = friendlyMessage(key);
@@ -480,6 +540,7 @@ apiClient.interceptors.response.use(
       code: backendCode,
       key,
       data: typeof body === "object" ? body?.data ?? null : null,
+      retryAfterMs,
     });
   }
 );

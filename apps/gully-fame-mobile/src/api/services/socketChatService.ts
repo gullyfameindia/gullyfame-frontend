@@ -1,5 +1,7 @@
+import { AppState, type AppStateStatus } from "react-native";
 import { io, Socket } from "socket.io-client";
-import { SOCKET_URL, getAuthToken } from "../client";
+import { SOCKET_URL } from "@/config/env";
+import { getAuthToken } from "../client";
 import type { ChatMessage } from "./chatService";
 
 /**
@@ -20,9 +22,33 @@ class SocketChatService {
   private connecting: Promise<void> | null = null;
   private messageListeners = new Set<MessageListener>();
   private statusListeners = new Set<StatusListener>();
+  /** True while the user is signed in and wants live chat (between connect() and disconnect()). */
+  private wanted = false;
+  private appStateSubscription: { remove: () => void } | null = null;
+
+  /**
+   * The socket is closed while the app is in the background (no wasted battery/data, and the
+   * server is not holding thousands of idle connections) and reopened when it returns.
+   */
+  private watchAppState() {
+    if (this.appStateSubscription) return;
+    this.appStateSubscription = AppState.addEventListener("change", (state: AppStateStatus) => {
+      if (!this.wanted) return;
+      if (state === "active") {
+        this.connect();
+      } else if (state === "background") {
+        this.socket?.removeAllListeners();
+        this.socket?.disconnect();
+        this.socket = null;
+        this.statusListeners.forEach((l) => l(false));
+      }
+    });
+  }
 
   /** Opens (or reuses) the single socket for the signed-in user. */
   connect(): Promise<void> {
+    this.wanted = true;
+    this.watchAppState();
     if (this.socket?.connected) return Promise.resolve();
     if (this.connecting) return this.connecting;
 
@@ -37,8 +63,11 @@ class SocketChatService {
         auth: { token },
         transports: ["websocket"],
         reconnection: true,
+        // Exponential backoff 1s -> 30s with +/-50% jitter, so clients do not reconnect in lockstep
+        // after a server restart.
         reconnectionDelay: 1000,
         reconnectionDelayMax: 30000,
+        randomizationFactor: 0.5,
       });
 
       socket.on("connect", () => this.statusListeners.forEach((l) => l(true)));
@@ -77,6 +106,9 @@ class SocketChatService {
 
   /** Called on logout. */
   disconnect(): void {
+    this.wanted = false;
+    this.appStateSubscription?.remove();
+    this.appStateSubscription = null;
     this.socket?.removeAllListeners();
     this.socket?.disconnect();
     this.socket = null;

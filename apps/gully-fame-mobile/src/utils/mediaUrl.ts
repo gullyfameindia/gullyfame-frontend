@@ -1,8 +1,8 @@
-import { BASE_URL } from "@/api/client";
+import { API_ORIGIN } from "@/config/env";
 
 // The API returns media either as absolute URLs or as server-relative paths ("/thumbs/a.jpg").
 // Relative paths are served from the API host, not from the /v1/api prefix.
-const SERVER_ORIGIN = BASE_URL.replace(/\/v1\/api\/?$/, "");
+const SERVER_ORIGIN = API_ORIGIN;
 
 export function resolveMediaUrl(path?: string | null): string | null {
   if (!path || typeof path !== "string") return null;

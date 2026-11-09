@@ -1,11 +1,9 @@
 import React, { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
-  Image,
   Modal,
   Platform,
-  ScrollView,
+  FlatList,
   StatusBar,
   StyleSheet,
   Text,
@@ -14,8 +12,10 @@ import {
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { DownloadItem, listDownloads, removeDownload } from "@/services/downloadsStore";
+import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 const formatMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 const formatDate = (iso: string) =>
@@ -84,9 +84,7 @@ export default function DownloadsScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-        </View>
+        <SkeletonList rows={5} avatarSize={72} avatarRadius={10} trailing style={{ padding: 16 }} />
       ) : downloads.length === 0 ? (
         <View style={styles.center}>
           <Ionicons name="download-outline" size={56} color="#EC9A15" />
@@ -94,16 +92,25 @@ export default function DownloadsScreen() {
           <Text style={styles.emptyText}>Tap the download button on a reel to save it here for offline viewing.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          <Text style={styles.summary}>
-            {downloads.length} {downloads.length === 1 ? "video" : "videos"} · {formatMb(totalBytes)}
-          </Text>
-
-          {downloads.map((item) => (
-            <View key={item.id} style={styles.card}>
+        <FlatList
+          data={downloads}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
+          ListHeaderComponent={
+            <Text style={styles.summary}>
+              {downloads.length} {downloads.length === 1 ? "video" : "videos"} · {formatMb(totalBytes)}
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <View style={styles.card}>
               <TouchableOpacity style={styles.thumbWrap} onPress={() => setPlaying(item)} accessibilityLabel="Play">
                 {item.thumbnail ? (
-                  <Image source={{ uri: item.thumbnail }} style={styles.thumb} />
+                  <Image source={{ uri: item.thumbnail }} style={styles.thumb} contentFit="cover" cachePolicy="memory-disk" />
                 ) : (
                   <View style={[styles.thumb, styles.thumbPlaceholder]}>
                     <Ionicons name="play" size={28} color="#EC9A15" />
@@ -127,8 +134,8 @@ export default function DownloadsScreen() {
                 <Ionicons name="trash-outline" size={22} color="#FF6B6B" />
               </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView>
+          )}
+        />
       )}
 
       {playing ? <DownloadPlayer uri={playing.localUri} onClose={() => setPlaying(null)} /> : null}

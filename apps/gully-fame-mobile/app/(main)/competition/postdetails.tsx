@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { safeDecode } from "@/utils/routeParams";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
   Text,
@@ -33,19 +35,19 @@ const categoryOptions = [
 export default function PostDetailsScreen() {
   const params = useLocalSearchParams();
 
-  const imageUri = params.imageUri ? decodeURIComponent(String(params.imageUri)) : undefined;
+  const imageUri = params.imageUri ? safeDecode(String(params.imageUri)) : undefined;
   const competitionId = params.competitionId ? String(params.competitionId) : "";
   const competitionNameParam = params.competitionName ? String(params.competitionName) : "";
   const entryFeeParam = params.entryFee ? String(params.entryFee) : "";
 
-  const competitionName = competitionNameParam ? decodeURIComponent(competitionNameParam) : "Gully Fame Competition";
-  const entryFee = entryFeeParam ? decodeURIComponent(entryFeeParam) : "Free Entry";
+  const competitionName = competitionNameParam ? safeDecode(competitionNameParam) : "Gully Fame Competition";
+  const entryFee = entryFeeParam ? safeDecode(entryFeeParam) : "Free Entry";
 
   const [caption, setCaption] = useState(
-    params.caption ? decodeURIComponent(String(params.caption)) : ""
+    params.caption ? safeDecode(String(params.caption)) : ""
   );
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    params.category ? decodeURIComponent(String(params.category)) : categoryOptions[0]
+    params.category ? safeDecode(String(params.category)) : categoryOptions[0]
   );
   const [makePublic, setMakePublic] = useState(true);
   const [allowMentions, setAllowMentions] = useState(true);
@@ -92,7 +94,7 @@ export default function PostDetailsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
@@ -220,7 +222,7 @@ export default function PostDetailsScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

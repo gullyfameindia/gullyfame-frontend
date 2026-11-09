@@ -144,6 +144,7 @@ export const StatsSection = ({
         <TouchableOpacity 
             style={styles.statItem}
             onPress={onFollowersPress}
+            testID="profile-followers-count"
             activeOpacity={0.7}
         >
             <Text style={styles.statNumber}>{followers ?? "–"}</Text>
@@ -152,6 +153,7 @@ export const StatsSection = ({
         <TouchableOpacity 
             style={styles.statItem}
             onPress={onFollowingPress}
+            testID="profile-following-count"
             activeOpacity={0.7}
         >
             <Text style={styles.statNumber}>{following ?? "–"}</Text>

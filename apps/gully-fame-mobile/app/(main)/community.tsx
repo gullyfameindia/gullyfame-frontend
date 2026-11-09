@@ -1,11 +1,10 @@
 import { router } from "expo-router";
-import { showToast } from "@/components/ui/Toast";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { useState } from "react";
-import { Dimensions, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import BottomNav from "@components/layout/BottomNav";
-import { BackIcon, CommunityIcon, DownIcon, GlobeIcon, UserIconSVG as UserIcon, HomeIconSVG } from "@/icons";
+import { BackIcon, CommunityIcon, UserIconSVG as UserIcon, HomeIconSVG } from "@/icons";
 import { ReelIconSVG as ReelIcon } from "@/icons";
-import Svg, { Path, Rect, G } from "react-native-svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -19,23 +18,9 @@ const tabs = [
 
 export default function CommunityScreen() {
   const [activeTab, setActiveTab] = useState("Community");
-  const [activeFeedTab, setActiveFeedTab] = useState("My feed");
-
-  const handleTabPress = (tabName: string) => {
-    if (tabName === "Home") {
-      router.push("/(main)" as any);
-    } else {
-      setActiveTab(tabName);
-    }
-  };
-
-  const handleBackPress = () => {
-    router.back();
-  };
 
   return (
-    
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" />
 
       {}
@@ -45,6 +30,7 @@ export default function CommunityScreen() {
           <TouchableOpacity
             onPress={() => router.push("/(main)")}
             style={styles.backButton}
+            testID="community-back"
           >
             <BackIcon color="white" size={26} />
           </TouchableOpacity>
@@ -56,99 +42,23 @@ export default function CommunityScreen() {
           Where creators and fans connect, cheer, and collab.
         </Text>
 
-        {}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>All communities</Text>
-
+        {/* The API collection has no communities or community-posts endpoints yet, so nothing here can
+            load or publish. Show one clear note instead of an empty list and a composer that does nothing. */}
+        <View style={styles.comingSoonCard} testID="community-coming-soon">
+          <CommunityIcon color="#EC9A15" />
+          <Text style={styles.comingSoonTitle}>Communities are coming soon</Text>
+          <Text style={styles.comingSoonText}>
+            You&apos;ll be able to join communities, follow their feeds and post updates here. Until then, share
+            your talent through reels and competitions.
+          </Text>
+          <TouchableOpacity
+            style={styles.comingSoonButton}
+            onPress={() => router.push("/(main)/competitions/live" as any)}
+            testID="community-browse-competitions"
+          >
+            <Text style={styles.comingSoonButtonText}>Browse competitions</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* The backend has no communities API yet. */}
-        <Text style={[styles.subtitle, { marginTop: 8 }]}>Communities aren&apos;t available yet.</Text>
-
-        {}
-        <View style={styles.sectionfeed}>
-          <View style={styles.feedTabsContainer}>
-            {}
-            <TouchableOpacity
-              style={styles.feedTab}
-              onPress={() => setActiveFeedTab("My feed")}
-            >
-              <Text
-                style={[
-                  styles.feedTabText,
-                  activeFeedTab === "My feed"
-                    ? styles.feedTabActiveText
-                    : styles.feedTabInactiveText,
-                ]}
-              >
-                My feed
-              </Text>
-              {activeFeedTab === "My feed" && (
-                <View style={styles.activeTabUnderline} />
-              )}
-            </TouchableOpacity>
-
-            {}
-            <TouchableOpacity
-              style={styles.feedTab}
-              onPress={() => setActiveFeedTab("My communities")}
-            >
-              <Text
-                style={[
-                  styles.feedTabText,
-                  activeFeedTab === "My communities"
-                    ? styles.feedTabActiveText
-                    : styles.feedTabInactiveText,
-                ]}
-              >
-                My communities
-              </Text>
-              {activeFeedTab === "My communities" && (
-                <View style={styles.activeTabUnderline} />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {activeFeedTab === "My feed" && (
-          <View style={styles.sectionpost}>
-            <View style={styles.postInputContainer}>
-              <View style={styles.profileIconContainer}>
-                <View style={styles.defaultProfileIcon}>
-                  <Text style={styles.profileInitial}>A</Text>
-                </View>
-              </View>
-
-              {}
-              <View style={styles.postInputContent}>
-                {}
-                <TextInput
-                  style={styles.postInput}
-                  placeholder="Share your latest win, idea, or challenge..."
-                  placeholderTextColor="#9CA3AF"
-                  multiline
-                  textAlignVertical="top"
-                />
-                <View style={styles.postdivider} />
-                {}
-                <View style={styles.postActionsRow}>
-                  <TouchableOpacity style={styles.addPostButton}>
-                    <GlobeIcon color="#6B7280" />
-                    <Text style={styles.addPostText}>Add your post in</Text>
-                    <DownIcon color="#6B7280" />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.publishButton}
-                    onPress={() => showToast("Community posts aren't available yet.", "info")}
-                  >
-                    <Text style={styles.publishButtonText}>Publish Post</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
       </ScrollView>
 
       <BottomNav
@@ -157,7 +67,7 @@ export default function CommunityScreen() {
         tabs={tabs}
         onOpenDrawer={() => {}}
       />
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 
@@ -168,6 +78,40 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   
+  comingSoonCard: {
+    marginHorizontal: 20,
+    marginTop: 28,
+    padding: 24,
+    borderRadius: 16,
+    backgroundColor: "#252525",
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.4)",
+    alignItems: "center",
+    gap: 10,
+  },
+  comingSoonTitle: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  comingSoonText: {
+    color: "#bbb",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  comingSoonButton: {
+    marginTop: 6,
+    backgroundColor: "#EC9A15",
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  comingSoonButtonText: {
+    color: "white",
+    fontWeight: "700",
+  },
   mainScrollContainer: {
     paddingBottom: 100, 
   },
@@ -258,10 +202,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 35,
-  },
-  comingSoonText: {
-    color: "white",
-    fontSize: 12,
   },
   name: {
     color: "white",

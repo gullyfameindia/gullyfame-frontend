@@ -1,11 +1,11 @@
 
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   StatusBar,
   Platform,
@@ -17,6 +17,7 @@ import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { getWallet, toDisplayTransaction, DisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
 import { toastError } from "@/components/ui/Toast";
+import { Skeleton, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
 type Transaction = DisplayTransaction;
 
@@ -51,20 +52,28 @@ export default function HistoryScreen() {
     }
   }, []);
 
-  const loadMore = async () => {
-    if (loadingMore || !hasMore) return;
+  // Synchronous lock: onEndReached can fire twice before state updates.
+  const loadingMoreRef = useRef(false);
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMore) return;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     try {
       const wallet = await getWallet(page + 1, PAGE_SIZE);
-      setTransactionData((prev) => [...prev, ...wallet.transactions.map(toDisplayTransaction)]);
+      setTransactionData((prev) => {
+        // Never show the same transaction twice if a page overlaps.
+        const seen = new Set(prev.map((tx) => tx.id));
+        return [...prev, ...wallet.transactions.map(toDisplayTransaction).filter((tx) => !seen.has(tx.id))];
+      });
       setPage(page + 1);
       setHasMore(wallet.hasMore);
     } catch (error) {
       toastError(getErrorMessage(error));
     } finally {
+      loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  };
+  }, [hasMore, page]);
 
   useFocusEffect(
     useCallback(() => {
@@ -91,10 +100,10 @@ export default function HistoryScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-          <Text style={{ color: "#999", marginTop: 12 }}>Loading wallet data...</Text>
-        </View>
+        <SkeletonRoot style={{ flex: 1, padding: 16, gap: 16 }}>
+          <Skeleton height={120} radius={16} />
+          <SkeletonList rows={6} trailing />
+        </SkeletonRoot>
       ) : loadError ? (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
           <Ionicons name="cloud-offline-outline" size={48} color="#666" />
@@ -104,7 +113,19 @@ export default function HistoryScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <FlatList
+          data={filteredTransactions}
+          keyExtractor={(tx) => tx.id}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={7}
+          removeClippedSubviews
+          ListHeaderComponent={
+            <>
         
         {/* Wallet Card */}
         <View style={styles.walletCard}>
@@ -168,12 +189,14 @@ export default function HistoryScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.transactionsContainer}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          
-          {filteredTransactions.length > 0 ? (
-            filteredTransactions.map((tx) => (
-              <View key={tx.id} style={styles.transactionCard}>
+
+              <View style={styles.transactionsContainer}>
+                <Text style={styles.sectionTitle}>Recent Transactions</Text>
+              </View>
+            </>
+          }
+          renderItem={({ item: tx }) => (
+              <View style={styles.transactionCard}>
                 <View style={styles.txIconContainer}>
                   <Ionicons name={tx.icon as any} size={24} color="#EC9A15" />
                 </View>
@@ -191,8 +214,8 @@ export default function HistoryScreen() {
                   <Text style={styles.txCoinText}>Coins</Text>
                 </View>
               </View>
-            ))
-          ) : (
+          )}
+          ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons name="receipt-outline" size={50} color="#666" />
               <Text style={styles.emptyStateText}>
@@ -201,8 +224,9 @@ export default function HistoryScreen() {
                   : `No ${filter === "earned" ? "earned" : "spent"} transactions`}
               </Text>
             </View>
-          )}
-          {hasMore && (
+          }
+          ListFooterComponent={
+            hasMore ? (
             <TouchableOpacity onPress={loadMore} disabled={loadingMore} style={{ alignItems: "center", paddingVertical: 16 }}>
               {loadingMore ? (
                 <ActivityIndicator color="#EC9A15" />
@@ -210,10 +234,9 @@ export default function HistoryScreen() {
                 <Text style={{ color: "#EC9A15", fontSize: 15 }}>Load more</Text>
               )}
             </TouchableOpacity>
-          )}
-        </View>
-
-      </ScrollView>
+              ) : null
+          }
+        />
       )}
     </View>
   );

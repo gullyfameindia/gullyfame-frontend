@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, G, Circle, Rect } from "react-native-svg";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCategories } from "@/api/services/userService";
 import { getFollowedCategories, setCategoryFollowed } from "@/utils/followedCategories";
 import { TALENT_CATEGORIES } from "@/constants/talentCategories";
@@ -22,33 +21,6 @@ const defaultCategoryData = {
   description: "Discover exciting content in this category",
   banner: require("@assets/images/carousel1.png"),
 };
-const CATEGORY_NAME_FIXES: Record<string, string> = {
-  categor: "Category",
-  category: "Category",
-  dancin: "Dance",
-  dancing: "Dance",
-  musi: "Music",
-  coo: "Talent",
-  cook: "Talent",
-  cooking: "Talent",
-  comedy: "Comedy",
-  fitness: "Fitness",
-};
-
-const normalizeCategoryName = (name?: string) => {
-  const raw = String(name || "").trim();
-  return CATEGORY_NAME_FIXES[raw.toLowerCase()] || raw;
-};
-
-const getStatusLabel = (status: "live" | "upcoming" | "past" | "all") => {
-  const labels = {
-    live: "Live",
-    upcoming: "Upcoming",
-    past: "Past",
-    all: "All",
-  };
-  return labels[status];
-};
 
 const sampleReels: { id: number; thumbnail: any }[] = [];
 
@@ -63,8 +35,8 @@ const topPerformers: any[] = [];
 
 
 const CompetitionCard = React.memo(({ comp, index, type }: any) => {
-  const scaleAnim = React.useRef(new Animated.Value(0)).current;
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const [scaleAnim] = React.useState(() => new Animated.Value(0));
+  const [fadeAnim] = React.useState(() => new Animated.Value(0));
 
   React.useEffect(() => {
     Animated.parallel([
@@ -81,6 +53,8 @@ const CompetitionCard = React.memo(({ comp, index, type }: any) => {
         useNativeDriver: true,
       }),
     ]).start();
+    // Entrance animation runs once on mount; re-running on `index` would replay it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePress = React.useCallback(async () => {
@@ -242,7 +216,7 @@ export default function CategoryDetailScreen() {
   }, []);
   
   
-  const liveDotBlink = React.useRef(new Animated.Value(1)).current;
+  const [liveDotBlink] = React.useState(() => new Animated.Value(1));
   
   React.useEffect(() => {
     const blinkAnimation = Animated.loop(
@@ -261,7 +235,7 @@ export default function CategoryDetailScreen() {
     );
     blinkAnimation.start();
     return () => blinkAnimation.stop();
-  }, []);
+  }, [liveDotBlink]);
 
   return (
     <View style={styles.container}>
@@ -389,7 +363,7 @@ export default function CategoryDetailScreen() {
               if (filteredComps.length === 0) {
                 return (
                   <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>Competitions by category aren&apos;t available yet</Text>
+                    <Text style={styles.emptyStateText}>Competitions by category are coming soon</Text>
                     <Text style={styles.emptyStateSubtext}>Browse all competitions from the home screen.</Text>
                   </View>
                 );
@@ -584,9 +558,6 @@ export default function CategoryDetailScreen() {
                 {topPerformers
                   .filter((d) => d.rank === 2)
                   .map((dancer) => {
-                    const nameParts = dancer.name?.split(' ') || [];
-                    const firstName = nameParts[0] || dancer.name || 'User';
-                    const lastName = nameParts.slice(1).join(' ') || '';
                     return (
                       <TouchableOpacity 
                         key={dancer.rank} 
@@ -688,9 +659,6 @@ export default function CategoryDetailScreen() {
                 {topPerformers
                   .filter((d) => d.rank === 3)
                   .map((dancer) => {
-                    const nameParts = dancer.name?.split(' ') || [];
-                    const firstName = nameParts[0] || dancer.name || 'User';
-                    const lastName = nameParts.slice(1).join(' ') || '';
                     return (
                       <TouchableOpacity 
                         key={dancer.rank} 
@@ -740,7 +708,7 @@ export default function CategoryDetailScreen() {
           <View style={styles.content}>
             {sampleReels.length === 0 && (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>Reels by category aren&apos;t available yet</Text>
+                <Text style={styles.emptyStateText}>Reels by category are coming soon</Text>
                 <Text style={styles.emptyStateSubtext}>Watch the latest reels in GullyReel.</Text>
               </View>
             )}
@@ -808,7 +776,7 @@ export default function CategoryDetailScreen() {
                 key={cat.id}
                 style={[
                   styles.filterOption,
-                  selectedCategoryId == cat.id.toString() && styles.filterOptionActive
+                  String(selectedCategoryId) === cat.id.toString() && styles.filterOptionActive
                 ]}
                 onPress={() => {
                   setSelectedCategoryId(cat.id.toString());
@@ -819,11 +787,11 @@ export default function CategoryDetailScreen() {
                 <Text
                   style={[
                   styles.filterOptionText,
-                  selectedCategoryId == cat.id.toString() && styles.filterOptionTextActive
+                  String(selectedCategoryId) === cat.id.toString() && styles.filterOptionTextActive
                 ]}>
                   {cat.name}
                 </Text>
-                {selectedCategoryId == cat.id.toString() && (
+                {String(selectedCategoryId) === cat.id.toString() && (
                   <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
                     <Path d="M20 6L9 17l-5-5" stroke="#EC9A15" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/>
                   </Svg>

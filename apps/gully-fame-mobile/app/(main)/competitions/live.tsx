@@ -8,12 +8,12 @@ import {
   ScrollView,
   Image,
   StatusBar,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useCompetitionList } from "@/hooks/useCompetitionList";
 import { resolveMediaUrl } from "@/utils/mediaUrl";
+import { SkeletonCards } from "@/components/Skeleton/Skeleton";
 
 const { width } = Dimensions.get("window");
 
@@ -49,9 +49,7 @@ export default function LiveCompetitionsScreen() {
           <Text style={styles.sectionTitle}>Happening Now</Text>
 
           {loading ? (
-            <View style={{ padding: 40, alignItems: "center" }}>
-              <ActivityIndicator size="large" color="#EC9A15" />
-            </View>
+            <SkeletonCards count={3} />
           ) : error ? (
             <TouchableOpacity onPress={reload} style={{ padding: 40, alignItems: "center" }}>
               <Text style={{ color: "#ccc", textAlign: "center" }}>{error}</Text>

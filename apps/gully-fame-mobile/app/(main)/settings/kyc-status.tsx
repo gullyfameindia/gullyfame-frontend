@@ -1,5 +1,6 @@
 
 
+import { validatePickedAsset } from "@/utils/fileValidation";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -9,7 +10,6 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
-  ActivityIndicator,
   Image,
   Alert,
 } from "react-native";
@@ -21,6 +21,7 @@ import { toastSuccess } from "@/components/ui/Toast";
 import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { SkeletonCards } from "@/components/Skeleton/Skeleton";
 
 
 export default function KYCStatusScreen() {
@@ -72,6 +73,11 @@ export default function KYCStatusScreen() {
       quality: 0.8,
     });
     if (result.canceled || !result.assets[0]) return;
+    const invalid = validatePickedAsset(result.assets[0], ["image"]);
+    if (invalid) {
+      Alert.alert("Can't use this file", invalid);
+      return;
+    }
     if (side === "front") setFrontImage(result.assets[0].uri);
     else setBackImage(result.assets[0].uri);
   };
@@ -241,7 +247,7 @@ export default function KYCStatusScreen() {
 
         {}
         {loading ? (
-          <ActivityIndicator size="large" color="#EC9A15" style={{ marginVertical: 40 }} />
+          <SkeletonCards count={3} height={72} style={{ marginVertical: 16 }} />
         ) : loadError ? (
           <TouchableOpacity onPress={loadKyc} style={{ alignItems: "center", marginVertical: 40 }}>
             <Text style={styles.statusDesc}>{loadError}</Text>

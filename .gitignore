@@ -2,17 +2,22 @@
 # Global gitignore for GFM Mobile Source monorepo
 
 # Dependencies
+# NOTE: lockfiles (yarn.lock, package-lock.json) are intentionally tracked
+# so installs are reproducible.
 node_modules/
-yarn.lock
-package-lock.json
-pnpm-lock.yaml
 
-# Environment variables
+# Environment variables (keep *.example templates tracked)
 .env
-.env.local
-.env.*.local
-.env.production
-.env.development
+.env.*
+!.env.example
+!.env.*.example
+
+# Secrets and signing material
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
 
 # IDE
 .vscode/
@@ -81,4 +86,15 @@ exported_videos/
 # Misc
 .turbo/
 *.apk
+*.aab
+*.ipa
 build-*.apk
+
+# Build artifacts and screenshots
+ios/build/
+android/app/build/
+.cxx/
+screenshot*.png
+screen.png
+cam-shot*.png
+app_screenshot*.png

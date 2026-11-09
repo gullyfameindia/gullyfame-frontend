@@ -15,7 +15,7 @@ export default function TermsAndConditions() {
       await AsyncStorage.setItem("termsAccepted", "true");
       
       router.back();
-    } catch (error) {
+    } catch {
       
       router.back();
     }

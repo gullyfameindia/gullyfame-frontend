@@ -1,4 +1,5 @@
 import React from "react";
+import { safeDecode } from "@/utils/routeParams";
 import {
   View,
   Text,
@@ -19,9 +20,9 @@ const { width } = Dimensions.get("window");
 export default function OnboardingVerifyId() {
   const params = useLocalSearchParams();
   const role = params.role ? String(params.role) : "participant";
-  const firstName = params.firstName ? decodeURIComponent(String(params.firstName)) : "Creator";
-  const lastName = params.lastName ? decodeURIComponent(String(params.lastName)) : "";
-  const email = params.email ? decodeURIComponent(String(params.email)) : "";
+  const firstName = params.firstName ? safeDecode(String(params.firstName)) : "Creator";
+  const lastName = params.lastName ? safeDecode(String(params.lastName)) : "";
+  const email = params.email ? safeDecode(String(params.email)) : "";
   const fromVerified = params.fromVerified === "true";
   const fromKycFlow = params.fromKycFlow === "true";
 

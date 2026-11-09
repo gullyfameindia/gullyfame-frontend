@@ -34,7 +34,7 @@ export default function VoiceToolPanel({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(1));
   const durationInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Start recording animation
@@ -68,7 +68,7 @@ export default function VoiceToolPanel({
       let Audio;
       try {
         Audio = require('expo-audio').Audio;
-      } catch (e) {
+      } catch {
         Alert.alert(
           "Audio Not Available",
           "Voice recording requires a native rebuild with expo-audio. This feature is not available in this build."
@@ -110,7 +110,7 @@ export default function VoiceToolPanel({
       durationInterval.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 0.1);
       }, 100);
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to start recording");
     }
   };
@@ -136,7 +136,7 @@ export default function VoiceToolPanel({
       }
 
       setRecording(null);
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to stop recording");
     }
   };
@@ -157,7 +157,7 @@ export default function VoiceToolPanel({
         let Audio;
         try {
           Audio = require('expo-audio').Audio;
-        } catch (e) {
+        } catch {
           Alert.alert(
             "Audio Not Available",
             "Playback requires a native rebuild with expo-audio."
@@ -180,7 +180,7 @@ export default function VoiceToolPanel({
         setSound(newSound);
         setIsPlaying(true);
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to play recording");
     }
   };
@@ -226,7 +226,7 @@ export default function VoiceToolPanel({
         duration: recordingDuration,
         title: `Voice Recording ${new Date().toLocaleTimeString()}`,
       });
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to add voice recording");
     } finally {
       setIsUploading(false);

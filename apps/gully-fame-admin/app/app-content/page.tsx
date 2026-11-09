@@ -15,6 +15,11 @@ import Faqs from './components/Faqs';
 import ContactUs from './components/ContactUs';
 import MediaLibrary from './components/MediaLibrary';
 
+const VALID_TABS = new Set([
+  'branding', 'banners', 'categories', 'rules', 'terms', 'privacy', 'about',
+  'faqs', 'contact', 'music', 'soundfx', 'stickers', 'filters',
+]);
+
 export default function AppContentPage() {
   const userRole = getUserRole();
   const [activeTab, setActiveTab] = useState('branding');
@@ -22,7 +27,8 @@ export default function AppContentPage() {
   // Deep links from the dashboard, e.g. /app-content?tab=faqs
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get('tab');
-    if (tab) setActiveTab(tab);
+    // Only accept known tab ids; ignore anything else in the query string.
+    if (tab && VALID_TABS.has(tab)) setActiveTab(tab);
   }, []);
 
   if (userRole !== 'admin') {

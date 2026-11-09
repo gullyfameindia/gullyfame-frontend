@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { safeIdParam } from "@/utils/routeParams";
 import {
   View,
   Text,
@@ -41,14 +42,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BackIcon, MicIcon, SendIcon } from "@/icons";
 import { chatScreenStyles as styles } from "@/styles/chatScreenStyles";
 import Message from "@/components/ChatMessage/ChatMessage";
+import { Skeleton, SkeletonRoot } from "@/components/Skeleton/Skeleton";
+import { blockUser, reportContent } from "@/utils/moderation";
 
 const getDimensions = () => Dimensions.get("window");
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const REACTION_EMOJIS = ["❤️", "😂", "😮", "😢", "🙏", "🔥"];
 export default function ChatDetailScreen() {
   const { id, name, avatar } = useLocalSearchParams();
-  const chatUserId = id as string;
-  const [dimensions, setDimensions] = useState(getDimensions());
+  const chatUserId = safeIdParam(id);
+  const [, setDimensions] = useState(getDimensions());
   const [message, setMessage] = useState("");
   const [androidKeyboardSpacer, setAndroidKeyboardSpacer] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
@@ -65,10 +68,8 @@ export default function ChatDetailScreen() {
   );
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef<ScrollView>(null);
-  const actionBarPosition = useRef<Animated.ValueXY>(
-    new Animated.ValueXY({ x: 0, y: 0 }),
-  ).current;
-  const actionBarOpacity = useRef(new Animated.Value(0)).current;
+  const [actionBarPosition] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
+  const [actionBarOpacity] = useState(() => new Animated.Value(0));
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   
@@ -78,11 +79,11 @@ export default function ChatDetailScreen() {
   const [chatUserAvatar, setChatUserAvatar] = useState(
     require("@assets/images/user1.png"),
   );
-  const [isOnline, setIsOnline] = useState(false);
+  const [isOnline] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [socketConnected, setSocketConnected] = useState(false);
-  const [socketError, setSocketError] = useState<string | null>(null);
+  const [, setSocketConnected] = useState(false);
+  const [, setSocketError] = useState<string | null>(null);
   useEffect(() => {
     if (Platform.OS === "ios") return;
     const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
@@ -448,6 +449,7 @@ export default function ChatDetailScreen() {
           <>
             <TouchableOpacity
               onPress={() => router.back()}
+              testID="chat-back"
               style={styles.headerButton}
             >
               <BackIcon />
@@ -472,6 +474,7 @@ export default function ChatDetailScreen() {
             <TouchableOpacity
               style={styles.headerButton}
               onPress={() => setShowMenu(true)}
+              testID="chat-menu"
             >
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Circle cx="12" cy="5" r="1.5" fill="#72777A" />
@@ -485,10 +488,11 @@ export default function ChatDetailScreen() {
 
       {}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-          <Text style={styles.loadingText}>Loading messages...</Text>
-        </View>
+        <SkeletonRoot style={{ flex: 1, padding: 16, gap: 14, justifyContent: "flex-end" }}>
+          {["60%", "45%", "70%", "40%", "55%", "65%"].map((w, i) => (
+            <Skeleton key={i} width={w as `${number}%`} height={40} radius={18} style={{ alignSelf: i % 2 ? "flex-end" : "flex-start" }} />
+          ))}
+        </SkeletonRoot>
       ) : (
         <View style={{ flex: 1 }}>
           <ScrollView
@@ -630,6 +634,7 @@ export default function ChatDetailScreen() {
           <TextInput
             style={styles.input}
             placeholder="Type a message..."
+            testID="chat-input"
             placeholderTextColor="#72777A"
             value={message}
             onChangeText={setMessage}
@@ -645,6 +650,7 @@ export default function ChatDetailScreen() {
             (!message.trim() || sending) && styles.sendButtonDisabled,
           ]}
           onPress={handleSend}
+          testID="chat-send"
           disabled={!message.trim() || sending}
         >
           {sending ? (
@@ -775,14 +781,39 @@ export default function ChatDetailScreen() {
               style={styles.menuItem}
               onPress={() => {
                 setShowMenu(false);
-                Alert.alert("Report", "Report this chat?", [
+                Alert.alert("Report", "Report this user's messages? This opens an email to our support team.", [
                   { text: "Cancel", style: "cancel" },
-                  { text: "Report", style: "destructive", onPress: () => {} },
+                  { text: "Report", style: "destructive", onPress: () => reportContent("chat", chatUserId) },
                 ]);
               }}
             >
               <Text style={[styles.menuItemText, styles.menuItemDanger]}>
                 Report
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setShowMenu(false);
+                Alert.alert(
+                  "Block this user?",
+                  "You won't see their reels, comments or chat in your inbox. You can unblock them from Settings & Help > Blocked Users.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Block",
+                      style: "destructive",
+                      onPress: async () => {
+                        await blockUser(chatUserId, (name as string) || "User");
+                        router.back();
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Text style={[styles.menuItemText, styles.menuItemDanger]}>
+                Block
               </Text>
             </TouchableOpacity>
           </View>

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { ArrowLeft, Users, RefreshCw } from 'lucide-react';
+import { usePagedItems } from '@/lib/hooks';
+import Pagination from '@/components/Pagination';
 import { getCompetitionById, getCompetitionParticipants, type Competition, type CompetitionParticipant } from '@/lib/competitionApi';
 
 export default function CompetitionParticipantsPage() {
@@ -14,21 +16,23 @@ export default function CompetitionParticipantsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchData();
-    }
-  }, [params.id]);
+  const competitionId = params.id as string | undefined;
+  const { page, setPage, totalPages, total, pageSize, pageItems } = usePagedItems(participants, 25);
+  // Only the newest request may update state (navigating between competitions can overlap).
+  const latestRequest = useRef(0);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (!competitionId) return;
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
       
       const [compResult, participantsResult] = await Promise.all([
-        getCompetitionById(params.id as string),
-        getCompetitionParticipants(params.id as string),
+        getCompetitionById(competitionId),
+        getCompetitionParticipants(competitionId),
       ]);
+      if (requestId !== latestRequest.current) return;
       
       if (compResult.success && compResult.data) {
         setCompetition(compResult.data);
@@ -40,12 +44,17 @@ export default function CompetitionParticipantsPage() {
         setError(participantsResult.message || 'Failed to fetch participants');
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching data:', err);
       setError(err.message || 'Failed to load data');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, [competitionId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -127,10 +136,10 @@ export default function CompetitionParticipantsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {participants.map((participant, index) => (
-                  <tr key={participant.id || participant._id || index} className="hover:bg-gray-50">
+                {pageItems.map((participant, localIndex) => (
+                  <tr key={participant.id || participant._id || localIndex} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {participant.rank || index + 1}
+                      {participant.rank || (page - 1) * pageSize + localIndex + 1}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -172,6 +181,7 @@ export default function CompetitionParticipantsPage() {
                 ))}
               </tbody>
             </table>
+            <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
           </div>
         )}
       </div>

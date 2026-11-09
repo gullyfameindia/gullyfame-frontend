@@ -9,11 +9,10 @@ import SafeImage from "@/components/SafeImage";
 import { useState } from "react";
 import { CrossIcon, FansIcon, TrophyIcon, VideoEditorIcon } from "@/icons";
 import { styles } from "./styles";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authService } from "@/api";
 import { router } from "expo-router";
 import { useUserRole } from "@/contexts/UserRoleContext";
-const upgradeBanner = require("@assets/images/becomeaparticipant.png");
+const upgradeBanner = require("@assets/images/becomeaparticipant.webp");
 type benefits = {
     text: string;
     icon?: any;
@@ -52,7 +51,7 @@ function UpgradeFanToParticipantModal({
                 router.replace(`/profile/me?refresh=${Date.now()}`);
             } else { /* intentionally ignored */
             }
-        } catch (err) { /* intentionally ignored */
+        } catch { /* intentionally ignored */
         } finally {
             setChangingRole(false);
         }

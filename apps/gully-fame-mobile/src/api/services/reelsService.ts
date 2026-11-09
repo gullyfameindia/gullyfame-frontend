@@ -1,4 +1,5 @@
 import { apiGet, apiPost, toResult } from "../client";
+import { resolveMediaUrl } from "@/utils/mediaUrl";
 
 /**
  * Reels feed and interactions.
@@ -89,8 +90,9 @@ export function toUiReel(reel: FeedReel, index = 0): UiReel {
     profileImage: reel.author?.profile_picture_url || "",
     caption: reel.caption || "",
     musicName: reel.music?.name || "Original Sound",
-    video: { uri: reel.video_url },
-    thumbnail: reel.thumbnail_url || "",
+    // The API may send server-relative paths ("/videos/a.mp4"); the player needs a full URL.
+    video: { uri: resolveMediaUrl(reel.video_url) || "" },
+    thumbnail: resolveMediaUrl(reel.thumbnail_url) || "",
     likes: reel.stats?.likes || 0,
     votes: reel.stats?.votes || 0,
     comments: reel.stats?.comments || 0,

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert, ActivityIndicator, TextInput } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -95,7 +96,7 @@ export default function AddMoneyScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
 
       {/* Header */}
@@ -237,7 +238,7 @@ export default function AddMoneyScreen() {
           <View style={{ height: 30 }} />
         </ScrollView>
       )}
-    </View>
+    </KeyboardAvoidingScreen>
   );
 }
 

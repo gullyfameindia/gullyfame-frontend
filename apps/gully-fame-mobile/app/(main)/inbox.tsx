@@ -13,7 +13,6 @@ import {
   PanResponder,
   Modal,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
@@ -24,8 +23,10 @@ import { socketChatService } from "@api/services/socketChatService";
 import { getErrorMessage } from "@api/client";
 import { getChatContacts, fallbackChatName } from "@utils/chatContacts";
 import { toastError, toastSuccess } from "@components/ui/Toast";
+import { blockUser, getBlockedUserIds, reportContent } from "@/utils/moderation";
 import { BackIcon } from "@/icons";
 import { convertDateToChatTimePassed } from "@/utils/convertDateToChatTimePassed";
+import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 const getDimensions = () => Dimensions.get("window");
 
@@ -44,7 +45,7 @@ export default function InboxScreen() {
   const [activeTab, setActiveTab] = useState<"All" | "Archived">("All");
   const [dimensions, setDimensions] = useState(getDimensions());
   const insets = useSafeAreaInsets();
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [slideAnim] = useState(() => new Animated.Value(0));
   const [allChatsList, setAllChatsList] = useState<ChatItem[]>([]);
   const [archivedChatsList, setArchivedChatsList] = useState<ChatItem[]>([]);
   const swipeAnimations = useRef<{ [key: string]: Animated.Value }>({});
@@ -69,10 +70,11 @@ export default function InboxScreen() {
   const loadChats = useCallback(async () => {
     setLoadError("");
     try {
-      const [all, archived, contacts] = await Promise.all([
+      const [all, archived, contacts, blocked] = await Promise.all([
         getChatList("all"),
         getChatList("archived"),
         getChatContacts(),
+        getBlockedUserIds(),
       ]);
       const toItem = (chat: ChatListItem): ChatItem => {
         const contact = contacts[chat.chatter_user_id];
@@ -87,8 +89,9 @@ export default function InboxScreen() {
           avatar: contact?.avatar ? { uri: contact.avatar } : require("@assets/images/user1.png"),
         };
       };
-      setAllChatsList(all.chatlist.map(toItem));
-      setArchivedChatsList(archived.chatlist.map(toItem));
+      // Conversations with users the viewer has blocked are hidden.
+      setAllChatsList(all.chatlist.filter((c) => !blocked.has(c.chatter_user_id)).map(toItem));
+      setArchivedChatsList(archived.chatlist.filter((c) => !blocked.has(c.chatter_user_id)).map(toItem));
     } catch (error) {
       setLoadError(getErrorMessage(error));
     } finally {
@@ -124,7 +127,7 @@ export default function InboxScreen() {
       tension: 50,
       friction: 7,
     }).start();
-  }, [activeTab]);
+  }, [activeTab, slideAnim]);
 
   
   const scale = (size: number) => (dimensions.width / 375) * size;
@@ -467,10 +470,7 @@ export default function InboxScreen() {
 
       {}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-          <Text style={styles.loadingText}>Loading chats...</Text>
-        </View>
+        <SkeletonList rows={8} trailing style={{ paddingHorizontal: 16 }} />
       ) : (
         <ScrollView
           style={styles.scrollView}
@@ -852,7 +852,25 @@ export default function InboxScreen() {
           <TouchableOpacity
             style={styles.selectionActionButton}
             onPress={() => {
-              Alert.alert("Not available yet", "Blocking users isn't available yet.");
+              Alert.alert("Block", `Block ${selectedChats.length} user(s)? You won't see their chats, reels or comments.`, [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Block",
+                  style: "destructive",
+                  onPress: async () => {
+                    const all = [...allChatsList, ...archivedChatsList];
+                    for (const id of selectedChats) {
+                      const chat = all.find((c) => c.id === id);
+                      await blockUser(id, chat?.name || "User");
+                    }
+                    setAllChatsList((prev) => prev.filter((c) => !selectedChats.includes(c.id)));
+                    setArchivedChatsList((prev) => prev.filter((c) => !selectedChats.includes(c.id)));
+                    setSelectedChats([]);
+                    setIsSelectionMode(false);
+                    toastSuccess("Blocked");
+                  },
+                },
+              ]);
             }}
           >
             <Text style={styles.selectionActionText}>Block</Text>
@@ -860,13 +878,13 @@ export default function InboxScreen() {
           <TouchableOpacity
             style={styles.selectionActionButton}
             onPress={() => {
-              Alert.alert("Report", `Report ${selectedChats.length} user(s)?`, [
+              Alert.alert("Report", `Report ${selectedChats.length} user(s)? This opens an email to our support team.`, [
                 { text: "Cancel", style: "cancel" },
                 {
                   text: "Report",
                   style: "destructive",
                   onPress: () => {
-                    Alert.alert("Not available yet", "Reporting isn't available yet. Contact support@gullyfame.com.");
+                    reportContent("user", selectedChats.join(", "));
                     setSelectedChats([]);
                     setIsSelectionMode(false);
                   },

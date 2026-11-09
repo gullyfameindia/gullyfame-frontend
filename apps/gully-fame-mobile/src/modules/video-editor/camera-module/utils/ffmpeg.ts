@@ -65,8 +65,11 @@ export async function runFFmpeg(
   if (!ReturnCode.isSuccess(returnCode)) {
     const logs = (await session.getAllLogsAsString()) ?? "";
     const code = returnCode?.getValue() ?? null;
-    // One line per entry: Android's logcat truncates single entries over ~4 KB.
-    logs.split("\n").slice(-40).forEach((line) => line.trim() && console.warn(`[${label}] ${line}`));
+    // Development only: FFmpeg logs contain local file paths, so they never reach release logcat.
+    if (__DEV__) {
+      // One line per entry: Android's logcat truncates single entries over ~4 KB.
+      logs.split("\n").slice(-40).forEach((line) => line.trim() && console.warn(`[${label}] ${line}`));
+    }
     throw new FFmpegError(`${label} failed (FFmpeg return code ${code})`, logs, code);
   }
 

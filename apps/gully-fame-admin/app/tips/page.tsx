@@ -1,11 +1,13 @@
 'use client';
 
 import DashboardLayout from '@/components/DashboardLayout';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { DollarSign, CheckCircle, XCircle, Eye, Trophy, User, Mail, Phone, RefreshCw, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { getUserRole } from '@/lib/auth';
 import { getEarnings, getWinners, getTopEarners, type Earnings, type Winner } from '@/lib/earningsApi';
+import { usePagedItems } from '@/lib/hooks';
+import Pagination from '@/components/Pagination';
 
 export default function TipsPage() {
   const userRole = getUserRole();
@@ -23,13 +25,11 @@ export default function TipsPage() {
     totalWinners: 0,
   });
 
-  useEffect(() => {
-    if (userRole === 'admin') {
-      fetchData();
-    }
-  }, [userRole]);
+  // Only the newest request may update state (rapid refresh clicks can overlap).
+  const latestRequest = useRef(0);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -39,38 +39,52 @@ export default function TipsPage() {
         getWinners(),
         getTopEarners(),
       ]);
+      if (requestId !== latestRequest.current) return;
+
+      // Compute stats from the freshly fetched data. Reading the `earnings` / `winners`
+      // state here would use the values from before this request (empty on first load).
+      const fetchedEarnings: Earnings[] =
+        earningsResult.success && earningsResult.data ? earningsResult.data.items || [] : [];
+      const fetchedWinners: Winner[] =
+        winnersResult.success && winnersResult.data ? winnersResult.data || [] : [];
 
       if (earningsResult.success && earningsResult.data) {
-        setEarnings(earningsResult.data.items || []);
+        setEarnings(fetchedEarnings);
       }
 
       if (winnersResult.success && winnersResult.data) {
-        setWinners(winnersResult.data || []);
+        setWinners(fetchedWinners);
       }
 
       if (topEarnersResult.success && topEarnersResult.data) {
         setTopEarners(topEarnersResult.data || []);
       }
 
-      
-      const tipsData = earnings.filter(e => e.category === 'TIP' || e.type === 'CREDIT');
+      const tipsData = fetchedEarnings.filter(e => e.category === 'TIP' || e.type === 'CREDIT');
       const totalTips = tipsData.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const totalCoins = earnings
+      const totalCoins = fetchedEarnings
         .filter(e => e.category === 'COMPETITION_WIN' || e.category === 'WINNER')
         .reduce((sum, e) => sum + (e.amount || 0), 0);
 
       setStats({
         totalTips,
         totalCoinsDistributed: totalCoins,
-        totalWinners: winners.length,
+        totalWinners: fetchedWinners.length,
       });
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching tips and earnings data:', err);
       setError(err.message || 'Failed to load data');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (userRole === 'admin') {
+      fetchData();
+    }
+  }, [userRole, fetchData]);
 
   
   const allData = [
@@ -112,6 +126,8 @@ export default function TipsPage() {
     const dateB = b.date ? new Date(b.date).getTime() : 0;
     return dateB - dateA;
   });
+
+  const { page, setPage, totalPages, total, pageSize, pageItems } = usePagedItems(allData, 20);
 
   if (userRole !== 'admin') {
     return <div>Access Denied</div>;
@@ -212,7 +228,7 @@ export default function TipsPage() {
                       </td>
                     </tr>
                   ) : (
-                    allData.map((item) => (
+                    pageItems.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-3 py-3 whitespace-nowrap">
                         {item.type === 'tip' ? (
@@ -290,6 +306,7 @@ export default function TipsPage() {
                   )}
                 </tbody>
               </table>
+              <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
             </div>
           </div>
         )}

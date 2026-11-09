@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Mail, Phone, Calendar, Wallet, Gift, Users, UserPlus, Ban, Key, Shield, Tag, Power, Loader2 } from 'lucide-react';
@@ -22,13 +22,14 @@ export default function UserDetailPage() {
   const [newPassword, setNewPassword] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => {
-    if (userId) {
-      fetchUserData();
-    }
-  }, [userId]);
+  // Synchronous lock for status/password actions (state alone can't stop a same-tick double click).
+  const actionLock = useRef(false);
+  // Only the newest request may update state.
+  const latestRequest = useRef(0);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
+    if (!userId) return;
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
@@ -37,6 +38,7 @@ export default function UserDetailPage() {
         getUserById(userId),
         getUserEarnings(userId),
       ]);
+      if (requestId !== latestRequest.current) return;
       
       if (userResult.success && userResult.data) {
         setUser(userResult.data);
@@ -48,12 +50,17 @@ export default function UserDetailPage() {
         setEarnings(earningsResult.data.items || []);
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching user data:', err);
       setError(err.message || 'Failed to load user data');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
 
   const handleStatusUpdate = async () => {
     if (!user) return;
@@ -61,6 +68,8 @@ export default function UserDetailPage() {
     
     if (!confirm(`Change status to ${newStatus}?`)) return;
     
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setIsUpdating(true);
       const result = await updateUserStatus(userId, newStatus);
@@ -75,6 +84,7 @@ export default function UserDetailPage() {
       console.error('Error updating status:', err);
       alert('Failed to update user status');
     } finally {
+      actionLock.current = false;
       setIsUpdating(false);
     }
   };
@@ -85,6 +95,8 @@ export default function UserDetailPage() {
       return;
     }
     
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setIsUpdating(true);
       const result = await resetUserPassword(userId, newPassword);
@@ -100,6 +112,7 @@ export default function UserDetailPage() {
       console.error('Error resetting password:', err);
       alert('Failed to reset password');
     } finally {
+      actionLock.current = false;
       setIsUpdating(false);
     }
   };

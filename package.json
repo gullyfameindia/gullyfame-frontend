@@ -13,7 +13,11 @@
     "start": "npm run start --workspace=apps/gully-fame-admin",
     "lint": "npm run lint --workspace=apps/gully-fame-admin",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "check:api": "node scripts/api-contract/check-api-contract.mjs",
+    "check:api:report": "node scripts/api-contract/check-api-contract.mjs --report",
+    "contract:extract": "node scripts/api-contract/extract-contract.mjs",
+    "test:admin-api": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test --import ./scripts/api-contract/ts-resolve.mjs apps/gully-fame-admin/lib/__tests__/http.test.mts"
   },
   "dependencies": {
     "expo": "~57.0.29",

@@ -21,23 +21,6 @@ export const styles = StyleSheet.create({
     paddingTop: scaleVertical(60),
     paddingBottom: scaleVertical(20),
   },
-  heroBannerWrapper: {
-    width: "100%",
-    height: hp(45),
-    justifyContent: "flex-end",
-  },
-  heroBannerImage: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  heroBannerCaption: {
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
-    paddingHorizontal: wp(6),
-    paddingTop: scaleVertical(12),
-    paddingBottom: scaleVertical(28),
-  },
   gfiLogoImage: {
     width: wp(25),
     height: wp(25),

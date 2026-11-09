@@ -1,17 +1,41 @@
 {
   "build": {
-    "preview": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
       "android": {
         "buildType": "apk",
         "env": {
-          "EXPO_PUBLIC_ENV": "preview",
-          "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+          "EXPO_PUBLIC_ENV": "development",
+          "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
         }
       },
       "ios": {
         "simulator": true,
         "env": {
-          "EXPO_PUBLIC_ENV": "preview"
+          "EXPO_PUBLIC_ENV": "development",
+          "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
+        }
+      }
+    },
+    "preview": {
+      "android": {
+        "buildType": "apk",
+        "env": {
+          "EXPO_PUBLIC_ENV": "preview",
+          "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+          "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
+        }
+      },
+      "ios": {
+        "simulator": true,
+        "env": {
+          "EXPO_PUBLIC_ENV": "preview",
+          "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
         }
       }
     },
@@ -19,13 +43,30 @@
       "android": {
         "buildType": "app-bundle",
         "env": {
-          "EXPO_PUBLIC_ENV": "production"
+          "EXPO_PUBLIC_ENV": "production",
+          "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
         }
       },
       "ios": {
         "env": {
-          "EXPO_PUBLIC_ENV": "production"
+          "EXPO_PUBLIC_ENV": "production",
+          "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
         }
+      },
+      "autoIncrement": true
+    }
+  },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }

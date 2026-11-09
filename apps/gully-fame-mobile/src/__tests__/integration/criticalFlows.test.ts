@@ -3,8 +3,6 @@
  * Tests end-to-end flows without UI (API + logic)
  */
 
-import { authService } from '@/api/services/authService';
-import { reelsService } from '@/api/services/reelsService';
 
 describe('Critical Flow Integration Tests', () => {
   const mockUserId = 'test-user-123';

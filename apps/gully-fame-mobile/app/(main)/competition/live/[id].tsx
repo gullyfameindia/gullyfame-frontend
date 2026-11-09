@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { safeIdParam } from "@/utils/routeParams";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   View,
@@ -14,7 +15,6 @@ import {
   Platform,
   Linking,
   LayoutAnimation,
-  ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,6 +28,7 @@ import { getCompetitionDetails, getLeaderboard } from "@/api/services/competitio
 import { getErrorMessage } from "@/api/client";
 import { resolveMediaUrl } from "@/utils/mediaUrl";
 import { openCompetition } from "@/utils/openCompetition";
+import { SkeletonLoader } from "@/components/Skeleton";
 
 const { height } = Dimensions.get("window");
 
@@ -73,8 +74,8 @@ export default function LiveCompetitionScreen() {
   const { role, isLoading } = useUserRole();
   const [isRulesExpanded, setIsRulesExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
-  const liveDotOpacity = useRef(new Animated.Value(1)).current;
-  const competitionIdFromParams = String(params.id);
+  const [liveDotOpacity] = useState(() => new Animated.Value(1));
+  const competitionIdFromParams = safeIdParam(params.id);
   const [competitionData, setCompetitionData] = useState<any>(null);
   
   useEffect(() => {
@@ -130,7 +131,7 @@ export default function LiveCompetitionScreen() {
   const [leaderboardModalVisible, setLeaderboardModalVisible] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const [shareModalVisible, setShareModalVisible] = useState(false);
-  const shareSlideAnim = useRef(new Animated.Value(height)).current;
+  const [shareSlideAnim] = useState(() => new Animated.Value(height));
 
   const toggleRules = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -171,7 +172,7 @@ export default function LiveCompetitionScreen() {
         duration: 300,
         useNativeDriver: true,
       }).start(() => setShareModalVisible(false));
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Unable to share. Please try again.");
     }
   };
@@ -180,7 +181,7 @@ export default function LiveCompetitionScreen() {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
         {loading ? (
-          <ActivityIndicator size="large" color="#EC9A15" />
+          <SkeletonLoader style={{ alignSelf: "stretch" }} />
         ) : (
           <>
             <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError || "Competition not found."}</Text>

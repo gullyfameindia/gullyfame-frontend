@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { ArrowLeft, Edit, Calendar, Trophy, Users, DollarSign, FileText, RefreshCw, Check, X, Loader2 } from 'lucide-react';
@@ -17,33 +17,43 @@ export default function CompetitionDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchCompetition();
-    }
-  }, [params.id]);
+  const competitionId = params.id as string | undefined;
+  // Synchronous lock for approve/reject (state alone can't stop a same-tick double click).
+  const actionLock = useRef(false);
+  // Only the newest request may update state.
+  const latestRequest = useRef(0);
 
-  const fetchCompetition = async () => {
+  const fetchCompetition = useCallback(async () => {
+    if (!competitionId) return;
+    const requestId = ++latestRequest.current;
     try {
       setLoading(true);
       setError(null);
-      const result = await getCompetitionById(params.id as string);
+      const result = await getCompetitionById(competitionId);
+      if (requestId !== latestRequest.current) return;
       if (result.success && result.data) {
         setCompetition(result.data);
       } else {
         setError(result.message || 'Failed to fetch competition');
       }
     } catch (err: any) {
+      if (requestId !== latestRequest.current) return;
       console.error('Error fetching competition:', err);
       setError(err.message || 'Failed to load competition');
     } finally {
-      setLoading(false);
+      if (requestId === latestRequest.current) setLoading(false);
     }
-  };
+  }, [competitionId]);
+
+  useEffect(() => {
+    fetchCompetition();
+  }, [fetchCompetition]);
 
   const handleApprove = async (id: string) => {
     if (!confirm('Are you sure you want to approve this competition?')) return;
     
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setLoadingAction(true);
       const result = await approveCompetition(id);
@@ -56,6 +66,7 @@ export default function CompetitionDetailPage() {
     } catch (err: any) {
       alert('Error approving competition: ' + err.message);
     } finally {
+      actionLock.current = false;
       setLoadingAction(false);
     }
   };
@@ -63,6 +74,8 @@ export default function CompetitionDetailPage() {
   const handleReject = async (id: string) => {
     if (!confirm('Are you sure you want to reject this competition?')) return;
     
+    if (actionLock.current) return;
+    actionLock.current = true;
     try {
       setLoadingAction(true);
       const result = await rejectCompetition(id);
@@ -75,6 +88,7 @@ export default function CompetitionDetailPage() {
     } catch (err: any) {
       alert('Error rejecting competition: ' + err.message);
     } finally {
+      actionLock.current = false;
       setLoadingAction(false);
     }
   };
@@ -84,6 +98,9 @@ export default function CompetitionDetailPage() {
     
     
     if (confirm('Declare winners and distribute coins? This action cannot be undone.')) {
+      // Irreversible coin distribution: block a second click before React re-renders.
+      if (actionLock.current) return;
+      actionLock.current = true;
       try {
         setLoadingAction(true);
         
@@ -105,6 +122,7 @@ export default function CompetitionDetailPage() {
       } catch (err: any) {
         alert('Error declaring winners: ' + err.message);
       } finally {
+        actionLock.current = false;
         setLoadingAction(false);
       }
     }

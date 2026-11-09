@@ -9,9 +9,9 @@ import {
   View,
   Platform,
   Animated,
-  ActivityIndicator,
   Alert,
   StyleSheet,
+  AppState,
 } from "react-native";
 import { homeScreenStyles as styles } from "@/styles/homeScreenStyles";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,12 +36,10 @@ import {
   ViewsEyeIcon,
   CaretRightIcon,
   LimitedTimeEventClockIcon,
-  ThumbsUpIcon,
-  EyeIcon,
 } from "@/icons";
-import { homePageHeroSlidesAPIData } from "@/types/homePageHeroSlides";
 import SafeImage from "@/components/SafeImage";
 import HeroBannerCarousel from "@/components/home/HeroBannerCarousel/HeroBannerCarousel";
+import { Skeleton, SkeletonCaption, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 import CategoriesCarousel from "@/components/home/CategoriesCarousel/CategoriesCarousel";
 import { getAuthToken, getErrorMessage } from "@/api/client";
 import { getCachedHomeScreen, getHomeScreen, HomeScreenData } from "@/api/services/homeService";
@@ -61,7 +59,7 @@ interface FeedCard {
   id: string;
   title: string;
   image: string;
-  likes: number;
+  /** Not shown; the Popular tab sorts by it. */
   votes: number;
 }
 
@@ -69,7 +67,6 @@ const reelToCard = (reel: FeedReel): FeedCard => ({
   id: reel._id,
   title: reel.caption || reel.author?.username || "",
   image: reel.thumbnail_url || "",
-  likes: reel.stats?.likes || 0,
   votes: reel.stats?.votes || 0,
 });
 
@@ -86,7 +83,6 @@ export default function GullyFameHome() {
   const feedLoadedRef = useRef(false);
 
   // null until the first home data (saved copy or server) arrives, so no placeholder slides flash.
-  const [banners, setBanners] = useState<homePageHeroSlidesAPIData[] | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [trendingData, setTrendingData] = useState<FeedCard[]>([]);
   const [forYouData, setForYouData] = useState<FeedCard[]>([]);
@@ -98,9 +94,9 @@ export default function GullyFameHome() {
   const [topCompetitors, setTopCompetitors] = useState<any[]>([]);
 
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const liveDotBlink = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
+  const [liveDotBlink] = useState(() => new Animated.Value(1));
+  const [pulseAnim] = useState(() => new Animated.Value(1));
   // True once the banner has scrolled away; only this flip re-renders, not every scroll frame.
   const [headerStuck, setHeaderStuck] = useState(false);
 
@@ -110,11 +106,10 @@ export default function GullyFameHome() {
   const [feedError, setFeedError] = useState("");
 
   const applyHome = useCallback((data: HomeScreenData) => {
-    setBanners(data.banners);
     setCategories(
       data.categories.map((c) => ({ id: c.id, name: c.name, imageUrl: c.icon, icon: categoryIconKey(c.name) }))
     );
-    setTrendingData(data.trending.map((t) => ({ id: t.id, title: t.title, image: t.image, likes: t.likes, votes: t.views })));
+    setTrendingData(data.trending.map((t) => ({ id: t.id, title: t.title, image: t.image, votes: t.views })));
     setLiveCompetitions(data.liveCompetitions);
     setPastCompetitions(data.pastCompetitions);
     setUpcomingCompeitions(data.upcomingCompetitions);
@@ -140,8 +135,6 @@ export default function GullyFameHome() {
       applyHome(data);
     } catch (error) {
       setHomeError(getErrorMessage(error));
-      // Offline with nothing saved: stop waiting so the built-in slides can show.
-      setBanners((prev) => prev ?? []);
     }
   }, [applyHome]);
 
@@ -177,10 +170,34 @@ export default function GullyFameHome() {
     }, [loadHome, loadFeed, refreshUnreadCount])
   );
 
-  useEffect(() => {
-    const pollInterval = setInterval(refreshUnreadCount, 30000);
-    return () => clearInterval(pollInterval);
-  }, [refreshUnreadCount]);
+  // Poll the unread badge only while this screen is focused AND the app is in the foreground.
+  useFocusEffect(
+    useCallback(() => {
+      let pollInterval: ReturnType<typeof setInterval> | null = null;
+      const start = () => {
+        if (!pollInterval) pollInterval = setInterval(refreshUnreadCount, 30000);
+      };
+      const stop = () => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      };
+      if (AppState.currentState === "active") start();
+      const subscription = AppState.addEventListener("change", (state) => {
+        if (state === "active") {
+          refreshUnreadCount();
+          start();
+        } else {
+          stop();
+        }
+      });
+      return () => {
+        stop();
+        subscription.remove();
+      };
+    }, [refreshUnreadCount])
+  );
 
   const openReel = (reelId: string) =>
     router.push({ pathname: "/(main)/reel", params: { startReelId: reelId } } as any);
@@ -262,7 +279,7 @@ export default function GullyFameHome() {
       blinkAnimation.stop();
       heartbeatAnimation.stop();
     };
-  }, []);
+  }, [fadeAnim, liveDotBlink, pulseAnim]);
 
   const tabs = [
     { name: "Home", icon: HomeIconSVG, label: "" },
@@ -289,7 +306,7 @@ export default function GullyFameHome() {
         }
       }
       router.push(route as any);
-    } catch (e) {
+    } catch {
       setDrawerVisible(true);
     }
   };
@@ -323,7 +340,7 @@ export default function GullyFameHome() {
                 <Rect width="100%" height="100%" fill="url(#radialGradient)" />
               </Svg>
             </View>
-            <HeroBannerCarousel slides={banners} />
+            <HeroBannerCarousel />
             {/* Hidden while the sticky header shows the same icons, so they never appear twice. */}
             <View
               style={[
@@ -338,6 +355,7 @@ export default function GullyFameHome() {
               <TouchableOpacity
                 style={styles.heroIconButton}
                 onPress={() => checkAuthAndNavigate("/(main)/settings/notifications")}
+                testID="home-notifications"
               >
                 <NotificationIcon />
                 {unreadCount > 0 && <View style={styles.notificationDot} />}
@@ -345,6 +363,7 @@ export default function GullyFameHome() {
               <TouchableOpacity
                 style={styles.heroIconButton}
                 onPress={() => checkAuthAndNavigate("/(main)/inbox")}
+                testID="home-inbox"
               >
                 <ChatIcon />
               </TouchableOpacity>
@@ -385,6 +404,7 @@ export default function GullyFameHome() {
                 <TouchableOpacity
                   key={tab.id}
                   onPress={() => setFeedTab(tab.id as any)}
+                  testID={`home-feed-tab-${tab.id}`}
                   style={[
                     {
                       paddingHorizontal: 14,
@@ -408,10 +428,14 @@ export default function GullyFameHome() {
             </ScrollView>
 
             {feedLoading ? (
-              <View style={{ paddingVertical: 40, justifyContent: "center", alignItems: "center" }}>
-                <ActivityIndicator size="large" color="#EC9A15" />
-                <Text style={{ color: "#999", marginTop: 12 }}>Loading feed...</Text>
-              </View>
+              <SkeletonRoot style={[styles.trendingScroll, { flexDirection: "row", overflow: "hidden" }]}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={styles.trendingReelCardWrapper}>
+                    <Skeleton style={styles.trendingReelCard} radius={0} />
+                    <SkeletonCaption />
+                  </View>
+                ))}
+              </SkeletonRoot>
             ) : feedTab !== "trending" && feedError ? (
               <TouchableOpacity onPress={loadFeed} style={{ paddingVertical: 40, alignItems: "center" }}>
                 <Text style={{ color: "#999", fontSize: 14, textAlign: "center" }}>{feedError}</Text>
@@ -446,26 +470,16 @@ export default function GullyFameHome() {
                         style={styles.trendingReelImage}
                         imageUrl={resolveMediaUrl(reel.image) || undefined}
                         defaultImage={require("@assets/images/trending_reel2.png")}
-                        resizeMode="contain"
+                        resizeMode="cover"
                       />
                     </TouchableOpacity>
-                    <Text style={styles.trendingReelTitleBelow} numberOfLines={1}>
+                    <Text
+                      style={styles.trendingReelTitleBelow}
+                      numberOfLines={1}
+                      onPress={() => openReel(reel.id)}
+                    >
                       {reel.title}
                     </Text>
-                    <View style={styles.trendingReelStatsBelow}>
-                      <View style={styles.statItem}>
-                        <ThumbsUpIcon />
-                        <Text style={styles.statText}>
-                          {convertToFormattedString(Number(reel.likes ?? 0))}
-                        </Text>
-                      </View>
-                      <View style={styles.statItem}>
-                        <EyeIcon color="#EAB04B" />
-                        <Text style={styles.statText}>
-                          {convertToFormattedString(Number(reel.votes ?? 0))} votes
-                        </Text>
-                      </View>
-                    </View>
                   </View>
                 ))}
               </ScrollView>
@@ -501,6 +515,7 @@ export default function GullyFameHome() {
               <TouchableOpacity
                 style={styles.viewAllContainer}
                 onPress={() => checkAuthAndNavigate("/(main)/competitions/live")}
+                testID="home-live-view-all"
               >
                 <Text style={styles.viewAllButton}>View All</Text>
                 <CaretRightIcon></CaretRightIcon>
@@ -631,6 +646,7 @@ export default function GullyFameHome() {
               <TouchableOpacity
                 style={styles.viewAllContainer}
                 onPress={() => checkAuthAndNavigate("/(main)/competitions/upcoming")}
+                testID="home-upcoming-view-all"
               >
                 <Text style={styles.viewAllButton}>View All</Text>
                 <CaretRightIcon></CaretRightIcon>
@@ -716,6 +732,7 @@ export default function GullyFameHome() {
               <TouchableOpacity
                 style={styles.viewAllContainer}
                 onPress={() => checkAuthAndNavigate("/(main)/competitions/past")}
+                testID="home-past-view-all"
               >
                 <Text style={styles.viewAllButton}>View All</Text>
                 <CaretRightIcon></CaretRightIcon>
@@ -915,6 +932,7 @@ export default function GullyFameHome() {
             <TouchableOpacity
               style={styles.stickyHeaderIconButton}
               onPress={() => checkAuthAndNavigate("/(main)/settings/notifications")}
+              testID="home-sticky-notifications"
             >
               <NotificationIcon />
               {unreadCount > 0 && <View style={styles.notificationDot} />}
@@ -922,6 +940,7 @@ export default function GullyFameHome() {
             <TouchableOpacity
               style={styles.stickyHeaderIconButton}
               onPress={() => checkAuthAndNavigate("/(main)/inbox")}
+              testID="home-sticky-inbox"
             >
               <ChatIcon />
             </TouchableOpacity>

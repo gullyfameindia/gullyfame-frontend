@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { validatePickedAsset } from "@/utils/fileValidation";
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert, ActivityIndicator, useWindowDimensions } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useIsFocused, useLocalSearchParams } from "expo-router";
@@ -26,7 +27,6 @@ import {
   undo,
   redo,
 } from "@/store/slices/editorSlice";
-import type { CameraClipArray } from "@modules/video-editor/camera-module/types/camera.types";
 import TimelineContainer from "@/components/VideoEditor/TimelineContainer";
 import BottomToolbar, {
   ToolId,
@@ -123,7 +123,7 @@ export default function EditScreen() {
   // Initialize editor state from params
   // Opened from the preview, the session's clips are already in the store.
   // Legacy entry points still pass clips as a param.
-  const hasSessionClips = useRef(clips.length > 0).current;
+  const [hasSessionClips] = useState(() => clips.length > 0);
   useEffect(() => {
     if (params.clips && !hasSessionClips) {
       try {
@@ -139,7 +139,7 @@ export default function EditScreen() {
             })
           );
         });
-      } catch (e) { /* intentionally ignored */
+      } catch { /* intentionally ignored */
       }
     }
 
@@ -151,11 +151,6 @@ export default function EditScreen() {
   // The editorSlice is not reset on close: the preview owns the session and keeps the edits.
 
   // Format time display (mm:ss)
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
 
   const togglePlayPause = sequence.toggle;
 
@@ -184,6 +179,12 @@ export default function EditScreen() {
       });
       const asset = result.canceled ? undefined : result.assets?.[0];
       if (!asset) return;
+
+      const invalid = validatePickedAsset(asset, ["image", "video"]);
+      if (invalid) {
+        Alert.alert("Couldn't add this clip", invalid);
+        return;
+      }
 
       setImportingClip(true);
       const media = await importGalleryAsset(asset);

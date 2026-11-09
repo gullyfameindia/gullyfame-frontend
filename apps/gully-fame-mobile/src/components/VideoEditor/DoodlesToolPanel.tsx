@@ -142,11 +142,6 @@ export default function DoodlesToolPanel({
   };
 
   // This would be called from the video preview component
-  const addDoodlePath = (path: DoodlePath) => {
-    const newDoodles = [...doodles, path];
-    setDoodles(newDoodles);
-    onDoodlesChange(newDoodles);
-  };
 
   return (
     <View style={styles.container}>
