@@ -5807,10 +5807,10 @@ expo-updates-interface@~57.0.2:
   resolved "https://registry.npmjs.org/expo-updates-interface/-/expo-updates-interface-57.0.2.tgz"
   integrity sha512-x3SA5toiHZEkW+5oeNdUM1Rvt6M3ExegQsSwS3Z1+S9gn9utGYTGBkb8MBQivhjIZiRlQYDIhauxA8kySQEWtQ==
 
-expo-video-thumbnails@~57.0.2:
-  version "57.0.2"
-  resolved "https://registry.npmjs.org/expo-video-thumbnails/-/expo-video-thumbnails-57.0.2.tgz"
-  integrity sha512-9nqx9nzjdFuSweJL/WsCaDoZOpd3lzOswudvoBsHUZvx0xfHJ+iGo3fND2u58P1CBT7qVjEiVm0wMBZKB6Z14g==
+expo-video-thumbnails@~58.0.2:
+  version "58.0.2"
+  resolved "https://registry.yarnpkg.com/expo-video-thumbnails/-/expo-video-thumbnails-58.0.2.tgz#9e904b1a1becdeaa5588cd07ccc68087be9f4a6a"
+  integrity sha512-htFJPHGh4Ell7i9ZUZXhP18nusgKBYyd5uNufAU+R1h2EdBhi1TFaMfBHnY0o+P3AVa8JcQG986Tps4uUXTdgg==
 
 expo-video@~57.0.5:
   version "57.0.5"
