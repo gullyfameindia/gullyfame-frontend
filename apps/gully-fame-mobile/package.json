@@ -30,7 +30,7 @@
     "@react-navigation/native": "7.3.18",
     "@reduxjs/toolkit": "^2.9.1",
     "@sentry/react-native": "7.11.0",
-    "axios": "^1.12.2",
+    "axios": "^1.21.0",
     "expo": "~57.0.29",
     "expo-asset": "~57.0.20",
     "expo-audio": "~57.0.5",
