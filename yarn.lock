@@ -8801,6 +8801,11 @@ next@^14.0.0:
     "@next/swc-win32-ia32-msvc" "14.2.33"
     "@next/swc-win32-x64-msvc" "14.2.33"
 
+nitro-core@0.37.2:
+  version "0.37.2"
+  resolved "https://registry.yarnpkg.com/nitro-core/-/nitro-core-0.37.2.tgz#5886030db1028869767dec5c142e38f0e58ae964"
+  integrity sha512-dhagikz9VXXzfidRH/vPNJfYWPmTBArDOo9wE/wEqeERU9C8uRWz9YccOyNUOvADccPAZq319yzhDMoJ9excSQ==
+
 node-exports-info@^1.6.0:
   version "1.6.2"
   resolved "https://registry.npmjs.org/node-exports-info/-/node-exports-info-1.6.2.tgz"
@@ -9570,10 +9575,12 @@ react-native-nitro-image@0.15.2:
   resolved "https://registry.npmjs.org/react-native-nitro-image/-/react-native-nitro-image-0.15.2.tgz"
   integrity sha512-WiaGnORmfNIIqtRJW76TWYNet1YZx1MWDlSOxd0jfcIBN4KjkVVMDVpvO01eCfpxKVG0ez9nA2iLQkPVlGFj+A==
 
-react-native-nitro-modules@0.37.1:
-  version "0.37.1"
-  resolved "https://registry.npmjs.org/react-native-nitro-modules/-/react-native-nitro-modules-0.37.1.tgz"
-  integrity sha512-KpW6EQVQ/bfegpCGxN9Be+ndvsfj56t4IESEvCASu9gWpJa/NDfHpIeIwCOvZQ3eXmLEj6YD4wCLqcC1FJPr2w==
+react-native-nitro-modules@0.37.2:
+  version "0.37.2"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.37.2.tgz#fa224c44b2e63c6de2ac5db53361c0bed5b4e596"
+  integrity sha512-Odnrq/p6/q0R01qZlkqeXu9VHHMuGEnZZmyxMvehEu6QiACNHhBCmAHgyBDqOSo9Lb3G0TscFAT+HG0uxsR/GA==
+  dependencies:
+    nitro-core "0.37.2"
 
 react-native-razorpay@^2.3.1:
   version "2.3.1"
