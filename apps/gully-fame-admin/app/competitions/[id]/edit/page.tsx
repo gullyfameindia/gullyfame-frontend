@@ -16,6 +16,9 @@ export default function EditCompetitionPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // A newly picked banner; sent with the save. formData.bannerImage keeps the current URL.
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -98,7 +101,7 @@ export default function EditCompetitionPage() {
       endDate: formData.endDate,
       prizeAmount: formData.prizeAmount,
       winnerSlots: formData.winnerSlots,
-    } as any);
+    } as any, bannerFile);
     setSaving(false);
     if (res.success) {
       router.push(`/competitions/${competitionId}`);
@@ -246,16 +249,32 @@ export default function EditCompetitionPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Banner Image</label>
-              {formData.bannerImage && (
+              {(bannerPreview || formData.bannerImage) && (
                 <div className="mb-3">
-                  <img src={formData.bannerImage} alt="Banner" className="h-32 w-full object-cover rounded-lg" />
+                  <img src={bannerPreview || formData.bannerImage} alt="Banner" className="h-32 w-full object-cover rounded-lg" />
+                  {bannerFile && <p className="text-xs text-gray-500 mt-1">New image, saved when you click Save: {bannerFile.name}</p>}
                 </div>
               )}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <label className="block cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500">
                 <Upload className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                <p className="text-sm text-gray-600">{formData.bannerImage || bannerFile ? 'Click to replace the banner' : 'Click to upload a banner'}</p>
                 <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-              </div>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 10 * 1024 * 1024) {
+                      alert('Please choose an image under 10MB.');
+                      return;
+                    }
+                    setBannerFile(file);
+                    setBannerPreview(URL.createObjectURL(file));
+                  }}
+                />
+              </label>
             </div>
 
             {userRole === 'admin' && (

@@ -60,7 +60,7 @@ export default function TipsPage() {
         setTopEarners(topEarnersResult.data || []);
       }
 
-      const tipsData = fetchedEarnings.filter(e => e.category === 'TIP' || e.type === 'CREDIT');
+      const tipsData = fetchedEarnings.filter(e => e.category === 'TIP_RECEIVED' || e.category === 'TIP');
       const totalTips = tipsData.reduce((sum, e) => sum + (e.amount || 0), 0);
       const totalCoins = fetchedEarnings
         .filter(e => e.category === 'COMPETITION_WIN' || e.category === 'WINNER')
@@ -88,10 +88,11 @@ export default function TipsPage() {
 
   
   const allData = [
-    ...earnings.map((earning) => ({
+    // Prize payouts are listed once, as winner rows below.
+    ...earnings.filter((earning) => earning.category !== 'COMPETITION_WIN').map((earning) => ({
       id: earning.id || earning._id || '',
       type: 'tip' as const,
-      userName: earning.userId || 'Unknown User',
+      userName: earning.userName || earning.user?.username || 'Unknown User',
       amount: earning.amount || 0,
       status: earning.status?.toLowerCase() || 'pending',
       date: earning.createdAt ? new Date(earning.createdAt).toISOString().split('T')[0] : '',
@@ -109,15 +110,15 @@ export default function TipsPage() {
       type: 'winner' as const,
       userName: winner.userName || winner.firstName || 'Unknown',
       userId: winner.userId || '',
-      competitionId: '',
-      competitionName: '',
-      competitionDate: '',
+      competitionId: winner.competitionId ? String(winner.competitionId) : '',
+      competitionName: winner.competitionTitle || '',
+      competitionDate: winner.declaredAt ? new Date(winner.declaredAt).toISOString().split('T')[0] : '',
       position: winner.rank || index + 1,
       totalTips: 0,
-      coinsEarned: winner.totalEarnings || winner.totalWinnings || 0,
-      date: '',
-      userEmail: '',
-      userMobile: '',
+      coinsEarned: winner.prize ?? winner.totalEarnings ?? winner.totalWinnings ?? 0,
+      date: winner.declaredAt ? new Date(winner.declaredAt).toISOString().split('T')[0] : '',
+      userEmail: winner.user?.email || '',
+      userMobile: winner.user?.mobile || '',
       participations: 0,
       totalWins: winner.competitionsWon || 0,
     })),

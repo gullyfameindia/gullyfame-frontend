@@ -47,8 +47,9 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
               appBrandingService.getSplash(),
             ]);
 
-            if (logoResult.success && logoResult.data?.logoUrl) {
-              const logo = logoResult.data.logoUrl;
+            // Logo and splash are handled independently so a bad logo value never drops the splash images.
+            const logo = logoResult.success ? logoResult.data?.logoUrl : undefined;
+            if (typeof logo === "string" && logo) {
               if (logo.toLowerCase().endsWith(".svg")) {
                 setLogoUrl(null);
               } else {
@@ -60,7 +61,7 @@ export const BrandingProvider: React.FC<BrandingProviderProps> = ({ children }) 
               const splashData = splashResult.data;
               let images: string[] = [];
 
-              images = splashData.images;
+              images = Array.isArray(splashData.images) ? splashData.images : [];
 
               if (images.length > 0) {
                 setSplashImages(images);

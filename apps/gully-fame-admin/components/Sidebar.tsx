@@ -31,11 +31,11 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['admin', 'sponsor'] },
   { name: 'App Content', href: '/app-content', icon: FileText, roles: ['admin'] },
-  { name: 'Competitions', href: '/competitions', icon: Trophy, roles: ['admin', 'sponsor'], pending: true },
-  { name: 'Users', href: '/users', icon: Users, roles: ['admin'], pending: true },
-  { name: 'Tips & Earnings', href: '/tips', icon: Coins, roles: ['admin'], pending: true },
-  { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['admin', 'sponsor'], pending: true },
-  { name: 'Sponsors', href: '/sponsors', icon: Building2, roles: ['admin'], pending: true },
+  { name: 'Competitions', href: '/competitions', icon: Trophy, roles: ['admin', 'sponsor'] },
+  { name: 'Users', href: '/users', icon: Users, roles: ['admin'] },
+  { name: 'Tips & Earnings', href: '/tips', icon: Coins, roles: ['admin'] },
+  { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['admin'] },
+  { name: 'Sponsors', href: '/sponsors', icon: Building2, roles: ['admin'] },
 ];
 
 export default function Sidebar({ userRole }: { userRole: UserRole }) {

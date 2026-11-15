@@ -12,7 +12,7 @@ import { apiGet, apiPost, ApiError, toResult } from "../client";
  *  reports the order status (the backend webhook also credits PAID orders).
  */
 
-export type TransactionType = "RECHARGE" | "TIP_SENT" | "TIP_RECEIVED" | "MISSION_REWARD";
+export type TransactionType = "RECHARGE" | "TIP_SENT" | "TIP_RECEIVED" | "MISSION_REWARD" | "COMPETITION_WIN";
 
 export interface WalletTransaction {
   _id: string;
@@ -22,6 +22,8 @@ export interface WalletTransaction {
   balanceAfter: number;
   relatedReel: string | null;
   relatedUser: string | null;
+  /** Set on COMPETITION_WIN: the competition the prize came from. */
+  relatedCompetition?: string | null;
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -78,13 +80,14 @@ export const TRANSACTION_LABELS: Record<TransactionType, string> = {
   TIP_SENT: "Tip sent",
   TIP_RECEIVED: "Tip received",
   MISSION_REWARD: "Daily mission reward",
+  COMPETITION_WIN: "Competition prize",
 };
 
 /** Credits add to the balance, debits subtract. */
 export const isCredit = (type: TransactionType) => type !== "TIP_SENT";
 
 export interface DisplayTransaction {
-  /** earned = tips received / mission rewards, recharge = coins bought, spent = tips sent. */
+  /** earned = tips received / mission rewards / competition prizes, recharge = coins bought, spent = tips sent. */
   kind: "earned" | "recharge" | "spent";
   id: string;
   title: string;
@@ -101,6 +104,7 @@ const TRANSACTION_ICONS: Record<TransactionType, string> = {
   TIP_SENT: "heart-outline",
   TIP_RECEIVED: "gift-outline",
   MISSION_REWARD: "trophy-outline",
+  COMPETITION_WIN: "medal-outline",
 };
 
 /** Maps a backend transaction to what the wallet screens render. */
@@ -152,7 +156,7 @@ export async function getWalletSummary(pageSize = 100): Promise<WalletSummary> {
     transactions.filter((tx) => types.includes(tx.type)).reduce((total, tx) => total + Math.abs(tx.amount), 0);
   return {
     balance: first.balance,
-    earned: sum(["TIP_RECEIVED", "MISSION_REWARD"]),
+    earned: sum(["TIP_RECEIVED", "MISSION_REWARD", "COMPETITION_WIN"]),
     recharged: sum(["RECHARGE"]),
     spent: sum(["TIP_SENT"]),
     transactions,

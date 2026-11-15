@@ -123,13 +123,8 @@ export default function CreateCompetitionPage() {
         competitionData.sponsorId = formData.sponsorId;
       }
 
-      
-      if (formData.bannerImage) {
-        
-        
-      }
-
-      const result = await createCompetition(competitionData);
+      // The banner file goes up with the form (multipart); the backend stores it on S3.
+      const result = await createCompetition(competitionData, formData.bannerImage);
 
       if (result.success) {
         router.push('/competitions');

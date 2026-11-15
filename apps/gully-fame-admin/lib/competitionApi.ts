@@ -147,7 +147,7 @@ async function makeRequest<T>(
   endpoint: string,
   body?: any
 ): Promise<ApiResponse<T>> {
-  const result = await apiRequest<T>(method, endpoint, { body });
+  const result = await apiRequest<T>(method, endpoint, body instanceof FormData ? { formData: body } : { body });
   return result.success
     ? { success: true, data: result.data as T, message: result.message }
     : { success: false, message: result.message, error: result.error };
@@ -260,11 +260,27 @@ export async function getCompetitionById(competitionId: string): Promise<ApiResp
 
 
 
+/**
+ * With a banner file the request is multipart: every field as text plus the file as `image`
+ * (the backend uploads it to S3 and stores the URL). Without a file it stays JSON.
+ */
+function withBanner(data: Record<string, any>, bannerFile?: File | null): Record<string, any> | FormData {
+  if (!bannerFile) return data;
+  const form = new FormData();
+  for (const [key, value] of Object.entries(data)) {
+    if (value === undefined || value === null) continue;
+    form.append(key, String(value));
+  }
+  form.append('image', bannerFile);
+  return form;
+}
+
 export async function createCompetition(
-  data: CreateCompetitionRequest
+  data: CreateCompetitionRequest,
+  bannerFile?: File | null
 ): Promise<ApiResponse<Competition>> {
   const endpoint = 'admin/competitions';
-  const response = await makeRequest<Competition>('POST', endpoint, data);
+  const response = await makeRequest<Competition>('POST', endpoint, withBanner(data as Record<string, any>, bannerFile));
 
   if (response.success && response.data) {
     const comp = response.data;
@@ -300,7 +316,8 @@ export async function createCompetition(
 
 export async function updateCompetition(
   competitionId: string,
-  data: UpdateCompetitionRequest
+  data: UpdateCompetitionRequest,
+  bannerFile?: File | null
 ): Promise<ApiResponse<Competition>> {
   const endpoint = `admin/competitions/${competitionId}`;
   
@@ -311,7 +328,7 @@ export async function updateCompetition(
     delete updateData.prizeAmount;
   }
   
-  const response = await makeRequest<Competition>('PUT', endpoint, updateData);
+  const response = await makeRequest<Competition>('PUT', endpoint, withBanner(updateData, bannerFile));
 
   if (response.success) {
     const comp = (response.data ?? {}) as Competition;
