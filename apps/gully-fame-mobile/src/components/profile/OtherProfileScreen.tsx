@@ -43,7 +43,9 @@ export default function OtherProfileScreen() {
   const userId = String(params.userId || params.id || profileData.id || "");
   const reels = useUserReels(userId);
   const { followCounts } = useProfileExtras(userId, false);
-  const isFanProfile = String(params.role || profileData.role || "").toLowerCase().startsWith("fan");
+  // The server's role wins once loaded; the opening screen's param (or a shared link's
+  // default) only covers the first moment.
+  const isFanProfile = String(profileData.role || params.role || "").toLowerCase().startsWith("fan");
 
   // The name/avatar passed by the opening screen show first; GET /user/:userId
   // then fills in the rest (see useOtherUserProfile).

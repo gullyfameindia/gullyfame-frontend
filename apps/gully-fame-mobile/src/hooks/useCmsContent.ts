@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { LegalSection } from "@/content/legal/types";
 import {
   getAboutUs,
+  getCompetitionRules,
   getFaqs,
   getPrivacyPolicy,
   getSupportContact,
@@ -35,6 +36,7 @@ function usePage(fetcher: () => Promise<{ success: boolean; data?: { content: st
 export const useTermsText = () => usePage(getTermsAndConditions);
 export const usePrivacyText = () => usePage(getPrivacyPolicy);
 export const useAboutText = () => usePage(getAboutUs);
+export const useCompetitionRulesText = () => usePage(getCompetitionRules);
 
 /** FAQs from the admin panel, or the bundled FAQ document when none are published. */
 export function useFaqSections(): LegalSection[] {

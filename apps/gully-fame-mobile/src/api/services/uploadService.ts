@@ -12,7 +12,7 @@ import { apiPost, ApiError } from "../client";
  * load into JS memory.
  */
 
-export type UploadAssetType = "reels" | "voiceovers";
+export type UploadAssetType = "reels" | "voiceovers" | "profiles";
 
 export interface PresignedUpload {
   uploadUrl: string;

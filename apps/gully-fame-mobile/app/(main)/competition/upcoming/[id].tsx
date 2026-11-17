@@ -215,6 +215,9 @@ export default function UpcomingCompetitionScreen() {
                     <View style={styles.missionContent}>
                       <Text style={styles.missionSectionTitle}>About</Text>
                       <Text style={styles.missionText}>{competitionData.description}</Text>
+                      <TouchableOpacity onPress={() => router.push("/(main)/competition-rules" as any)} accessibilityLabel="Read the competition rules">
+                        <Text style={[styles.missionText, { color: "#EC9A15", fontWeight: "600", marginTop: 10 }]}>Read the competition rules</Text>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </TouchableOpacity>

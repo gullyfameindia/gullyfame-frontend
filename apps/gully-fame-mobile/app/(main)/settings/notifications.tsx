@@ -1,5 +1,5 @@
 import { useState, useEffect,  useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, Platform, Animated, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, Platform, Animated, ActivityIndicator, Alert, Switch } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
@@ -9,9 +9,14 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  deleteAllNotifications,
   type Notification,
 } from "@/api/services/notificationIntegrationService";
 import { getErrorMessage } from "@/api/client";
+import { getProfile, toggleNotifications } from "@/api/services/userService";
+
+/** Notifications loaded per page. */
+const PAGE_SIZE = 30;
 import { toastError, toastSuccess } from "@/components/ui/Toast";
 import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
@@ -69,21 +74,91 @@ export default function NotificationsScreen() {
   );
 
   const [loadError, setLoadError] = useState("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  // Push notifications on/off (the profile's notificationAllowed); null until loaded.
+  const [pushEnabled, setPushEnabled] = useState<boolean | null>(null);
+  const [savingPush, setSavingPush] = useState(false);
 
   // time=0 returns every notification plus the total unread count;
   // the Today / Past tabs split the list by date on the device.
   const fetchNotifications = async () => {
     setLoading(true);
     setLoadError("");
+    getProfile()
+      .then((profile) => setPushEnabled(!!profile.notificationAllowed))
+      .catch(() => {});
     try {
-      const page = await fetchNotificationsPage(0, 1, 100);
-      setNotifications(page.notifications);
-      setUnreadCount(page.unreadCount);
+      const first = await fetchNotificationsPage(0, 1, PAGE_SIZE);
+      setNotifications(first.notifications);
+      setUnreadCount(first.unreadCount);
+      setPage(1);
+      setHasMore(first.hasMore);
     } catch (error) {
       setLoadError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const next = await fetchNotificationsPage(0, page + 1, PAGE_SIZE);
+      setNotifications((prev) => {
+        const seen = new Set(prev.map((n) => n.id));
+        return [...prev, ...next.notifications.filter((n) => !seen.has(n.id))];
+      });
+      setUnreadCount(next.unreadCount);
+      setPage(page + 1);
+      setHasMore(next.hasMore && next.notifications.length > 0);
+    } catch (error) {
+      toastError(getErrorMessage(error));
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleTogglePush = async (enabled: boolean) => {
+    if (savingPush) return;
+    const previous = pushEnabled;
+    setPushEnabled(enabled);
+    setSavingPush(true);
+    try {
+      setPushEnabled(await toggleNotifications(enabled));
+    } catch (error) {
+      setPushEnabled(previous);
+      toastError(getErrorMessage(error));
+    } finally {
+      setSavingPush(false);
+    }
+  };
+
+  const handleClearAll = () => {
+    if (clearing || notifications.length === 0) return;
+    Alert.alert("Clear all notifications?", "They will be removed from your list.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Clear all",
+        style: "destructive",
+        onPress: async () => {
+          setClearing(true);
+          const response = await deleteAllNotifications();
+          if (response.success) {
+            setNotifications([]);
+            setUnreadCount(0);
+            setHasMore(false);
+            toastSuccess(response.message);
+          } else {
+            toastError(response.message);
+          }
+          setClearing(false);
+        },
+      },
+    ]);
   };
 
   const handleMarkAsRead = async (notificationId: string) => {
@@ -374,7 +449,17 @@ export default function NotificationsScreen() {
         </View>
       </View>
 
-      {}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 10 }}>
+        <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>Push notifications</Text>
+        <Switch
+          value={!!pushEnabled}
+          onValueChange={handleTogglePush}
+          disabled={pushEnabled === null || savingPush}
+          trackColor={{ true: "#EC9A15" }}
+          accessibilityLabel="Push notifications"
+        />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -397,9 +482,16 @@ export default function NotificationsScreen() {
           </View>
         ) : (
           <>
-            <Text style={responsiveStyles.sectionHeading}>
-              {activeTab === "Today" ? "Earlier Today" : "Past Notifications"}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              <Text style={responsiveStyles.sectionHeading}>
+                {activeTab === "Today" ? "Earlier Today" : "Past Notifications"}
+              </Text>
+              <TouchableOpacity onPress={handleClearAll} disabled={clearing} accessibilityLabel="Clear all notifications">
+                <Text style={{ color: "#EC9A15", fontSize: 13, fontWeight: "600", opacity: clearing ? 0.5 : 1 }}>
+                  {clearing ? "Clearing..." : "Clear all"}
+                </Text>
+              </TouchableOpacity>
+            </View>
             <View style={responsiveStyles.notificationsList}>
               {currentNotifications.map((notification) => (
                 <View key={notification.id} style={{ position: "relative" }}>
@@ -489,6 +581,16 @@ export default function NotificationsScreen() {
             </View>
           </>
         )}
+
+        {!loading && !loadError && hasMore ? (
+          <TouchableOpacity onPress={loadMore} disabled={loadingMore} style={{ alignItems: "center", paddingVertical: 16 }}>
+            {loadingMore ? (
+              <ActivityIndicator size="small" color="#EC9A15" />
+            ) : (
+              <Text style={{ color: "#EC9A15", fontSize: 14, fontWeight: "600" }}>Load more</Text>
+            )}
+          </TouchableOpacity>
+        ) : null}
 
         <View style={{ height: scaleVertical(40) }} />
       </ScrollView>

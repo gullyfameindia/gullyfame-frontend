@@ -171,7 +171,7 @@ export async function updateProfile(update: ProfileUpdate): Promise<BackendUser>
     if (value !== undefined && value !== null) body[key] = value;
   }
   if (isLocalUri(body.profileImage)) {
-    body.profileImage = await uploadLocalFile(body.profileImage, { assetType: "reels" });
+    body.profileImage = await uploadLocalFile(body.profileImage, { assetType: "profiles" });
   }
   await apiPut("user/profile", body);
   return getProfile();
@@ -189,12 +189,16 @@ export const registerDeviceToken = (token: string, platform: "android" | "ios") 
   apiPut("user/profile", { device_token: token, device_type: platform });
 
 /**
- * GET /user/notifications/switch. Note: the backend currently always turns
- * notifications OFF for active accounts (it reads `isActive` instead of the
- * current setting), so the caller must re-read the profile afterwards.
+ * GET /user/notifications/switch?enabled=true|false -> { notificationAllowed }.
+ * Pass `enabled` to set push notifications on or off; leave it out to toggle.
+ * Returns the setting the server saved.
  */
-export async function toggleNotifications(): Promise<boolean> {
-  await apiGet("user/notifications/switch");
+export async function toggleNotifications(enabled?: boolean): Promise<boolean> {
+  const data = await apiGet<{ notificationAllowed?: boolean }>(
+    "user/notifications/switch",
+    typeof enabled === "boolean" ? { params: { enabled } } : undefined
+  );
+  if (typeof data?.notificationAllowed === "boolean") return data.notificationAllowed;
   const profile = await getProfile();
   return !!profile.notificationAllowed;
 }

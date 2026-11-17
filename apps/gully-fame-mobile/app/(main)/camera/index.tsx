@@ -28,6 +28,7 @@ import * as Haptics from "expo-haptics";
 import { importGalleryAsset } from "@modules/video-editor/camera-module/utils/clipImport";
 import MusicLibraryModal from "@/components/MusicLibraryModal";
 import { listFilters } from "@api/services/filterLibraryService";
+import { getLatestDraft, type PublishedReel } from "@api/services/videoUploadService";
 import { matchPresetByName } from "@modules/video-editor/camera-module/components/preview/filterPresets";
 import { CloseIcon } from "@/icons";
 
@@ -169,6 +170,38 @@ export default function TikTokCameraScreen() {
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null);
   const selectedLens = lenses.find((lens) => lens.id === selectedLensId) ?? null;
   const [isRecording, setIsRecording] = useState(false);
+
+  // "Continue your draft": the latest draft saved on the server (GET /reels/draft).
+  const [latestDraft, setLatestDraft] = useState<PublishedReel | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      getLatestDraft()
+        .then((draft) => {
+          if (active) setLatestDraft(draft && draft.video_url ? draft : null);
+        })
+        .catch(() => {
+          if (active) setLatestDraft(null);
+        });
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
+  const openLatestDraft = () => {
+    if (!latestDraft) return;
+    router.push({
+      pathname: "/(main)/upload/post",
+      params: {
+        clips: JSON.stringify([{ id: `draft-${latestDraft._id}`, uri: latestDraft.video_url, duration: 0, type: "video" }]),
+        mediaType: "video",
+        caption: latestDraft.caption || "",
+        draftReelId: latestDraft._id,
+        draftThumb: latestDraft.thumbnail_url || "",
+        ...(latestDraft.competition ? { competitionId: String(latestDraft.competition) } : {}),
+      },
+    } as any);
+  };
   const [, setRecordingTime] = useState("00:00");
   const [cameraReady, setCameraReady] = useState(false);
   const [recordedClips, setRecordedClips] = useState<VideoClip[]>([]);
@@ -1107,6 +1140,27 @@ export default function TikTokCameraScreen() {
 
       {/* MODALS */}
       <View style={styles.overlay} pointerEvents="box-none">
+        {latestDraft && !isRecording ? (
+          <TouchableOpacity
+            onPress={openLatestDraft}
+            accessibilityLabel="Continue your draft"
+            style={{
+              position: "absolute",
+              top: insets.top + 64,
+              alignSelf: "center",
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 20,
+              backgroundColor: "rgba(0,0,0,0.65)",
+              borderWidth: 1,
+              borderColor: "#EC9A15",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>Continue your draft</Text>
+          </TouchableOpacity>
+        ) : null}
         <Modal
           visible={showHDPopup}
           transparent

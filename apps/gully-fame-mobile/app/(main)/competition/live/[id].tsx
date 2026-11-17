@@ -366,6 +366,9 @@ export default function LiveCompetitionScreen() {
               <View style={styles.missionContent}>
                 <Text style={styles.missionSectionTitle}>About the Battle</Text>
                 <Text style={styles.missionText}>{competitionData.description || "No description available."}</Text>
+                <TouchableOpacity onPress={() => router.push("/(main)/competition-rules" as any)} accessibilityLabel="Read the competition rules">
+                  <Text style={[styles.missionText, { color: "#EC9A15", fontWeight: "600", marginTop: 10 }]}>Read the competition rules</Text>
+                </TouchableOpacity>
               </View>
             )}
           </TouchableOpacity>

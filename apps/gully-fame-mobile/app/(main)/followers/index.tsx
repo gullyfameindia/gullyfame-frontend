@@ -7,6 +7,7 @@ import {
   ScrollView,
   FlatList,
   ActivityIndicator,
+  TextInput,
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
@@ -30,11 +31,14 @@ function FollowList({
   userId,
   active,
   header,
+  search = "",
 }: {
   kind: FollowListKind;
   userId: string;
   active: boolean;
   header?: React.ReactElement | null;
+  /** Filters the list by name or username (server-side ?search=). */
+  search?: string;
 }) {
   const [users, setUsers] = useState<FollowUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -51,7 +55,7 @@ function FollowList({
   // the first load starts from loading=true / error="" already.
   const fetchFirstPage = useCallback(() => {
     const requestId = ++requestRef.current;
-    return getFollowList(kind, { userId: userId || undefined, page: 1, limit: PAGE_SIZE })
+    return getFollowList(kind, { userId: userId || undefined, page: 1, limit: PAGE_SIZE, search })
       .then((result) => {
         if (requestId !== requestRef.current) return;
         setUsers(result.users);
@@ -66,7 +70,7 @@ function FollowList({
       .finally(() => {
         if (requestId === requestRef.current) setLoading(false);
       });
-  }, [kind, userId]);
+  }, [kind, userId, search]);
 
   /** Retry / pull-to-refresh: show the spinner again, then reload page 1. */
   const loadFirstPage = useCallback(() => {
@@ -78,7 +82,22 @@ function FollowList({
   // Load a tab the first time it is shown.
   useEffect(() => {
     if (active && !loaded) fetchFirstPage();
-  }, [active, loaded, fetchFirstPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, loaded]);
+
+  // A new search reloads the visible tab now and the other one when it is next shown.
+  const lastSearch = useRef(search);
+  useEffect(() => {
+    if (lastSearch.current === search) return;
+    lastSearch.current = search;
+    if (active) {
+      setLoading(true);
+      setError("");
+      fetchFirstPage();
+    } else {
+      setLoaded(false);
+    }
+  }, [search, active, fetchFirstPage]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMore || loading) return;
@@ -87,7 +106,7 @@ function FollowList({
     const requestId = requestRef.current;
     try {
       const next = page + 1;
-      const result = await getFollowList(kind, { userId: userId || undefined, page: next, limit: PAGE_SIZE });
+      const result = await getFollowList(kind, { userId: userId || undefined, page: next, limit: PAGE_SIZE, search });
       if (requestId !== requestRef.current) return;
       setUsers((prev) => {
         const seen = new Set(prev.map((u) => u.id));
@@ -101,7 +120,7 @@ function FollowList({
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [hasMore, loading, page, kind, userId]);
+  }, [hasMore, loading, page, kind, userId, search]);
 
   if (loading && !loaded) {
     return (
@@ -149,7 +168,9 @@ function FollowList({
       ListEmptyComponent={
         <View style={styles.emptyContainer}>
           <Ionicons name="people-outline" size={56} color="#EC9A15" />
-          <Text style={styles.emptyTitle}>{kind === "followers" ? "No followers yet" : "Not following anyone yet"}</Text>
+          <Text style={styles.emptyTitle}>
+            {search.trim() ? `No one matches "${search.trim()}"` : kind === "followers" ? "No followers yet" : "Not following anyone yet"}
+          </Text>
           <Text style={styles.emptySubtitle}>
             {kind === "followers"
               ? "When people follow this account, they will show up here."
@@ -204,6 +225,13 @@ const FollowersScreen: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const pagerRef = useRef<ScrollView>(null);
   const [followedKeys, setFollowedKeys] = useState<string[]>([]);
+  // Search box: the lists reload 300 ms after typing stops.
+  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(query.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
   useFocusEffect(
     useCallback(() => {
       getFollowedCategories().then(setFollowedKeys);
@@ -269,6 +297,27 @@ const FollowersScreen: React.FC = () => {
         })}
       </View>
 
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={18} color="#C9B9A6" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by name or username"
+          placeholderTextColor="#8A7A69"
+          value={query}
+          onChangeText={setQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+          accessibilityLabel="Search followers"
+          testID="followers-search"
+        />
+        {query ? (
+          <TouchableOpacity onPress={() => setQuery("")} accessibilityLabel="Clear search" hitSlop={10}>
+            <Ionicons name="close-circle" size={18} color="#C9B9A6" />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
       <ScrollView
         ref={pagerRef}
         horizontal
@@ -286,7 +335,8 @@ const FollowersScreen: React.FC = () => {
               kind={tab}
               userId={userId}
               active={activeIndex === index}
-              header={tab === "following" ? categoriesHeader : null}
+              header={tab === "following" && !search ? categoriesHeader : null}
+              search={search}
             />
           </View>
         ))}
@@ -311,6 +361,24 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: "center",
     alignItems: "center",
+  },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    paddingHorizontal: 12,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  searchInput: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 14,
+    paddingVertical: 0,
   },
   tabRow: {
     flexDirection: "row",

@@ -23,6 +23,8 @@ export interface VideoUploadRequest {
   /** From the music picker: the audio library id and its display title. */
   music?: { trackId: string; title: string; artist?: string; startOffset?: number; duration?: number };
   ctaLink?: { label: string; url: string };
+  /** Set when posting from a saved draft: the server promotes (or updates) that draft. */
+  draftReelId?: string;
 }
 
 export interface PublishedReel {
@@ -74,6 +76,7 @@ const reelBody = (videoUrl: string, request: VideoUploadRequest) => ({
   ...(request.competitionId ? { competitionId: request.competitionId } : {}),
   music: request.music?.trackId ? { id: request.music.trackId, name: request.music.title } : { id: "", name: "" },
   ...(request.ctaLink?.url ? { ctaLink: request.ctaLink } : {}),
+  ...(request.draftReelId ? { reelId: request.draftReelId } : {}),
 });
 
 /** POST /reels/publish */

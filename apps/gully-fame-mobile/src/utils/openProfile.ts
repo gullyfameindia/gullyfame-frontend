@@ -19,9 +19,10 @@ export async function openOwnProfile(options: { replace?: boolean } = {}) {
 }
 
 /**
- * Opens a user's profile. There is no "get user by id" endpoint, so whatever
- * the caller already knows about the user (from a reel, search result or
- * leaderboard row) travels with the navigation and seeds the profile header.
+ * Opens a user's profile. Whatever the caller already knows about the user
+ * (from a reel, search result or leaderboard row) travels with the navigation
+ * so the header shows at once; the profile screen then loads the rest from
+ * GET /user/:userId.
  */
 export function openUserProfile(user: {
   id: string;

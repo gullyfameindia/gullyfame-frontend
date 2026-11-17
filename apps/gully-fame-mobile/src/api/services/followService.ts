@@ -3,10 +3,10 @@ import { resolveMediaUrl } from "@/utils/mediaUrl";
 
 /**
  * Followers / following lists (API collection, "User APIs / Follow"):
- *   GET user/followers                ?page&limit          (signed-in user)
+ *   GET user/followers                ?page&limit&search   (signed-in user)
  *   GET user/following                ?page&limit&search   (signed-in user)
- *   GET user/:userId/followers        ?page&limit
- *   GET user/:userId/following        ?page&limit
+ *   GET user/:userId/followers        ?page&limit&search
+ *   GET user/:userId/following        ?page&limit&search
  *
  * Verified against production: every one answers { page, limit, total, totalPages, users: [] }.
  * No populated example exists yet (no account has followers), so each entry is read defensively:
@@ -54,7 +54,7 @@ export function toFollowUser(entry: unknown, kind: FollowListKind): FollowUser |
 
 export async function getFollowList(
   kind: FollowListKind,
-  options: { userId?: string; page?: number; limit?: number } = {}
+  options: { userId?: string; page?: number; limit?: number; search?: string } = {}
 ): Promise<FollowPage> {
   const page = options.page ?? 1;
   const limit = options.limit ?? 20;
@@ -63,7 +63,8 @@ export async function getFollowList(
   let path: string;
   if (kind === "followers") path = id ? `user/${id}/followers` : "user/followers";
   else path = id ? `user/${id}/following` : "user/following";
-  const data = await apiGet<Record<string, unknown> | null>(path, { params: { page, limit } });
+  const search = options.search?.trim();
+  const data = await apiGet<Record<string, unknown> | null>(path, { params: { page, limit, ...(search ? { search } : {}) } });
   const raw = Array.isArray(data?.users) ? (data?.users as unknown[]) : [];
   const users = raw.map((entry) => toFollowUser(entry, kind)).filter((u): u is FollowUser => u !== null);
   const totalPages = num(data?.totalPages, page);

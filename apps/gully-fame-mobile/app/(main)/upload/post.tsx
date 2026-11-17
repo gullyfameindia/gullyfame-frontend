@@ -231,10 +231,18 @@ export default function PostReelScreen() {
     }).start(() => setShowMoreOptions(false));
   };
 
+  // Opened from "Continue your draft": the video is already on the server, so the
+  // upload is skipped and the server promotes (or updates) that draft.
+  const draftReelId = params.draftReelId ? String(params.draftReelId) : "";
+  const draftThumb = params.draftThumb ? String(params.draftThumb) : "";
+
   const buildJob = (mode: "publish" | "draft", fileUri: string) => ({
     mode,
     mediaType: (isPhoto ? "photo" : "video") as "photo" | "video",
     fileUri,
+    ...(draftReelId && /^https?:\/\//i.test(fileUri)
+      ? { uploadedUrl: fileUri, ...(draftThumb ? { thumbnailUrl: draftThumb } : {}) }
+      : {}),
     music:
       isPhoto && musicTrack?.url
         ? { url: musicTrack.url, volume: musicTrack.volume, startOffset: musicTrack.trimStart ?? 0 }
@@ -250,6 +258,7 @@ export default function PostReelScreen() {
       tags: hashtags,
       music: musicForUpload ?? undefined,
       competitionId: competitionId || undefined,
+      ...(draftReelId ? { draftReelId } : {}),
     },
   });
 

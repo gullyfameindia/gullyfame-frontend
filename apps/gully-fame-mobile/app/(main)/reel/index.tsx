@@ -51,11 +51,13 @@ import {
   addComment,
   listComments,
   likeComment,
+  deleteComment,
   commentAuthorName,
   ReelComment,
   COMMENT_MAX_LENGTH,
 } from "@api/services/commentService";
-import { getErrorMessage } from "@api/client";
+import { apiGet, getErrorMessage } from "@api/client";
+import { sendMessage } from "@api/services/chatService";
 import { showToast, toastError, toastSuccess } from "@/components/ui/Toast";
 import { blockUser, getBlockedUserIds } from "@/utils/moderation";
 import {
@@ -87,6 +89,7 @@ function groupComments(list: ReelComment[], blockedIds: Set<string> = new Set())
   const toUi = (c: ReelComment, idx: number) => ({
     id: parseInt(c._id.slice(-8), 16) || idx + 1,
     _backendId: c._id,
+    authorId: typeof c.author === "object" && c.author ? c.author._id : String(c.author || ""),
     username: commentAuthorName(c.author),
     avatar: typeof c.author === "object" ? c.author.profileImage || undefined : undefined,
     level: undefined,
@@ -114,6 +117,8 @@ function groupComments(list: ReelComment[], blockedIds: Set<string> = new Set())
 const { width, height } = Dimensions.get("window");
 /** Extra feed pages (10 reels each) loaded to find a reel opened by id before giving up. */
 const MAX_PAGES_TO_FIND_START = 10;
+/** Comments fetched per page in the comment sheet. */
+const COMMENTS_PAGE_SIZE = 50;
 
 /** Thumbnail shown in place of a video that has not drawn its first frame (or is not mounted yet). */
 function ReelPoster({ uri }: { uri: string }) {
@@ -293,6 +298,11 @@ export default function GullyReelScreen() {
   const [currentReelBackendId, setCurrentReelBackendId] = useState<string | null>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  // Flat list of every comment loaded so far (all pages); `comments` is it grouped for display.
+  const rawCommentsRef = useRef<ReelComment[]>([]);
+  const commentsPageRef = useRef(1);
+  const [commentsHasMore, setCommentsHasMore] = useState(false);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
 
   const BOTTOM_NAV_HEIGHT = scale(60);
 
@@ -370,8 +380,11 @@ export default function GullyReelScreen() {
     (async () => {
       setIsLoadingComments(true);
       try {
-        const page = await listComments(currentReelBackendId, 1, 50);
+        const page = await listComments(currentReelBackendId, 1, COMMENTS_PAGE_SIZE);
         if (!active) return;
+        rawCommentsRef.current = page.comments;
+        commentsPageRef.current = 1;
+        setCommentsHasMore(!!page.hasMore);
         setComments(groupComments(page.comments, await getBlockedUserIds()));
         setCommentLikes(new Map());
       } catch (error) {
@@ -392,13 +405,60 @@ export default function GullyReelScreen() {
     setCommentLikes(new Map());
   }, []);
 
-  // There is no followers-list endpoint, so "share to followers" has no list to show.
+  // "Send to": your followers (GET user/followers); tapping one sends the reel link in chat.
+  const [sentShareTo, setSentShareTo] = useState<Set<string>>(new Set());
   useEffect(() => {
-    if (shareModalVisible) {
-      setShareModalFollowers([]);
-      setIsLoadingShareFollowers(false);
-    }
+    if (!shareModalVisible) return;
+    let active = true;
+    setSentShareTo(new Set());
+    setIsLoadingShareFollowers(true);
+    (async () => {
+      try {
+        const [page, blocked] = await Promise.all([
+          apiGet<{ users: { _id: string; firstName?: string; lastName?: string; username?: string; profileImage?: string }[] }>(
+            "user/followers",
+            { params: { page: 1, limit: 30 } }
+          ),
+          getBlockedUserIds(),
+        ]);
+        if (!active) return;
+        const users = Array.isArray(page?.users) ? page.users : [];
+        setShareModalFollowers(
+          users
+            .filter((u) => u && u._id && !blocked.has(u._id))
+            .map((u) => ({
+              id: u._id,
+              name: `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.username || "User",
+              avatar: u.profileImage || "",
+            }))
+        );
+      } catch {
+        if (active) setShareModalFollowers([]);
+      } finally {
+        if (active) setIsLoadingShareFollowers(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, [shareModalVisible]);
+
+  const sendReelToFollower = async (friend: { id: string; name: string }) => {
+    if (sentShareTo.has(friend.id)) return;
+    const backendId = reels.find((r) => r.id === currentReelId)?._backendId || String(currentReelId);
+    setSentShareTo((prev) => new Set(prev).add(friend.id));
+    try {
+      await sendMessage(friend.id, `Check out this reel on Gully Fame! https://gullyfame.com/reel/${backendId}`);
+      toastSuccess(`Sent to ${friend.name}`);
+    } catch (error) {
+      setSentShareTo((prev) => {
+        const next = new Set(prev);
+        next.delete(friend.id);
+        return next;
+      });
+      toastError(getErrorMessage(error));
+    }
+  };
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -841,7 +901,10 @@ export default function GullyReelScreen() {
     try {
       await addComment(currentReelBackendId, text, parent?._backendId);
       // Re-read so the new comment shows with its author populated.
-      const page = await listComments(currentReelBackendId, 1, 50);
+      const page = await listComments(currentReelBackendId, 1, COMMENTS_PAGE_SIZE);
+      rawCommentsRef.current = page.comments;
+      commentsPageRef.current = 1;
+      setCommentsHasMore(!!page.hasMore);
       setComments(groupComments(page.comments, await getBlockedUserIds()));
       setCommentLikes(new Map());
       setReels((prev) =>
@@ -881,6 +944,56 @@ export default function GullyReelScreen() {
       }
     },
     [commentLikes]
+  );
+
+  // Next page of comments, merged into what is already shown.
+  const loadMoreComments = useCallback(async () => {
+    if (!currentReelBackendId || loadingMoreComments || !commentsHasMore) return;
+    setLoadingMoreComments(true);
+    try {
+      const nextPage = commentsPageRef.current + 1;
+      const page = await listComments(currentReelBackendId, nextPage, COMMENTS_PAGE_SIZE);
+      const seen = new Set(rawCommentsRef.current.map((c) => c._id));
+      rawCommentsRef.current = [...rawCommentsRef.current, ...page.comments.filter((c) => !seen.has(c._id))];
+      commentsPageRef.current = nextPage;
+      setCommentsHasMore(!!page.hasMore && page.comments.length > 0);
+      setComments(groupComments(rawCommentsRef.current, await getBlockedUserIds()));
+    } catch (error) {
+      toastError(getErrorMessage(error));
+    } finally {
+      setLoadingMoreComments(false);
+    }
+  }, [currentReelBackendId, loadingMoreComments, commentsHasMore]);
+
+  // DELETE /reels/comments/:id - only offered on your own comments.
+  const handleDeleteComment = useCallback(
+    (comment: any) => {
+      const backendId: string | undefined = comment?._backendId;
+      if (!backendId || !currentReelBackendId) return;
+      Alert.alert("Delete comment?", "This can't be undone.", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteComment(backendId);
+              rawCommentsRef.current = rawCommentsRef.current.filter((c) => c._id !== backendId);
+              setComments(groupComments(rawCommentsRef.current, await getBlockedUserIds()));
+              setReels((prev) =>
+                prev.map((r) =>
+                  r._backendId === currentReelBackendId ? { ...r, comments: Math.max(0, (r.comments || 0) - 1) } : r
+                )
+              );
+              toastSuccess("Comment deleted");
+            } catch (error) {
+              toastError(getErrorMessage(error));
+            }
+          },
+        },
+      ]);
+    },
+    [currentReelBackendId]
   );
 
   // POST /user/:userId/follow toggles; the response says the new state.
@@ -1438,7 +1551,8 @@ export default function GullyReelScreen() {
                         <Text style={{ color: "#999", fontSize: 14 }}>No comments yet</Text>
                       </View>
                     ) : (
-                      comments.map((comment) => {
+                      <>
+                      {comments.map((comment) => {
                       const commentLikeData = commentLikes.get(comment.id) || {
                         likes: comment.likes,
                         isLiked: comment.isLiked,
@@ -1473,6 +1587,11 @@ export default function GullyReelScreen() {
                                     {replyingToComment === comment.id ? "Cancel" : "Reply"}
                                   </Text>
                                 </TouchableOpacity>
+                                {comment.authorId && comment.authorId === myUserId ? (
+                                  <TouchableOpacity onPress={() => handleDeleteComment(comment)} accessibilityLabel="Delete comment">
+                                    <Text style={styles.commentReply}>Delete</Text>
+                                  </TouchableOpacity>
+                                ) : null}
                               </View>
 
                               {comment.replies && comment.replies.length > 0 && (
@@ -1523,7 +1642,7 @@ export default function GullyReelScreen() {
                             comment.replies &&
                             comment.replies.length > 0 && (
                               <View style={styles.repliesContainer}>
-                                {comment.replies.map((reply: { id: number; likes: number; isLiked: boolean; avatar?: string; username: string; level: number; comment: string }) => {
+                                {comment.replies.map((reply: { id: number; _backendId?: string; authorId?: string; likes: number; isLiked: boolean; avatar?: string; username: string; level: number; comment: string }) => {
                                   const replyLikeData = commentLikes.get(reply.id) || {
                                     likes: reply.likes,
                                     isLiked: reply.isLiked,
@@ -1540,6 +1659,11 @@ export default function GullyReelScreen() {
                                           </Text>
                                         </View>
                                         <Text style={styles.replyText}>{reply.comment}</Text>
+                                        {reply.authorId && reply.authorId === myUserId ? (
+                                          <TouchableOpacity onPress={() => handleDeleteComment(reply)} accessibilityLabel="Delete reply">
+                                            <Text style={[styles.commentReply, { marginTop: 4 }]}>Delete</Text>
+                                          </TouchableOpacity>
+                                        ) : null}
                                       </View>
                                       <TouchableOpacity
                                         style={styles.commentLikeButton}
@@ -1569,7 +1693,22 @@ export default function GullyReelScreen() {
                             )}
                         </View>
                       );
-                    })
+                    })}
+                      {commentsHasMore ? (
+                        <TouchableOpacity
+                          onPress={loadMoreComments}
+                          disabled={loadingMoreComments}
+                          style={{ alignItems: "center", paddingVertical: 14 }}
+                          accessibilityLabel="Load more comments"
+                        >
+                          {loadingMoreComments ? (
+                            <ActivityIndicator size="small" color={THEME_COLOR} />
+                          ) : (
+                            <Text style={[styles.commentReply, { color: THEME_COLOR }]}>Load more comments</Text>
+                          )}
+                        </TouchableOpacity>
+                      ) : null}
+                      </>
                     )}
                   </ScrollView>
 
@@ -1674,10 +1813,16 @@ export default function GullyReelScreen() {
                     />
                   ) : shareModalFollowers.length > 0 ? (
                     shareModalFollowers.map((friend) => (
-                      <TouchableOpacity key={friend.id} style={styles.friendItem}>
-                        <Image source={friend.avatar} style={styles.friendAvatar} />
+                      <TouchableOpacity
+                        key={friend.id}
+                        style={styles.friendItem}
+                        onPress={() => sendReelToFollower(friend)}
+                        disabled={sentShareTo.has(friend.id)}
+                        accessibilityLabel={`Send to ${friend.name}`}
+                      >
+                        <UserAvatar uri={resolveMediaUrl(friend.avatar)} name={friend.name} style={styles.friendAvatar} />
                         <Text style={styles.friendName} numberOfLines={1}>
-                          {friend.name}
+                          {sentShareTo.has(friend.id) ? "Sent" : friend.name}
                         </Text>
                       </TouchableOpacity>
                     ))

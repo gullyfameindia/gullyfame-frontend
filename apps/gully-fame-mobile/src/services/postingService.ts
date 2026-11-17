@@ -117,7 +117,7 @@ async function run() {
     if (!current.reel) {
       report("publishing", 0);
       if (current.mode === "draft") {
-        current.reel = await saveDraft(current.uploadedUrl, current.request);
+        current.reel = await saveDraft(current.uploadedUrl, current.request, current.request.draftReelId);
       } else {
         // A competition entry also registers the user (already joined is fine).
         if (current.request.competitionId) {
