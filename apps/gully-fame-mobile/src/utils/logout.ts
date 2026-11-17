@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { removeAuthToken } from "@api/client";
+import { apiPost, removeAuthToken } from "@api/client";
 import { socketChatService } from "@api/services/socketChatService";
 import { store, resetStore } from "@/store";
 import { SESSION_CACHE_KEYS } from "./userSession";
@@ -8,12 +8,18 @@ import { clearOwnProfileSnapshot } from "./ownProfileCache";
 import { resetBlockedUsersCache } from "./moderation";
 
 /**
- * Logout is local-only: the backend has no logout endpoint and its JWTs never
- * expire, so we drop the token, cached profile, live socket and in-memory state.
- * `hasSeenOnboarding` is kept so returning users land on sign-in.
+ * Logout: POST /auth/logout first, so the server stops accepting this token
+ * (and stops push notifications to this device), then drop the token, cached
+ * profile, live socket and in-memory state. Offline or slow, the local logout
+ * still happens after 3 s. `hasSeenOnboarding` is kept so returning users land
+ * on sign-in.
  */
 export const performLogout = async (): Promise<void> => {
   try {
+    await Promise.race([
+      apiPost("auth/logout", {}).catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 3000)),
+    ]);
     socketChatService.disconnect();
     await removeAuthToken();
     clearOwnProfileSnapshot();

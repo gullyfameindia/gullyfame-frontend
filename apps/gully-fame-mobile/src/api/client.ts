@@ -374,7 +374,7 @@ type RetryableConfig = InternalAxiosRequestConfig & { _retryCount?: number };
  */
 export function requiresUserToken(url: string | undefined): boolean {
   const path = String(url ?? "").replace(/^https?:\/\/[^/]+/i, "").replace(/^\/+(v1\/api\/)?/, "").replace(/^\/+/, "");
-  if (path.startsWith("auth/reset-password")) return true;
+  if (path.startsWith("auth/reset-password") || path.startsWith("auth/logout")) return true;
   return !(path.startsWith("public/") || path.startsWith("auth/"));
 }
 
@@ -510,8 +510,11 @@ apiClient.interceptors.response.use(
     const key = backendKeyFor(rawMessage);
     const backendCode = typeof body === "object" && body && typeof body.code === "number" ? body.code : null;
 
+    // A failed logout call must not start another logout.
+    const isLogoutCall = /(^|\/)auth\/logout/.test(String(config?.url ?? ""));
     const isSessionError =
       !config?.skipAuth &&
+      !isLogoutCall &&
       requiresUserToken(config?.url) &&
       (status === 401 || key === "invalid_token" || key === "ac_deactivated");
     if (isSessionError) {

@@ -10,6 +10,7 @@
     "ios": "npx expo run:ios",
     "web": "npx expo start --web",
     "lint": "npx expo lint",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "android": "npx expo run:android",
     "test": "jest",
     "test:watch": "jest --watch",

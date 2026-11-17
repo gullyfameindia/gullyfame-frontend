@@ -1,0 +1,59 @@
+{
+  "//": "Type-check only (npm run typecheck). The monorepo root also has React 18 types for the admin panel, which React Native's type files would otherwise pick up; this points every 'react' import at this app's React 19 types. Kept out of tsconfig.json because Expo's bundler reads its paths at runtime.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "react": [
+        "node_modules/@types/react"
+      ],
+      "react/*": [
+        "node_modules/@types/react/*"
+      ],
+      "@/*": [
+        "src/*"
+      ],
+      "@api/*": [
+        "src/api/*"
+      ],
+      "@assets/*": [
+        "src/assets/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@contexts/*": [
+        "src/contexts/*"
+      ],
+      "@features/*": [
+        "src/features/*"
+      ],
+      "@hooks/*": [
+        "src/hooks/*"
+      ],
+      "@navigation/*": [
+        "src/navigation/*"
+      ],
+      "@screens/*": [
+        "src/screens/*"
+      ],
+      "@store/*": [
+        "src/store/*"
+      ],
+      "@styles/*": [
+        "src/styles/*"
+      ],
+      "@types/*": [
+        "src/types/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@constants/*": [
+        "constants/*"
+      ],
+      "@modules/*": [
+        "src/modules/*"
+      ]
+    }
+  }
+}
