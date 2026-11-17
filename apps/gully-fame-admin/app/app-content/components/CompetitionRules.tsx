@@ -10,7 +10,7 @@ export default function CompetitionRules() {
     <TextPageEditor
       title="Competition Rules"
       icon={FileText}
-      shownIn="Saved on the backend and served at public/competitionRules. The app does not display it on a screen yet."
+      shownIn="Shown in the app on the Competition Rules screen (linked from live and upcoming competitions)."
       defaultText={''}
       contentKey="competitionRules"
       load={getCompetitionRules}
