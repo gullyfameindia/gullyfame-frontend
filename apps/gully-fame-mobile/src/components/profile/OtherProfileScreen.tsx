@@ -30,11 +30,11 @@ const profileTabs = [
 /** Another user's profile (fan or participant). */
 export default function OtherProfileScreen() {
   const params = useLocalSearchParams();
-  const { profileData, isLoading } = useOtherUserProfile();
+  const { profileData, setProfileData, isLoading } = useOtherUserProfile();
   const [activeTab, setActiveTab] = useState("MyFame");
   const [supportVisible, setSupportVisible] = useState(false);
   const [isFollowing, setIsFollowing] = useState(String(params.isFollowing ?? "") === "true");
-  // Follow state comes from user search once the profile loads.
+  // Follow state comes from GET /user/:userId once the profile loads.
   useEffect(() => {
     if (typeof profileData.isFollowing === "boolean") setIsFollowing(profileData.isFollowing);
   }, [profileData.isFollowing]);
@@ -45,8 +45,8 @@ export default function OtherProfileScreen() {
   const { followCounts } = useProfileExtras(userId, false);
   const isFanProfile = String(params.role || profileData.role || "").toLowerCase().startsWith("fan");
 
-  // There is no GET user/:id endpoint; the name/avatar passed by the opening
-  // screen are enriched from user search (see useOtherUserProfile).
+  // The name/avatar passed by the opening screen show first; GET /user/:userId
+  // then fills in the rest (see useOtherUserProfile).
   const firstName = profileData.firstName || String(params.firstName || "");
   const lastName = profileData.lastName || String(params.lastName || "");
   const displayName = [firstName, lastName].filter(Boolean).join(" ");
@@ -84,13 +84,20 @@ export default function OtherProfileScreen() {
     if (result.success) {
       const next = result.data ? result.data.following : !previous;
       setIsFollowing(next);
+      if (next !== previous) {
+        setProfileData((prev) =>
+          typeof prev.followersCount === "number"
+            ? { ...prev, followersCount: Math.max(0, prev.followersCount + (next ? 1 : -1)) }
+            : prev
+        );
+      }
       followUpdateEmitter.emit({ type: next ? "follow" : "unfollow", userId });
     } else {
       setIsFollowing(previous);
       Alert.alert("Couldn't update", result.message || "Please try again.");
     }
     setFollowBusy(false);
-  }, [userId, isFollowing, followBusy]);
+  }, [userId, isFollowing, followBusy, setProfileData]);
 
   const openMessage = useCallback(() => {
     if (!userId) return;
@@ -168,9 +175,9 @@ export default function OtherProfileScreen() {
 
       <LinearGradient colors={["rgba(41, 33, 24, 0.2)", "#3C2610"]} locations={[0.0, 0.4]} style={styles.contentContainer}>
         <StatsSection
-          photos={reels.loading && items.length === 0 ? null : items.length}
+          photos={typeof profileData.reelsCount === "number" ? profileData.reelsCount : reels.loading && items.length === 0 ? null : items.length}
           followers={typeof profileData.followersCount === "number" ? profileData.followersCount : followCounts ? followCounts.followers : null}
-          following={followCounts ? followCounts.following : null}
+          following={typeof profileData.followingCount === "number" ? profileData.followingCount : followCounts ? followCounts.following : null}
           onFollowersPress={() => userId && router.push({ pathname: "/(main)/followers", params: { userId, tab: "followers" } } as any)}
           onFollowingPress={() => userId && router.push({ pathname: "/(main)/followers", params: { userId, tab: "following" } } as any)}
         />

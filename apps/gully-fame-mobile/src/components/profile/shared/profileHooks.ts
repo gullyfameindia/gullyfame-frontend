@@ -2,9 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
-import { getProfile, getProgress } from "@api/services/userService";
+import { getProfile, getProgress, getPublicProfile } from "@api/services/userService";
 import { getMyKyc } from "@api/services/kycService";
-import { searchUsersPage } from "@api/services/searchService";
 import { apiGet, getErrorMessage } from "@api/client";
 import { cacheUserProfile } from "@utils/userSession";
 import { getOwnProfileSnapshot, ownProfileSnapshotReady, saveOwnProfileSnapshot } from "@utils/ownProfileCache";
@@ -28,6 +27,8 @@ export interface ProfileData {
     xLink: string;
     instagramLink: string;
     followersCount?: number;
+    followingCount?: number;
+    reelsCount?: number;
     isFollowing?: boolean;
     // Participant-specific fields
     rank?: number;
@@ -118,6 +119,8 @@ export function useOwnProfile() {
                 email: user.email || "",
                 profileImage: user.profileImage || null,
                 role: user.role || "",
+                followersCount: typeof user.followersCount === "number" ? user.followersCount : prev.followersCount,
+                followingCount: typeof user.followingCount === "number" ? user.followingCount : prev.followingCount,
                 isVerified: kyc?.status === "APPROVED",
                 competitionCount: competitions?.total || 0,
                 level: progress?.level,
@@ -144,9 +147,9 @@ export function useOwnProfile() {
     };
 }
 
-// Another user's profile. The backend has no "get user by id" endpoint, so the
-// header is seeded from navigation params and enriched from user search
-// (follower count and follow state) when a name or username is known.
+// Another user's profile. The header is seeded from navigation params (so it
+// renders instantly) and then filled from GET /user/:userId, which works with
+// only the id - e.g. when the profile is opened from a shared link.
 export function useOtherUserProfile() {
     const params = useLocalSearchParams();
     const userId = (params.userId as string) || (params.id as string) || "";
@@ -167,35 +170,38 @@ export function useOtherUserProfile() {
         role,
     });
     const [isLoading, setIsLoading] = useState(!!userId);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         if (!userId) {
             setIsLoading(false);
             return;
         }
-        const query = (username || `${firstName} ${lastName}`).replace(/^@/, "").trim();
-        if (!query) {
-            setIsLoading(false);
-            return;
-        }
         let active = true;
+        setError("");
         (async () => {
             try {
-                const page = await searchUsersPage(query, 1, 30);
-                const match = page.results.find((u) => u._id === userId);
-                if (active && match) {
+                const user = await getPublicProfile(userId);
+                if (active) {
                     setProfileData((prev) => ({
                         ...prev,
-                        firstName: match.first_name || prev.firstName,
-                        lastName: match.last_name || prev.lastName,
-                        username: match.username || prev.username,
-                        profileImage: match.profile_picture_url || prev.profileImage,
-                        followersCount: match.followers_count,
-                        isFollowing: match.is_followed_by_me,
+                        id: user._id || prev.id,
+                        _id: user._id || prev._id,
+                        firstName: user.firstName || prev.firstName,
+                        lastName: user.lastName || prev.lastName,
+                        username: user.username || prev.username,
+                        profileImage: user.profileImage || prev.profileImage,
+                        role: user.role || prev.role,
+                        level: typeof user.level === "number" ? user.level : prev.level,
+                        followersCount: user.followersCount,
+                        followingCount: user.followingCount,
+                        reelsCount: user.reelsCount,
+                        isFollowing: user.isFollowedByMe,
                     }));
                 }
-            } catch {
-                // The seeded header is still shown.
+            } catch (err) {
+                // The seeded header (if any) is still shown.
+                if (active) setError(getErrorMessage(err));
             } finally {
                 if (active) setIsLoading(false);
             }
@@ -203,7 +209,7 @@ export function useOtherUserProfile() {
         return () => {
             active = false;
         };
-    }, [userId, username, firstName, lastName]);
+    }, [userId]);
 
-    return { profileData, setProfileData, isLoading };
+    return { profileData, setProfileData, isLoading, error };
 }

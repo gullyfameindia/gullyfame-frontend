@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
@@ -16,7 +16,6 @@ import Svg, { Path } from "react-native-svg";
 import { EyeIcon, EyeOffIcon } from "@/icons";
 import { authService, AUTH_RULES } from "@api/services/authService";
 import { toastSuccess } from "@/components/ui/Toast";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
 
@@ -30,24 +29,8 @@ export default function ChangePassword() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [userMobile, setUserMobile] = useState("");
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-
-  useEffect(() => {
-    loadUserIdentifier();
-  }, []);
-
-  const loadUserIdentifier = async () => {
-    try {
-      const email = await AsyncStorage.getItem("userEmail");
-      const mobile = await AsyncStorage.getItem("userMobile");
-      setUserEmail(email || "");
-      setUserMobile(mobile || "");
-    } catch { /* intentionally ignored */
-    }
-  };
 
   // Mirrors the backend rule: at least 6 characters.
   const validatePassword = (pwd: string): string[] => {
@@ -116,16 +99,11 @@ export default function ChangePassword() {
       return;
     }
 
-    const identifier = userEmail || userMobile;
-    if (!identifier) {
-      setErrorMessage("Unable to identify your account. Please sign in again.");
-      return;
-    }
     if (isLoading) return;
     setIsLoading(true);
     try {
-      // Verifies the current password via login, then PUT /auth/reset-password.
-      const result = await authService.changePassword({ identifier, currentPassword, newPassword });
+      // PUT /auth/reset-password; the server checks the current password.
+      const result = await authService.changePassword({ currentPassword, newPassword });
       if (!result.success) {
         setErrorMessage(result.message);
         return;

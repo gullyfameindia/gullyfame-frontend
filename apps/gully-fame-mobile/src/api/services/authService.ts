@@ -177,26 +177,21 @@ export const authService = {
       return {};
     }, "Password updated. Please log in with your new password."),
 
-  /** PUT /auth/reset-password (logged in): sets a new password without checking the old one. */
-  resetPassword: (password: string) =>
+  /**
+   * PUT /auth/reset-password (logged in). An account that already has a password
+   * must send it as `currentPassword`; accounts created with OTP or Google sign-in
+   * can set their first password without one.
+   */
+  resetPassword: (password: string, currentPassword?: string) =>
     toResult(async () => {
-      await apiPut("auth/reset-password", { password });
+      await apiPut("auth/reset-password", { password, ...(currentPassword ? { currentPassword } : {}) });
       return {};
     }, "Password updated successfully"),
 
-  /**
-   * Change password while logged in. The backend has no "current password"
-   * check on PUT /auth/reset-password, so the current password is verified
-   * first by a password login with the account's email or mobile.
-   */
-  changePassword: (data: { identifier: string; currentPassword: string; newPassword: string }) =>
+  /** Change password while logged in; the server checks the current password. */
+  changePassword: (data: { identifier?: string; currentPassword: string; newPassword: string }) =>
     toResult(async () => {
-      await apiPost(
-        "auth/login",
-        { userId: data.identifier.trim(), password: data.currentPassword, viaPassword: true },
-        { skipAuth: true }
-      );
-      await apiPut("auth/reset-password", { password: data.newPassword });
+      await apiPut("auth/reset-password", { password: data.newPassword, currentPassword: data.currentPassword });
       return {};
     }, "Password changed successfully"),
 

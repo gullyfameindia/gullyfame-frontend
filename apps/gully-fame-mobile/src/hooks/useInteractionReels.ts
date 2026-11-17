@@ -15,10 +15,8 @@ const normalize = (reel: any) => ({
 });
 
 /**
- * Reels the signed-in user saved: the feed (GET /reels) carries
- * user_interactions.is_saved per reel, so pages are scanned for saved ones.
- * The feed has no "liked" flag and there is no liked-reels endpoint, so the
- * liked tab stays empty until the backend provides one.
+ * Reels the signed-in user saved or liked, newest first:
+ *   GET /user/reels/saved | /user/reels/liked ?cursor&limit -> { reels, nextCursor, hasMore }
  */
 export function useInteractionReels(kind: InteractionKind, enabled: boolean) {
   const [items, setItems] = useState<any[]>([]);
@@ -45,14 +43,13 @@ export function useInteractionReels(kind: InteractionKind, enabled: boolean) {
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
-      if (kind === "liked") return { confirmed: [] as any[], nextCursor: null, more: false };
-      const response = await apiClient.get<any>("reels", {
+      const response = await apiClient.get<any>(kind === "liked" ? "user/reels/liked" : "user/reels/saved", {
         params: { limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
         signal: controller.signal,
       });
       const data = (response.data as any)?.data;
       const list: any[] = Array.isArray(data?.reels) ? data.reels : [];
-      const confirmed = list.filter((reel) => reel?.user_interactions?.is_saved === true).map(normalize);
+      const confirmed = list.map(normalize);
       const nextCursor: string | null = data?.nextCursor || null;
       const more = Boolean(data?.hasMore) && !!nextCursor && nextCursor !== cursor;
       return { confirmed, nextCursor, more };

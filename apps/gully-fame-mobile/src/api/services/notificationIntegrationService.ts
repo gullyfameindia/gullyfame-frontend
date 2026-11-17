@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { apiGet, apiPut, toResult } from "../client";
+import { apiDelete, apiGet, apiPut, toResult } from "../client";
 import { registerPushTokenWithBackend } from "@/utils/pushToken";
 
 /**
@@ -61,6 +61,14 @@ export const getNotifications = (time: NotificationWindow = 0, page = 1, limit =
 
 export const markNotificationAsRead = (notificationId: string) =>
   toResult(() => apiPut(`notification/${notificationId}/read`, {}));
+
+/** DELETE /notification/:id - removes it from the list for good. */
+export const deleteNotification = (notificationId: string) =>
+  toResult(() => apiDelete(`notification/${notificationId}`), "Notification deleted");
+
+/** DELETE /notification - removes every notification. */
+export const deleteAllNotifications = () =>
+  toResult(() => apiDelete<{ deleted: number }>("notification"), "All notifications deleted");
 
 export const markAllNotificationsAsRead = () =>
   toResult(() => apiPut<{ updated: number }>("notification/read-all", {}), "All notifications marked as read");

@@ -35,6 +35,7 @@ import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
 import DrawerMenu from "@components/layout/DrawerMenu";
 import SupportModal from "@/components/modals/SupportModal/SupportModal";
+import ReportReelModal from "@/components/modals/ReportReelModal/ReportReelModal";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { scale, getFontSize, wp, spacing } from "@utils/responsive";
 import { toggleFollow } from "@api/services/userService";
@@ -49,13 +50,14 @@ import { deletePost } from "@/api/services/profileExtrasService";
 import {
   addComment,
   listComments,
+  likeComment,
   commentAuthorName,
   ReelComment,
   COMMENT_MAX_LENGTH,
 } from "@api/services/commentService";
 import { getErrorMessage } from "@api/client";
 import { showToast, toastError, toastSuccess } from "@/components/ui/Toast";
-import { blockUser, getBlockedUserIds, reportContent } from "@/utils/moderation";
+import { blockUser, getBlockedUserIds } from "@/utils/moderation";
 import {
   HomeIconSVG,
   ReelIconSVG,
@@ -89,8 +91,8 @@ function groupComments(list: ReelComment[], blockedIds: Set<string> = new Set())
     avatar: typeof c.author === "object" ? c.author.profileImage || undefined : undefined,
     level: undefined,
     comment: c.text,
-    likes: 0,
-    isLiked: false,
+    likes: Math.max(0, c.likesCount || 0),
+    isLiked: !!c.isLiked,
     createdAt: c.createdAt,
     parentId: c.parentComment,
     replies: [] as any[],
@@ -371,6 +373,7 @@ export default function GullyReelScreen() {
         const page = await listComments(currentReelBackendId, 1, 50);
         if (!active) return;
         setComments(groupComments(page.comments, await getBlockedUserIds()));
+        setCommentLikes(new Map());
       } catch (error) {
         if (active) {
           setComments([]);
@@ -840,6 +843,7 @@ export default function GullyReelScreen() {
       // Re-read so the new comment shows with its author populated.
       const page = await listComments(currentReelBackendId, 1, 50);
       setComments(groupComments(page.comments, await getBlockedUserIds()));
+      setCommentLikes(new Map());
       setReels((prev) =>
         prev.map((r) => (r._backendId === currentReelBackendId ? { ...r, comments: (r.comments || 0) + 1 } : r))
       );
@@ -854,10 +858,30 @@ export default function GullyReelScreen() {
     }
   }, [commentText, currentReelBackendId, comments, replyingToComment, isPostingComment]);
 
-  // The backend has no comment-like endpoint.
-  const handleToggleCommentLike = useCallback((_comment: any) => {
-    showToast("Liking comments isn't available yet.", "info");
-  }, []);
+  // POST /reels/comments/:id/like. The star updates at once; the server's count replaces it.
+  const commentLikeBusy = useRef<Set<string>>(new Set());
+  const handleToggleCommentLike = useCallback(
+    async (comment: any) => {
+      const backendId: string | undefined = comment?._backendId;
+      if (!backendId || commentLikeBusy.current.has(backendId)) return;
+      const current = commentLikes.get(comment.id) || { likes: comment.likes || 0, isLiked: !!comment.isLiked };
+      const next = !current.isLiked;
+      commentLikeBusy.current.add(backendId);
+      setCommentLikes((prev) =>
+        new Map(prev).set(comment.id, { likes: Math.max(0, current.likes + (next ? 1 : -1)), isLiked: next })
+      );
+      try {
+        const result = await likeComment(backendId, next);
+        setCommentLikes((prev) => new Map(prev).set(comment.id, { likes: result.likesCount, isLiked: result.liked }));
+      } catch (error) {
+        setCommentLikes((prev) => new Map(prev).set(comment.id, current));
+        toastError(getErrorMessage(error));
+      } finally {
+        commentLikeBusy.current.delete(backendId);
+      }
+    },
+    [commentLikes]
+  );
 
   // POST /user/:userId/follow toggles; the response says the new state.
   const handleToggleFollow = useCallback(async (userId: string, username: string, _reelId: number) => {
@@ -878,6 +902,17 @@ export default function GullyReelScreen() {
   // The reel the three-dots menu was opened on; its owner gets "Delete" instead of "Report".
   const menuReel = reels.find((r) => r.id === currentReelForMenu);
   const menuReelIsMine = !!menuReel && !!myUserId && menuReel.userId === myUserId;
+
+  // Report sheet: backend id of the reel being reported, or null when closed.
+  const [reportReelId, setReportReelId] = useState<string | null>(null);
+  const handleReelReported = (reelId: string, alreadyReported: boolean) => {
+    setReportReelId(null);
+    toastSuccess(alreadyReported ? "Report updated. Thanks for letting us know." : "Thanks for reporting. Our team will review this reel.");
+    // Hide it from this list so the reporter doesn't keep seeing it.
+    const remaining = reels.filter((r) => String(r._backendId || r.id) !== reelId);
+    setReels(remaining);
+    if (remaining.length === 0) router.back();
+  };
 
   const confirmDeleteReel = (reel: any) => {
     if (!reel) return;
@@ -1949,8 +1984,8 @@ export default function GullyReelScreen() {
                       useNativeDriver: true,
                     }).start(() => {
                       setShowThreeDotsMenu(false);
-                      // No backend report endpoint yet: opens a pre-filled email to support.
-                      if (menuReel?._backendId) reportContent("reel", menuReel._backendId);
+                      // POST /reels/:id/report with a reason picked in the sheet.
+                      if (menuReel?._backendId) setReportReelId(String(menuReel._backendId));
                     });
                   }}
                 >
@@ -2067,6 +2102,13 @@ export default function GullyReelScreen() {
       />
 
       <DrawerMenu visible={drawerVisible} onClose={() => setDrawerVisible(false)} />
+
+      <ReportReelModal
+        visible={!!reportReelId}
+        reelId={reportReelId}
+        onClose={() => setReportReelId(null)}
+        onReported={handleReelReported}
+      />
 
       {currentTipReelId !== null && (
         <SupportModal

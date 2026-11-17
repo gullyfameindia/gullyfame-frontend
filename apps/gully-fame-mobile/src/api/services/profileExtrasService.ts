@@ -1,6 +1,6 @@
-// Profile data the backend does not provide yet. Each function returns a safe empty
-// value so the profile screen can hide the section or show "–" instead of a fake number.
-// Replace each body with a real API call once the endpoint exists.
+// Extra profile data: follow counts, profile views, post deletion and sharing.
+// Reads return null when they can't load, so the screen hides the section or
+// shows "–" instead of a made-up number.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiDelete, apiGet, toResult } from "../client";
@@ -11,7 +11,14 @@ export interface FollowCounts {
 }
 
 export interface ProfileInsights {
+  /** Window the numbers cover. */
+  days: number;
+  /** Views in the window; each viewer counts once per day. */
+  views: number;
+  uniqueViewers: number;
+  /** Same as `views` for the default 30-day window. */
   viewsLast30Days: number;
+  daily: { date: string; views: number }[];
 }
 
 type Result<T = undefined> = { success: boolean; message: string; data?: T };
@@ -49,11 +56,22 @@ export async function getFollowCounts(userId: string): Promise<FollowCounts | nu
 }
 
 /**
- * Profile view analytics for the signed-in user. `null` hides the insights card.
+ * Profile view analytics for the signed-in user, from GET user/insights?days=30.
+ * `null` hides the insights line.
  */
-export async function getProfileInsights(): Promise<ProfileInsights | null> {
-  // BACKEND_PENDING: GET user/insights?days=30 -> { viewsLast30Days: number }
-  return null;
+export async function getProfileInsights(days = 30): Promise<ProfileInsights | null> {
+  const data = await apiGet<{ days: number; views: number; uniqueViewers: number; daily: { date: string; views: number }[] }>(
+    "user/insights",
+    { params: { days } }
+  );
+  if (!data || typeof data.views !== "number") return null;
+  return {
+    days: data.days,
+    views: data.views,
+    uniqueViewers: data.uniqueViewers || 0,
+    viewsLast30Days: data.views,
+    daily: Array.isArray(data.daily) ? data.daily : [],
+  };
 }
 
 /** Whether the Delete quick action is offered on own posts. */

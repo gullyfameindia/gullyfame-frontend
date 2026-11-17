@@ -1,5 +1,5 @@
 import { useState, useEffect,  useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, Platform, Animated, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, Platform, Animated, ActivityIndicator, Alert } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
@@ -8,10 +8,11 @@ import {
   fetchNotifications as fetchNotificationsPage,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  deleteNotification,
   type Notification,
 } from "@/api/services/notificationIntegrationService";
 import { getErrorMessage } from "@/api/client";
-import { showToast, toastError, toastSuccess } from "@/components/ui/Toast";
+import { toastError, toastSuccess } from "@/components/ui/Toast";
 import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 
@@ -48,7 +49,7 @@ export default function NotificationsScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState<string | null>(null);
-  const deleting: string | null = null;
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
 
   
@@ -113,9 +114,29 @@ export default function NotificationsScreen() {
     setMarkingAll(false);
   };
 
-  // The backend has no endpoint to delete a notification.
-  const handleDeleteNotification = (_notificationId: string) => {
-    showToast("Deleting notifications isn't available yet.", "info");
+  // Long-press a notification to delete it (DELETE /notification/:id).
+  const handleDeleteNotification = (notificationId: string) => {
+    if (deleting) return;
+    Alert.alert("Delete notification?", "It will be removed from your list.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          const target = notifications.find((n) => n.id === notificationId);
+          setDeleting(notificationId);
+          const response = await deleteNotification(notificationId);
+          if (response.success) {
+            setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+            if (target && !target.read) setUnreadCount((count) => Math.max(0, count - 1));
+            toastSuccess(response.message);
+          } else {
+            toastError(response.message);
+          }
+          setDeleting(null);
+        },
+      },
+    ]);
   };
 
   useEffect(() => {

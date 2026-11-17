@@ -22,8 +22,29 @@ export interface BackendUser {
   streakCount: number;
   device_token?: string;
   device_type?: "android" | "ios" | "web" | "";
+  followersCount?: number;
+  followingCount?: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/** Another user's public profile, as GET /user/:userId returns it. */
+export interface PublicProfile {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  profileImage: string;
+  role: BackendUser["role"];
+  level?: number;
+  streakCount?: number;
+  createdAt?: string;
+  followersCount: number;
+  followingCount: number;
+  reelsCount: number;
+  isFollowedByMe: boolean;
+  followsMe: boolean;
+  isMe: boolean;
 }
 
 /**
@@ -156,6 +177,9 @@ export async function updateProfile(update: ProfileUpdate): Promise<BackendUser>
   return getProfile();
 }
 
+/** GET /user/:userId - another user's public profile with follow counts. */
+export const getPublicProfile = (userId: string) => apiGet<PublicProfile>(`user/${encodeURIComponent(userId)}`);
+
 export const getCurrentUser = (): Promise<ApiResult<BackendUser>> => toResult(getProfile);
 
 export const updateUserProfile = (update: ProfileUpdate) => toResult(() => updateProfile(update), "Profile updated");
@@ -202,6 +226,7 @@ export const getChampions = (page = 1, limit = 20) =>
 export const userService = {
   getProfile,
   updateProfile,
+  getPublicProfile,
   getCurrentUser,
   updateUserProfile,
   registerDeviceToken,

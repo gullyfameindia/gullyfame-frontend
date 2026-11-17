@@ -18,7 +18,8 @@ import { Image as ExpoImage } from "expo-image";
 import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
-import { resolveMediaUrl } from "@/utils/mediaUrl";
+import { formatCount, resolveMediaUrl } from "@/utils/mediaUrl";
+import { Ionicons } from "@expo/vector-icons";
 import { useOwnProfile } from "@/components/profile/shared/profileHooks";
 import {
   BIO_MAX_LENGTH,
@@ -119,7 +120,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   // before the profile request returns.
   const reels = useUserReels(userId || "me");
   const saved = useInteractionReels("saved", true);
-  const { followCounts } = useProfileExtras(userId, true);
+  const { followCounts, insights } = useProfileExtras(userId, true);
 
   useEffect(() => {
     // Contact details saved at sign-in (the profile hook does not load them).
@@ -362,11 +363,23 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
       >
         <StatsSection
           photos={reels.loading && posts.length === 0 ? null : posts.length}
-          followers={followCounts ? followCounts.followers : null}
-          following={followCounts ? followCounts.following : null}
+          followers={typeof profileData.followersCount === "number" ? profileData.followersCount : followCounts ? followCounts.followers : null}
+          following={typeof profileData.followingCount === "number" ? profileData.followingCount : followCounts ? followCounts.following : null}
           onFollowersPress={() => openFollowers("followers")}
           onFollowingPress={() => openFollowers("following")}
         />
+
+        {insights ? (
+          <View
+            style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6, marginBottom: 4 }}
+            accessibilityLabel={`${insights.views} profile views in the last ${insights.days} days`}
+          >
+            <Ionicons name="eye-outline" size={15} color="#C9B9A6" />
+            <Text style={{ color: "#C9B9A6", fontSize: 13 }}>
+              {formatCount(insights.views)} profile {insights.views === 1 ? "view" : "views"} in the last {insights.days} days
+            </Text>
+          </View>
+        ) : null}
 
         {isFan ? (
           <LevelUpSection
