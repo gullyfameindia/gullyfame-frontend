@@ -16,6 +16,7 @@ import { router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Circle } from "react-native-svg";
 import { BackIcon } from "@/icons";
+import { COIN_PURCHASE_ENABLED, WITHDRAW_MIN_COINS, withdrawMessage } from "@/config/features";
 import { getWalletSummary, toDisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
 import { Skeleton, SkeletonGrid, SkeletonRoot } from "@/components/Skeleton/Skeleton";
@@ -143,7 +144,8 @@ export default function CoinsScreen() {
                 </View>
               </View>
 
-              {/* Add Money Button - Inside Balance Card */}
+              {/* Add Money Button - Inside Balance Card (hidden while coin purchase is off) */}
+              {COIN_PURCHASE_ENABLED ? (
               <TouchableOpacity
                 style={styles.addMoneyButton}
                 onPress={handleAddMoney}
@@ -157,16 +159,14 @@ export default function CoinsScreen() {
                   <Text style={styles.addMoneyText}>+ Add GFI Coins</Text>
                 </LinearGradient>
               </TouchableOpacity>
+              ) : null}
 
-              {/* Withdraw Button */}
+              {/* Withdraw Button (withdrawals are not built yet; shows the 1,000-coin goal) */}
               {availableBalance > 0 && (
                 <TouchableOpacity
                   style={styles.withdrawButton}
                   onPress={() =>
-                    Alert.alert(
-                      "Withdrawals not available yet",
-                      "Cashing out coins isn't supported by the server yet. Your coins stay safe in your wallet."
-                    )
+                    Alert.alert("Withdraw GFI Coins", withdrawMessage(availableBalance))
                   }
                 >
                   <Text style={styles.withdrawButtonText}>
@@ -174,6 +174,13 @@ export default function CoinsScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
+
+              {/* Progress toward the withdrawal goal */}
+              <Text style={{ color: "#C9B9A6", fontSize: 13, textAlign: "center", marginTop: 10 }}>
+                {availableBalance >= WITHDRAW_MIN_COINS
+                  ? "Withdrawal goal reached. Withdrawals are coming soon."
+                  : `${Math.floor(Math.max(0, availableBalance)).toLocaleString()} / ${WITHDRAW_MIN_COINS.toLocaleString()} coins to unlock withdrawal`}
+              </Text>
             </LinearGradient>
           </View>
 

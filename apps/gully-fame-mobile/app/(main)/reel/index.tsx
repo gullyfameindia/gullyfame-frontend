@@ -35,6 +35,7 @@ import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
 import DrawerMenu from "@components/layout/DrawerMenu";
 import SupportModal from "@/components/modals/SupportModal/SupportModal";
+import { COIN_PURCHASE_ENABLED, EARN_COINS_MESSAGE, TIPPING_ENABLED } from "@/config/features";
 import ReportReelModal from "@/components/modals/ReportReelModal/ReportReelModal";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { scale, getFontSize, wp, spacing } from "@utils/responsive";
@@ -1059,8 +1060,12 @@ export default function GullyReelScreen() {
       }
 
       if (balance < 1) {
-        toastError("Insufficient balance. Please add coins to your wallet.");
-        router.push("/(main)/coins");
+        if (COIN_PURCHASE_ENABLED) {
+          toastError("Insufficient balance. Please add coins to your wallet.");
+          router.push("/(main)/coins");
+        } else {
+          toastError(EARN_COINS_MESSAGE);
+        }
       } else {
         setCurrentTipReelId(reelId);
         setCurrentTipCreatorId(creatorId);
@@ -1300,6 +1305,7 @@ export default function GullyReelScreen() {
               </View>
 
               <View style={styles.bottomButtonsRow}>
+                {TIPPING_ENABLED ? (
                 <View style={styles.flexButtonWrapper}>
                   <TouchableOpacity
                     style={[styles.tipButton, isFetchingBalance && { opacity: 0.6 }]}
@@ -1320,6 +1326,7 @@ export default function GullyReelScreen() {
                     )}
                   </TouchableOpacity>
                 </View>
+                ) : null}
 
                 <View style={styles.flexButtonWrapper}>
                   {showVotePopup === reel.id && (

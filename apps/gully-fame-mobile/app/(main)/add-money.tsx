@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert, ActivityIndicator, TextInput } from "react-native";
 import { router, useFocusEffect } from "expo-router";
@@ -9,6 +9,7 @@ import { getWallet, rechargeWallet, RECHARGE_LIMITS } from "@/api/services/walle
 import { getProfile, displayName } from "@/api/services/userService";
 import { getErrorMessage } from "@/api/client";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
+import { COIN_PURCHASE_ENABLED } from "@/config/features";
 
 interface CoinPackage {
   id: string;
@@ -27,7 +28,22 @@ const COIN_PACKAGES: CoinPackage[] = QUICK_AMOUNTS.map((amount) => ({
   popular: amount === 250,
 }));
 
-export default function AddMoneyScreen() {
+// While coin purchase is switched off, anyone who reaches this screen (old link,
+// back stack) is sent back with a message. The purchase screen below is kept.
+export default function AddMoneyRoute() {
+  return COIN_PURCHASE_ENABLED ? <AddMoneyScreen /> : <CoinPurchaseUnavailable />;
+}
+
+function CoinPurchaseUnavailable() {
+  useEffect(() => {
+    toastError("Buying coins is not available yet.");
+    if (router.canGoBack()) router.back();
+    else router.replace("/(main)/coins" as any);
+  }, []);
+  return <View style={{ flex: 1, backgroundColor: "#000" }} />;
+}
+
+function AddMoneyScreen() {
   const coinPackages = COIN_PACKAGES;
   const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(
     COIN_PACKAGES.find((p) => p.popular) || null

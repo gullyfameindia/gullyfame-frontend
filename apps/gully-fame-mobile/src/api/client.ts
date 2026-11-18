@@ -10,6 +10,7 @@ import axios, {
 import * as SecureStore from "expo-secure-store";
 import NetInfo from "@react-native-community/netinfo";
 import { API_BASE_URL, SOCKET_URL as CONFIG_SOCKET_URL } from "@/config/env";
+import { COIN_PURCHASE_ENABLED, EARN_COINS_MESSAGE } from "@/config/features";
 import {
   MAX_GET_RETRIES,
   RETRYABLE_STATUS,
@@ -222,7 +223,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   comment_text_required: "Write something before posting.",
   comment_not_found: "Comment not found.",
   cannot_follow_self: "You cannot follow yourself.",
-  insufficient_balance: "Insufficient wallet balance. Please add money first.",
+  insufficient_balance: COIN_PURCHASE_ENABLED ? "Insufficient wallet balance. Please add money first." : EARN_COINS_MESSAGE,
   invalid_amount: "Enter a valid amount.",
   invalid_recharge_amount: "Enter a whole amount within the allowed recharge range.",
   cannot_tip_self: "You cannot tip your own reel.",

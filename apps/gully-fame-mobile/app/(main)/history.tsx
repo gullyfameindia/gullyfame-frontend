@@ -17,14 +17,15 @@ import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { getWallet, toDisplayTransaction, DisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
 import { toastError } from "@/components/ui/Toast";
+import { COIN_PURCHASE_ENABLED, withdrawMessage } from "@/config/features";
 import { Skeleton, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
 type Transaction = DisplayTransaction;
 
 const PAGE_SIZE = 20;
 
-const showWithdrawUnavailable = () =>
-  Alert.alert("Withdrawals not available yet", "Cashing out coins isn't supported by the server yet.");
+const showWithdrawUnavailable = (balance: number) =>
+  Alert.alert("Withdraw GFI Coins", withdrawMessage(balance));
 
 export default function HistoryScreen() {
   const [filter, setFilter] = useState<"all" | "earned" | "spent">("all");
@@ -136,6 +137,7 @@ export default function HistoryScreen() {
           </View>
           
           <View style={styles.walletActions}>
+            {COIN_PURCHASE_ENABLED ? (
             <TouchableOpacity 
               style={styles.addMoneyButton} 
               activeOpacity={0.8}
@@ -144,11 +146,12 @@ export default function HistoryScreen() {
               <Ionicons name="add-circle" size={20} color="#fff" />
               <Text style={styles.addMoneyButtonText}>Add Money</Text>
             </TouchableOpacity>
+            ) : null}
 
             <TouchableOpacity 
               style={styles.withdrawButton} 
               activeOpacity={0.8}
-              onPress={showWithdrawUnavailable}
+              onPress={() => showWithdrawUnavailable(totalBalance)}
             >
               <MaterialIcons name="account-balance" size={20} color="#fff" />
               <Text style={styles.withdrawButtonText}>Withdraw</Text>

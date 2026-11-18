@@ -14,6 +14,7 @@ import { otherProfileStyles as styles } from "@/styles/otherProfileStyles";
 import { getProfileShareMessage } from "@/api/services/profileExtrasService";
 import { resolveMediaUrl } from "@/utils/mediaUrl";
 import SupportModal from "@/components/modals/SupportModal/SupportModal";
+import { TIPPING_ENABLED } from "@/config/features";
 import { useUserReels } from "@/hooks/useUserReels";
 import { useProfileExtras } from "@/hooks/useProfileExtras";
 import { userService } from "@/api/services/userService";
@@ -170,7 +171,7 @@ export default function OtherProfileScreen() {
           onToggleFollow={userId ? toggleFollow : undefined}
           onMessage={userId ? openMessage : undefined}
           // Tips are sent to a reel (POST reels/:id/tip), so Support needs at least one post.
-          onSupport={latestReelId ? () => setSupportVisible(true) : undefined}
+          onSupport={TIPPING_ENABLED && latestReelId ? () => setSupportVisible(true) : undefined}
         />
         </View>
       ) : null}

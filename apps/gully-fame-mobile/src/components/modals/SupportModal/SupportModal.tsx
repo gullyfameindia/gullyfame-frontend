@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getWallet, tipReel } from "@/api/services/walletService";
 import { ApiError, getErrorMessage } from "@/api/client";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
+import { COIN_PURCHASE_ENABLED, EARN_COINS_MESSAGE } from "@/config/features";
 
 interface SupportPackage {
   id: string;
@@ -243,14 +244,16 @@ export default function SupportModal({
 
             {insufficient && (
               <Text style={styles.insufficientText}>
-                Insufficient balance. You need {supportAmount} coins, you have {walletBalance}.
+                {COIN_PURCHASE_ENABLED
+                  ? `Insufficient balance. You need ${supportAmount} coins, you have ${walletBalance}.`
+                  : `You need ${supportAmount} coins, you have ${walletBalance}. Earn coins by completing daily missions.`}
               </Text>
             )}
           </ScrollView>
 
           {/* Footer */}
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-            {insufficient ? (
+            {insufficient && COIN_PURCHASE_ENABLED ? (
               <TouchableOpacity style={styles.sendButton} onPress={goToWallet}>
                 <Ionicons name="wallet-outline" size={20} color="#fff" />
                 <Text style={styles.sendButtonText}>Add Coins</Text>
