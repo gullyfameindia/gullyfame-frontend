@@ -3,6 +3,8 @@
 Scope: `Gullyfamefrontend/apps/gully-fame-admin` (Next.js 14 app, the only admin app in the monorepo).
 Contract: `Gully Fame API Production.postman_collection.json` (repo root, 165 requests). The backend repo is not in this workspace, so the backend was NOT read directly. All endpoints below were checked against the collection and `yarn check:api`.
 
+> **Update 2026-11-18:** the monorepo now lives at `gullyfameindia/gullyfame-frontend/` and the backend at `gullyfameindia/gullyfame-backend/`. Backend-dependent items were re-checked against the code: see the note at the top of `BACKEND_GAPS.md` (item 8 resolved; items 2 and 6 partly). Item 9: `_unused/` is still present in this checkout. Item 10: `next` is still `^14.0.0`.
+
 ## 1. Map
 
 | Area | Location | Notes |

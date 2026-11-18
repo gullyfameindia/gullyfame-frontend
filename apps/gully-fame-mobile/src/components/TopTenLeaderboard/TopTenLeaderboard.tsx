@@ -50,7 +50,7 @@ function TopTenLeaderboard({ performers }: TopTenLeaderbaordProps) {
                             <Image
                                 source={
                                     performer.defaultProfilePicture ||
-                                    require("@assets/images/user2.png")
+                                    require("@assets/images/default-avatar.png")
                                 }
                                 style={styles.leaderboardAvatarImage}
                             />

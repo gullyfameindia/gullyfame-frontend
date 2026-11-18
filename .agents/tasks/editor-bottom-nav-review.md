@@ -1,5 +1,7 @@
 # Video Editor Bottom Navigation Integration
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 Bottom navigation toolbar now renders all buttons without gating on thumbnail load, and upload failure is non-blocking after gallery save succeeds.
 
 The key changes address three concerns: the toolbar was previously clipping buttons when `isReady` gated the entire component; the sticker callback now validates content; and upload errors surface to the user with retry capability instead of silently failing. The export-to-gallery flow is independent of backend upload — if the server rejects the video, the file is still on the device and the user can retry without re-exporting.

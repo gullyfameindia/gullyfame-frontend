@@ -1,5 +1,7 @@
 # Camera Blank Screen Fix - Bugfix Design
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 ## Overview
 
 The Instagram-style reel camera screen displays a blank/black preview on real Android and iOS devices because the CameraView component renders before the navigation screen gains focus. This causes Android's Camera2 API and iOS's AVFoundation to initialize with an invalid rendering surface. The fix wraps the CameraView render with a focus check using React Navigation's `useIsFocused` hook, ensuring the camera initializes only after the screen is focused with a valid surface. This pattern is already working in `CameraScreen.tsx` and needs to be applied to `camera.tsx`.

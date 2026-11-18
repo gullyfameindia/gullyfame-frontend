@@ -356,6 +356,9 @@ export default function GullyFameHome() {
                 style={styles.heroIconButton}
                 onPress={() => checkAuthAndNavigate("/(main)/settings/notifications")}
                 testID="home-notifications"
+                accessibilityRole="button"
+                accessibilityLabel={unreadCount > 0 ? "Notifications, unread" : "Notifications"}
+                hitSlop={4}
               >
                 <NotificationIcon />
                 {unreadCount > 0 && <View style={styles.notificationDot} />}
@@ -364,6 +367,9 @@ export default function GullyFameHome() {
                 style={styles.heroIconButton}
                 onPress={() => checkAuthAndNavigate("/(main)/inbox")}
                 testID="home-inbox"
+                accessibilityRole="button"
+                accessibilityLabel="Messages"
+                hitSlop={4}
               >
                 <ChatIcon />
               </TouchableOpacity>
@@ -635,7 +641,7 @@ export default function GullyFameHome() {
         );
 
       case "upcoming":
-        if (!upcomingCompetitionsFull.length) return null;
+        // Always shown; with nothing scheduled it says "Coming soon" instead of disappearing.
         return (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -643,15 +649,26 @@ export default function GullyFameHome() {
                 <TrophyIcon size={24} />
                 <Text style={styles.sectionTitle}>Upcoming Competitions</Text>
               </View>
-              <TouchableOpacity
-                style={styles.viewAllContainer}
-                onPress={() => checkAuthAndNavigate("/(main)/competitions/upcoming")}
-                testID="home-upcoming-view-all"
-              >
-                <Text style={styles.viewAllButton}>View All</Text>
-                <CaretRightIcon></CaretRightIcon>
-              </TouchableOpacity>
+              {upcomingCompetitionsFull.length ? (
+                <TouchableOpacity
+                  style={styles.viewAllContainer}
+                  onPress={() => checkAuthAndNavigate("/(main)/competitions/upcoming")}
+                  testID="home-upcoming-view-all"
+                >
+                  <Text style={styles.viewAllButton}>View all</Text>
+                  <CaretRightIcon></CaretRightIcon>
+                </TouchableOpacity>
+              ) : null}
             </View>
+            {!upcomingCompetitionsFull.length ? (
+              <View style={homeExtraStyles.comingSoon} testID="home-upcoming-coming-soon">
+                <TrophyIcon size={34} />
+                <Text style={homeExtraStyles.comingSoonTitle}>Coming Soon</Text>
+                <Text style={homeExtraStyles.comingSoonText}>
+                  New competitions are on the way. Stay tuned!
+                </Text>
+              </View>
+            ) : (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -670,27 +687,23 @@ export default function GullyFameHome() {
                         defaultImage={comp.defaultThumbnailImage}
                         imageUrl={resolveMediaUrl(comp.image) || undefined}
                         style={styles.upcomingCompImage}
-                        resizeMode="contain"
+                        resizeMode="cover"
                       ></SafeImage>
                       <View style={styles.joinButtonOverlay}>
                         <TouchableOpacity
-                          style={styles.joinButtonOnImage}
+                          style={homeExtraStyles.joinPill}
+                          activeOpacity={0.85}
                           onPress={(e) => {
                             e.stopPropagation();
                             router.push(`/(main)/competition/upcoming/${comp.id}` as any);
                           }}
                         >
-                          <LinearGradient
-                            colors={["#1E88E5", "#1565C0"]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.joinButtonGradientOnImage}
-                          >
-                            <Text style={styles.joinButtonTextOnImage}>View Details</Text>
-                            <Text style={styles.joinButtonPrizeText}>
-                              {convertToFormattedPrize(comp.prize)}
+                          <Text style={homeExtraStyles.joinPillText}>Join Now</Text>
+                          {typeof comp.prize === "number" ? (
+                            <Text style={homeExtraStyles.joinPillPrize}>
+                              ₹{new Intl.NumberFormat("en-IN").format(comp.prize)}/-
                             </Text>
-                          </LinearGradient>
+                          ) : null}
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -700,14 +713,17 @@ export default function GullyFameHome() {
                       </Text>
                       <View style={styles.compInfoRow}>
                         <View style={styles.compInfoItem}>
-                          <LimitedTimeEventClockIcon></LimitedTimeEventClockIcon>
-                          <Text style={styles.upcomingCompDeadline}>
-                            {convertDateToDaysLeft(comp.endDate ? String(comp.endDate) : "")} Days Left
+                          <LimitedTimeEventClockIcon size={14} strokeWidth={2} />
+                          <Text style={homeExtraStyles.metaText}>
+                            {(() => {
+                              const days = convertDateToDaysLeft(comp.endDate ? String(comp.endDate) : "");
+                              return `${days} ${days === 1 ? "day" : "days"} left`;
+                            })()}
                           </Text>
                         </View>
                         <View style={styles.compInfoItem}>
                           <PeopleIcon color="#EC9A15" size={14} />
-                          <Text style={styles.upcomingCompParticipants}>
+                          <Text style={homeExtraStyles.metaText}>
                             {convertToFormattedString(Number(comp.participants ?? 0))}
                           </Text>
                         </View>
@@ -717,6 +733,7 @@ export default function GullyFameHome() {
                 </View>
               ))}
             </ScrollView>
+            )}
           </View>
         );
 
@@ -933,6 +950,9 @@ export default function GullyFameHome() {
               style={styles.stickyHeaderIconButton}
               onPress={() => checkAuthAndNavigate("/(main)/settings/notifications")}
               testID="home-sticky-notifications"
+                accessibilityRole="button"
+                accessibilityLabel={unreadCount > 0 ? "Notifications, unread" : "Notifications"}
+                hitSlop={4}
             >
               <NotificationIcon />
               {unreadCount > 0 && <View style={styles.notificationDot} />}
@@ -941,6 +961,9 @@ export default function GullyFameHome() {
               style={styles.stickyHeaderIconButton}
               onPress={() => checkAuthAndNavigate("/(main)/inbox")}
               testID="home-sticky-inbox"
+                accessibilityRole="button"
+                accessibilityLabel="Messages"
+                hitSlop={4}
             >
               <ChatIcon />
             </TouchableOpacity>
@@ -1016,5 +1039,56 @@ const homeExtraStyles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#EC9A15",
+  },
+  // Upcoming Competitions: gold "Join Now ₹1,00,000/-" pill and grey meta line, per the design.
+  joinPill: {
+    minWidth: "70%",
+    maxWidth: "92%",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: "#E9A83A",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.6)",
+    alignItems: "center",
+  },
+  joinPillText: {
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Inter_600SemiBold",
+  },
+  joinPillPrize: {
+    color: "#fff",
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+  },
+  metaText: {
+    color: "#CAD7D8",
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+  },
+  comingSoon: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "rgba(233,168,58,0.6)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  comingSoonTitle: {
+    color: "#E9A83A",
+    fontSize: 18,
+    fontFamily: "Inter_700Bold",
+    marginTop: 10,
+  },
+  comingSoonText: {
+    color: "#CAD7D8",
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
+    marginTop: 4,
+    textAlign: "center",
   },
 });

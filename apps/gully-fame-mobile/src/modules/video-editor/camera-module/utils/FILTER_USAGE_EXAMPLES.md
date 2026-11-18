@@ -1,5 +1,7 @@
 # Filter Change Detection - Usage Examples
 
+> **Outdated (note added 2026-11-18):** `ffmpegFilters.ts`, `filterHelpers.ts` and the functions shown below (`applyPresetToImage`, `applyPresetToVideo`, `getClipFilterName`, ...) no longer exist. Filters are now baked at export in `bakeEdits.ts` (FFmpeg runner in `ffmpeg.ts`; filter types in `../types/filters.ts`). Keep this file only as background on the FFmpeg filter strings.
+
 ## How to Check if a Filter Has Changed
 
 Use the utility functions in `camera-module/utils/filterHelpers.ts` to check filter states.

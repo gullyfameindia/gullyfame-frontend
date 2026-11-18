@@ -112,7 +112,7 @@ export default function LiveCompetitionScreen() {
         votes: entry.points ?? entry.votes ?? 0,
         defaultProfilePicture: entry.profilePictureUrl
           ? { uri: entry.profilePictureUrl }
-          : require("@assets/images/user1.png"),
+          : require("@assets/images/default-avatar.png"),
         isCurrentUser: !!entry.isCurrentUser,
         role: "participants",
       }));

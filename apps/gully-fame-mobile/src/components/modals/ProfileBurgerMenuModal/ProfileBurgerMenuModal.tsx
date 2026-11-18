@@ -116,7 +116,7 @@ function ProfileBurgerMenuModal({
               />
             ) : (
               <Image
-                source={require("@assets/images/user2.png")}
+                source={require("@assets/images/default-avatar.png")}
                 style={styles.menuProfileImage}
               />
             )}

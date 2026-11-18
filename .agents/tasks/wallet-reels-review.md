@@ -1,5 +1,7 @@
 # Wallet, History & Reels Integration
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 Real API data now drives the ReelsScreen, coins wallet shows transaction history with an Add Money button, and insufficient balance redirects users to add funds.
 
 The three screens are now integrated: ReelsScreen displays real creator names and engagement metrics, requests proper creator IDs for support, and the wallet screen provides a clear entry point for adding coins. The insufficient-balance flow properly redirects to wallet for top-ups. One navigation issue remains: the button routes to the wrong screen when coins run out.

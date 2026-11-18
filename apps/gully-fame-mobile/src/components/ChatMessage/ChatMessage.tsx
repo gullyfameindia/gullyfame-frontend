@@ -27,7 +27,7 @@ function ChatMessage({
   onLongPress,
 }: ChatMessageProps) {
   const avatarSource = isSent
-    ? require("@assets/images/user1.png")
+    ? require("@assets/images/default-avatar.png")
     : chatUserAvatar;
   return (
     <View style={styles.messageItemContainer}>

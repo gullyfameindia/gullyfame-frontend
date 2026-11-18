@@ -1,5 +1,7 @@
 # GullyReel Feed Fix - Phase 1 Implementation Plan
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 ## Overview
 This plan addresses the four main issues in the GullyReel feed: missing profileImage in Reel interface, hardcoded avatar images, always-visible caption and music rows, missing pagination UI, and incorrect caption field in video upload.
 

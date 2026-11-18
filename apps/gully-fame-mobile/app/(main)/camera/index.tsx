@@ -249,6 +249,8 @@ export default function TikTokCameraScreen() {
   const [zoomMenuScale] = useState(() => new Animated.Value(0));
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartTime = useRef<number>(0);
+  // Start of the current segment. A camera flip mid-recording ends one file and starts the next.
+  const segmentStartTime = useRef<number>(0);
   const filterLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleCameraReady = () => {
@@ -401,31 +403,18 @@ export default function TikTokCameraScreen() {
       }
 
       const recorder = await videoOutput.createRecorder({});
-      
+      segmentStartTime.current = Date.now();
+
       await recorder.startRecording(
         (filePath: string, reason: string) => {
-          const elapsed = (Date.now() - recordingStartTime.current) / 1000;
-          
-          // Check if this is a segment from a camera flip
-          if (isCameraFlipping.current) {
-            // This is a mid-recording segment from camera flip
-            setCurrentRecordingSegments((prev) => [...prev, `file://${filePath}`]);
-            recordingRef.current = null;
-            // isRecording stays true, camera will auto-resume
-            return; // Don't create a clip yet, wait for final stop
-          }
-          
-          // This is the final stop - check if we have segments to merge
-          setCurrentRecordingSegments((prevSegments) => {
-            const allSegments = prevSegments.length > 0 
-              ? [...prevSegments, `file://${filePath}`]
-              : [`file://${filePath}`];
-            
-            
-            const newClip: VideoClip = {
-              id: Date.now().toString(),
-              uri: allSegments.length === 1 ? allSegments[0] : `file://${filePath}`, // Use last segment for now, TODO: merge
-              duration: elapsed,
+          const segmentDuration = (Date.now() - segmentStartTime.current) / 1000;
+
+          // Every recorded file becomes its own clip, so a camera flip mid-recording keeps all
+          // footage (the editor plays and exports clips in sequence).
+          const buildClip = (uri: string, duration: number): VideoClip => ({
+              id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              uri,
+              duration,
               speed: selectedSpeed,
               musicTrack: selectedMusicTrack ? {
                 id: selectedMusicTrack.id || selectedMusicTrack._id,
@@ -446,24 +435,19 @@ export default function TikTokCameraScreen() {
                 : null,
               resolution: selectedCameraFormat.resolution,
               frameRate: selectedCameraFormat.frameRate,
-            };
-            
-            setRecordedClips((prev) => [...prev, newClip]);
-            
-            // TODO: If allSegments.length > 1, merge video files using FFmpeg or similar
-            if (allSegments.length > 1) {
-              setTimeout(() => {
-                Alert.alert(
-                  "Camera Flip Recording",
-                  `Recording captured ${allSegments.length} segments from camera flips. Note: These segments need to be merged into a single video. This feature requires FFmpeg integration.`,
-                  [{ text: "OK" }]
-                );
-              }, 500);
-            }
-            
-            return []; // Clear segments
           });
-          
+
+          if (isCameraFlipping.current) {
+            // Mid-recording segment from a camera flip: keep it, recording resumes on the other camera.
+            setRecordedClips((prev) => [...prev, buildClip(`file://${filePath}`, segmentDuration)]);
+            recordingRef.current = null;
+            return;
+          }
+
+          // Final stop.
+          setRecordedClips((prev) => [...prev, buildClip(`file://${filePath}`, segmentDuration)]);
+          setCurrentRecordingSegments([]);
+
           setIsRecording(false);
           recordingRef.current = null;
           resetRecordingUI();

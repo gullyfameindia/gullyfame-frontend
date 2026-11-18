@@ -1,5 +1,7 @@
 # Typo Fix Verification Review
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 ## Summary
 
 All 10 typos from the typo-fix-plan have been correctly fixed in the Postman API collection file. The changes are isolated to a single JSON artifact file (documentation), with no impact on source code, no syntax errors introduced, and no unrelated changes bundled in the commit. Verification confirms corrected spellings are present and old misspellings have been removed.

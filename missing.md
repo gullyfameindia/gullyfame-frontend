@@ -4,6 +4,14 @@ Base URL: `https://gullyfame.com/v1/api` · Audited: 2026-10-12 · Collection: `
 
 Method: read-only calls only, one per endpoint. No user token was available in this audit, so every authenticated endpoint returned `401 {"code":3,"message":"invalid token"}`. I did not try to bypass auth. Write endpoints were not called.
 
+> **Corrections, 2026-11-18 (code re-read, no live calls).** This is a historical audit; these statements are now out of date:
+> - **Base URL** is `https://api.gullyfame.com/v1/api/` (`src/config/env.ts`), not `https://gullyfame.com/v1/api`.
+> - **Payments (sections 6 and 7.3–7.4):** the app no longer calls `payment/*` or `payments/*`. Coins are bought with `POST user/wallet/recharge` (Razorpay order) → checkout → `POST user/wallet/recharge/verify`, which credits the wallet after signature verification on the server (`gullyfame-backend/src/routes/users.js:189-215`).
+> - **Competition entry:** `app/(main)/competition/payment.tsx` now calls `POST competitions/:id/join`; the hard-coded `₹ 2400.00` balance is gone.
+> - **"My posts" (blocker 2):** `GET reels?author=<userId>` exists (`gullyfame-backend/src/controllers/FeedController.js:79-82`) and the profile grid uses it (`src/hooks/useUserReels.ts:92`).
+> - **`users/search` with the wrong base URL** in `reels/post.tsx`: no longer in the code.
+> - The other rows were not re-checked. Current status: `PRODUCTION_READINESS_REPORT.md` and `BACKEND_ISSUES.md` at the workspace root.
+
 ## 1. Summary
 
 | Item | Count |

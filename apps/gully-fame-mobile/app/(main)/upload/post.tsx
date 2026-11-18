@@ -31,6 +31,10 @@ import { MusicLibraryModal } from "@/components/MusicLibraryModal";
 
 const { height } = Dimensions.get("window");
 
+// Tagging is hidden until the backend accepts tags on publish and has a user search to pick from.
+// The modal listed two hard-coded sample users and the tags were never sent.
+const TAGGING_ENABLED = false;
+
 interface PostVideoPreviewProps {
   videoUri: string;
   playerRef: React.MutableRefObject<ReturnType<typeof useVideoPlayer> | null>;
@@ -425,6 +429,7 @@ export default function PostReelScreen() {
           )}
         </TouchableOpacity>
 
+        {TAGGING_ENABLED && (
         <TouchableOpacity style={styles.optionRow} onPress={() => setShowTagModal(true)}>
           <TagIcon />
           <Text style={styles.optionText}>
@@ -434,11 +439,12 @@ export default function PostReelScreen() {
           </Text>
           <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
-        {taggedPeople.length > 0 && (
+        )}
+        {TAGGING_ENABLED && taggedPeople.length > 0 && (
           <View style={styles.taggedContainer}>
             {taggedPeople.map((person, index) => (
               <View key={index} style={styles.taggedChip}>
-                <Image source={require("@assets/images/user1.png")} style={styles.taggedAvatar} />
+                <Image source={require("@assets/images/default-avatar.png")} style={styles.taggedAvatar} />
                 <Text style={styles.taggedName}>{person.name}</Text>
               </View>
             ))}
@@ -694,12 +700,12 @@ export default function PostReelScreen() {
               {
                 id: 1,
                 name: "User 1",
-                avatar: require("@assets/images/user1.png"),
+                avatar: require("@assets/images/default-avatar.png"),
               },
               {
                 id: 2,
                 name: "User 2",
-                avatar: require("@assets/images/user2.png"),
+                avatar: require("@assets/images/default-avatar.png"),
               },
             ].map((person) => (
               <TouchableOpacity

@@ -94,7 +94,7 @@ export default function PastCompetitionScreen() {
                 prizeMoneyWon: entry.prizeMoneyWon || 0,
                 defaultProfilePicture: entry.profilePictureUrl
                     ? { uri: entry.profilePictureUrl }
-                    : require("@assets/images/user1.png"),
+                    : require("@assets/images/default-avatar.png"),
                 isCurrentUser: false,
                 role: "participants",
                 badge: entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : entry.rank === 3 ? "🥉" : "⭐",

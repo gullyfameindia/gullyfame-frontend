@@ -2,6 +2,14 @@
 
 The backend repo is not in this workspace. Nothing here was changed on the backend. "Current behavior" is what the Postman collection documents, or what the admin code relies on, and it could not be checked against the running server. Please confirm each item against the backend code.
 
+> **Checked against the backend code on 2026-11-18** (the backend is now in the parent folder, `gullyfame-backend/`):
+> - **BG-01** still open (token in JSON body; no cookie auth).
+> - **BG-02** resolved: `GET admin/competitions/:id` exists (`gullyfame-backend/src/routes/adminRoutes.js:309`); only the Postman collection lacks it.
+> - **BG-03** partly: the admin is looked up with role and `isActive` (`src/middlewares/AuthMiddleware.js:139-153`); per-route sponsor scoping was not verified.
+> - **BG-05** answered: the backend reads `faqId` from the **body** and ignores the URL id (`src/controllers/AdminController.js:630-635`), so keep sending `faqId` until the backend fix (`BACKEND_ISSUES.md` BE-039).
+> - **BG-06** resolved: `POST admin/login`, `forgotPassword`, `verifyOtp` and `resendOtp` are rate limited (`src/routes/adminRoutes.js:38-65`); the limiter allows requests when Redis is down (BE-010).
+> - BG-04 and BG-07 were not re-checked.
+
 ## BG-01: Cookie-based admin session (security)
 - **Endpoint:** `POST admin/login`, and every admin request.
 - **Expected:** login sets an httpOnly, Secure, SameSite cookie. Admin requests are authenticated by that cookie, and logout clears it.

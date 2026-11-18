@@ -17,6 +17,21 @@ import { DEFAULT_ROLE, getProfileRoute } from "@/components/profile/shared/profi
 
 const { width, height } = Dimensions.get("window");
 
+// Screen-reader names for the tabs (several tabs are icon-only).
+const TAB_A11Y_LABELS = {
+  Home: "Home",
+  Reel: "Gully Reels",
+  Upload: "Upload a video",
+  Search: "Search",
+  MyFame: "My profile",
+};
+
+const tabA11yProps = (tab, isActive) => ({
+  accessibilityRole: "tab",
+  accessibilityLabel: TAB_A11Y_LABELS[tab.name] || tab.label || tab.name,
+  accessibilityState: { selected: !!isActive },
+});
+
 export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer }) {
   const insets = { bottom: Platform.OS === "ios" ? 20 : 0 };
   const [profileImage, setProfileImage] = useState(null);
@@ -147,6 +162,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
               key={tab.name}
               testID={`bottom-nav-${tab.name.toLowerCase()}`}
               style={styles.uploadButton}
+              {...tabA11yProps(tab, activeTab === tab.name)}
               onPress={() => handlePress(tab.name)}
               activeOpacity={0.85}
             >
@@ -174,6 +190,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
               key={tab.name}
               testID={`bottom-nav-${tab.name.toLowerCase()}`}
               style={styles.navItem}
+              {...tabA11yProps(tab, isActive)}
               onPress={() => handlePress(tab.name)}
               activeOpacity={0.8}
             >
@@ -191,6 +208,7 @@ export default function BottomNav({ activeTab, setActiveTab, tabs, onOpenDrawer 
             key={tab.name}
               testID={`bottom-nav-${tab.name.toLowerCase()}`}
             style={styles.navItem}
+            {...tabA11yProps(tab, isActive)}
             onPress={() => handlePress(tab.name)}
             activeOpacity={0.8}
           >

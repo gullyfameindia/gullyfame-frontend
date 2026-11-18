@@ -86,7 +86,7 @@ export default function InboxScreen() {
           timestamp: convertDateToChatTimePassed(chat.last_message_time),
           unreadCount: 0,
           isOnline: false,
-          avatar: contact?.avatar ? { uri: contact.avatar } : require("@assets/images/user1.png"),
+          avatar: contact?.avatar ? { uri: contact.avatar } : require("@assets/images/default-avatar.png"),
         };
       };
       // Conversations with users the viewer has blocked are hidden.

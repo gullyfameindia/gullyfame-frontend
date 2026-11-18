@@ -1,5 +1,7 @@
 # Token Refresh and Invalid Token Error Fix
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 The fix adds pre-request token validation, explicit 404/invalid-token handling as an auth failure, and improved error messaging to address the "invalid token" error when calling PUT /user/profile. The solution implements token freshness checks before authenticated requests and treats the backend's non-standard 404 response as an authorization failure.
 
 **Watch for**: Dynamic import in ensureTokenFresh creates a circular import risk with axios. Token refresh is called unconditionally on every profile update, which adds network latency on every save even for fresh tokens (though the 60-second threshold mitigates this). No logging shows whether the 404/invalid-token handler is actually triggered in production, making it harder to trace whether the refresh mechanism is activating.

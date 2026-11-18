@@ -1,7 +1,13 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ["babel-preset-expo"],
+    // Resolve the preset that ships with this app's Expo (57). A bare "babel-preset-expo"
+    // picks up the hoisted Expo 54 copy from apps/videoeditor, which breaks RN 0.86 codegen.
+    presets: [
+      require.resolve("babel-preset-expo", {
+        paths: [require.resolve("expo/package.json")],
+      }),
+    ],
     plugins: [
       [
         "module-resolver",

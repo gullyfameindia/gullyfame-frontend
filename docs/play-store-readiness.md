@@ -6,6 +6,11 @@ check each one against how the app and backend really behave before submitting.
 
 Policy facts below were checked against Google's current Play Console help pages (links at the end).
 
+> **Update 2026-11-18:** the current audit and Console inventories are at the workspace root:
+> `PRODUCTION_READINESS_REPORT.md` (issues and blockers), `PLAY_STORE_DATA_SAFETY.md` (Data safety, replaces
+> section 3 below), `RELEASE_STEPS.md` (build and Console steps) and `BACKEND_ISSUES.md`. Corrections made below:
+> privacy policy contact details, push notifications and the reviewer OTP.
+
 ## 1. Hard requirements
 
 | Requirement | Status |
@@ -17,7 +22,8 @@ Policy facts below were checked against Google's current Play Console help pages
 | Signing | Use Play App Signing. EAS Build injects the upload key from `eas credentials`. Local builds sign only when `GF_UPLOAD_*` properties are provided; otherwise the bundle is left unsigned. The debug key is never used for release. |
 | Account deletion (in-app + web link) | In-app screen exists (Settings & Help > Delete Account) and the public page is `https://gullyfameindia.com/delete-account`. **The deletion itself is by email request because the backend has no delete endpoint.** See "Needs backend". |
 | User-generated content: report and block | In-app Report and Block exist. **Both are interim**: report opens an email to support, block is stored on the device. Real endpoints are needed. |
-| Privacy policy | In-app: burger menu > Privacy Policy. Public URL for the listing: use the website privacy page. |
+| Privacy policy | In-app: burger menu > Privacy Policy. Public URL for the listing: use the website privacy page. **Not ready:** the in-app text has blank grievance-officer name, email and address, the terms say "registered office at _____", and drafting notes are visible (FE-046). |
+| Push notifications | No `google-services.json` in the project, so Android release builds get no FCM token and receive no push (FE-045). |
 
 ## 2. Permissions (release manifest)
 
@@ -89,8 +95,10 @@ screen only registers the user (the hard-coded wallet balance it used to show wa
 
 Login uses an OTP sent to a mobile number, so reviewers cannot sign in on their own. Provide in the Console:
 
-- A test mobile number and the fixed OTP **if the backend supports a master OTP for review**. The backend has a
-  `MASTER_OTP_ENABLED` setting: enable it for a dedicated reviewer number only, never globally, and disable it after review.
+- A test mobile number and a fixed OTP. **Correction (2026-11-18):** the backend's `MASTER_OTP_ENABLED` /
+  `MASTER_OTP_LOGIN` setting is global (`src/services/OtpService.js:19-23`): it opens **every** number, so it must
+  not be turned on in production. A per-number reviewer OTP needs a small backend change (an allow-list of reviewer
+  numbers), see `BACKEND_ISSUES.md` BE-002.
 - Or a test email/password account (email login screen exists).
 - Steps: open the app > Sign in > enter the test number > enter the OTP > complete the short profile.
 - State clearly: camera, microphone and notification permissions are optional; location can be skipped.

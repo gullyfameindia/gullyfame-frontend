@@ -64,7 +64,7 @@ export default function MyFameScreen() {
         isYou: !!entry.isCurrentUser,
         points: entry.points ?? entry.votes ?? 0,
         avatarUrl: entry.profilePictureUrl || "",
-        profileImage: entry.profilePictureUrl ? { uri: entry.profilePictureUrl } : require("@assets/images/user1.png"),
+        profileImage: entry.profilePictureUrl ? { uri: entry.profilePictureUrl } : require("@assets/images/default-avatar.png"),
       };
     });
 
@@ -291,7 +291,7 @@ export default function MyFameScreen() {
                     </View>
 
                     <View style={styles.leaderboardAvatarWrapper}>
-                    <Image source={item.profileImage || require("@assets/images/user2.png")} style={styles.leaderboardAvatarImage} />
+                    <Image source={item.profileImage || require("@assets/images/default-avatar.png")} style={styles.leaderboardAvatarImage} />
                     {item.isYou && <View style={styles.yourBadge}><Text style={styles.yourBadgeText}>YOU</Text></View>}
                     </View>
 

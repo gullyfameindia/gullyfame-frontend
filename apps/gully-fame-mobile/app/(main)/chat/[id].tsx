@@ -77,7 +77,7 @@ export default function ChatDetailScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatUserName, setChatUserName] = useState(name || "User");
   const [chatUserAvatar, setChatUserAvatar] = useState(
-    require("@assets/images/user1.png"),
+    require("@assets/images/default-avatar.png"),
   );
   const [isOnline] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -394,7 +394,7 @@ export default function ChatDetailScreen() {
               name: contacts[c.chatter_user_id]?.name || fallbackChatName(c.chatter_user_id),
               avatar: contacts[c.chatter_user_id]?.avatar
                 ? { uri: contacts[c.chatter_user_id].avatar }
-                : require("@assets/images/user1.png"),
+                : require("@assets/images/default-avatar.png"),
             }))
         );
       } catch (error) {

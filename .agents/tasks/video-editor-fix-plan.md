@@ -1,5 +1,7 @@
 # Video Editor Integration & Visual Rendering Fix Plan
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 ## Overview
 The video editor has state management for all tools (stickers, filters, overlays, adjustments, doodles, cutout) but lacks visual rendering on the video preview. Additionally, some features have UI/UX issues (popups instead of in-place editing) and missing audio playback support. This plan will create a unified rendering layer and fix each tool's implementation.
 

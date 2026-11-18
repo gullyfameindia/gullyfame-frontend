@@ -1,5 +1,7 @@
 # Bugfix Requirements Document
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 ## Introduction
 
 The Instagram-style reel camera screen (`apps/gully-fame-mobile/app/(main)/reels/camera.tsx`) displays a blank/black screen instead of the live camera preview on real Android and iOS devices. This bug is caused by the CameraView component rendering before the navigation screen gains focus, which causes Android's Camera2 API to initialize with an invalid surface. The issue does not occur on emulators but prevents users from recording reels on physical devices. The fix pattern already exists in the codebase at `apps/gully-fame-mobile/src/screens/CameraScreen.tsx` and needs to be applied to the affected file.

@@ -1,5 +1,7 @@
 # UI/UX Implementation for Gully Fame Video Editor
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 Integrated a tabbed toolbar architecture with a cohesive design system for the video editor. The implementation replaces a flat scrollable button layout with five organized categories (Visual, Audio, Text, Effects, More), adds reusable component foundations, and establishes theme constants for consistent styling. All existing callbacks remain wired through to their target handlers.
 
 Watch for: ToolTabBar missing event handlers for Music button—it attempts to call a handler that doesn't route back through the props. One visual tab button (Sticker) has no onPress callback. Playhead animation in TimelineEditor uses a manual glow shadow but the orange tint appears subtle. ToolButton active state styling applies orange background color at 0.2 opacity—verify the visual prominence feels sufficient.

@@ -1,5 +1,7 @@
 # Video Editor Audio & Bottom Navigation Integration Plan
 
+> **Historical record (note added 2026-11-18):** this is a past AI task plan, review or spec, kept for reference. File paths, statuses and verdicts describe the code at the time and may no longer match it. Current status: `PRODUCTION_READINESS_REPORT.md` at the workspace root.
+
 ## Overview
 This plan fixes the disabled audio tool panel and builds a unified backend service layer for all 10 editor tools in the bottom navigation bar. The work decomposes into 3 independent features: (1) Audio panel fix, (2) Service layer creation, (3) Component integration.
 
