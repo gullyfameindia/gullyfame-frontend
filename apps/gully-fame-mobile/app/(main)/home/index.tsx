@@ -50,6 +50,7 @@ import { categoryIconKey } from "@/utils/categoryDisplay";
 import { convertToFormattedString } from "@/utils/convertToFormattedString";
 import { convertToFormattedPrize } from "@/utils/convertToFormattedPrize";
 import { convertDateToDaysLeft } from "@/utils/convertDateToDaysLeft";
+import { XP_AND_MISSIONS_ENABLED } from "@/config/features";
 
 const getDimensions = () => Dimensions.get("window");
 
@@ -114,8 +115,9 @@ export default function GullyFameHome() {
     setPastCompetitions(data.pastCompetitions);
     setUpcomingCompeitions(data.upcomingCompetitions);
     setTopCompetitors(data.topCompetitors);
-    setProgress(data.progress);
-    setDailyMission(data.dailyMission);
+    // Level card and daily mission are hidden while XP and missions are switched off.
+    setProgress(XP_AND_MISSIONS_ENABLED ? data.progress : null);
+    setDailyMission(XP_AND_MISSIONS_ENABLED ? data.dailyMission : null);
   }, []);
 
   // The last home screen saved on this device shows first; the server copy replaces it.

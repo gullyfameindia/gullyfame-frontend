@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getWallet, tipReel } from "@/api/services/walletService";
 import { ApiError, getErrorMessage } from "@/api/client";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
-import { COIN_PURCHASE_ENABLED, EARN_COINS_MESSAGE } from "@/config/features";
+import { COIN_PURCHASE_ENABLED } from "@/config/features";
+import { showCoinsComingSoon } from "@/utils/coinPurchase";
 
 interface SupportPackage {
   id: string;
@@ -80,6 +81,10 @@ export default function SupportModal({
   const canSend = !loading && !sending && agreed && supportAmount > 0 && !insufficient;
 
   const goToWallet = () => {
+    if (!COIN_PURCHASE_ENABLED) {
+      showCoinsComingSoon();
+      return;
+    }
     toastError("Insufficient balance. Please add coins to your wallet.");
     onClose();
     router.push("/(main)/coins" as any);
@@ -246,14 +251,14 @@ export default function SupportModal({
               <Text style={styles.insufficientText}>
                 {COIN_PURCHASE_ENABLED
                   ? `Insufficient balance. You need ${supportAmount} coins, you have ${walletBalance}.`
-                  : `You need ${supportAmount} coins, you have ${walletBalance}. Earn coins by completing daily missions.`}
+                  : `You need ${supportAmount} coins, you have ${walletBalance}. Earn coins by winning competitions and inviting friends.`}
               </Text>
             )}
           </ScrollView>
 
           {/* Footer */}
           <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-            {insufficient && COIN_PURCHASE_ENABLED ? (
+            {insufficient ? (
               <TouchableOpacity style={styles.sendButton} onPress={goToWallet}>
                 <Ionicons name="wallet-outline" size={20} color="#fff" />
                 <Text style={styles.sendButtonText}>Add Coins</Text>

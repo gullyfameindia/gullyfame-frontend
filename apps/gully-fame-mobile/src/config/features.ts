@@ -7,7 +7,7 @@
 export const COIN_PURCHASE_ENABLED = false;
 
 // Tipping creators with coins. On: users tip with coins they earned
-// (daily missions, prizes). The backend limits tips per day.
+// (competition prizes, referrals). The backend limits tips per day.
 export const TIPPING_ENABLED = true;
 
 // Coins a user needs before they can withdraw. Withdrawals are not built yet;
@@ -15,7 +15,12 @@ export const TIPPING_ENABLED = true;
 export const WITHDRAW_MIN_COINS = 1000;
 
 // Shown when a user has too few coins and cannot buy more.
-export const EARN_COINS_MESSAGE = "Not enough coins. Earn coins by completing daily missions.";
+export const EARN_COINS_MESSAGE = "Not enough coins. Earn coins by winning competitions and inviting friends.";
+
+// Daily missions, XP, levels and streaks. Off: the home-screen level card,
+// the daily mission line and the "+5 XP" vote popup are hidden. The backend
+// switch is GAMIFICATION_ENABLED in the server .env; turn both on together.
+export const XP_AND_MISSIONS_ENABLED = false;
 
 export const withdrawMessage = (balance: number) =>
   balance >= WITHDRAW_MIN_COINS

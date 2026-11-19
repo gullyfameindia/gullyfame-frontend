@@ -23,7 +23,7 @@ import Svg, { Path, Circle } from "react-native-svg";
 
 
 import { getUserSession } from "@utils/userSession";
-import { COIN_PURCHASE_ENABLED } from "@/config/features";
+import { openAddCoins } from "@/utils/coinPurchase";
 
 
 
@@ -151,15 +151,13 @@ export default function CompetitionPaymentScreen() {
               {walletBalance === null ? "..." : walletBalance < 0 ? "Unavailable" : `${walletBalance.toLocaleString()} coins`}
             </Text>
           </View>
-          {COIN_PURCHASE_ENABLED ? (
           <TouchableOpacity
             activeOpacity={0.8}
             style={styles.walletButton}
-            onPress={() => router.push("/(main)/add-money" as any)}
+            onPress={() => openAddCoins()}
           >
             <Text style={styles.walletButtonText}>Add Coins</Text>
           </TouchableOpacity>
-          ) : null}
         </View>
 
         <LinearGradient

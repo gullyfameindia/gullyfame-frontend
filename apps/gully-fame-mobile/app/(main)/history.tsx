@@ -17,7 +17,8 @@ import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { getWallet, toDisplayTransaction, DisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
 import { toastError } from "@/components/ui/Toast";
-import { COIN_PURCHASE_ENABLED, withdrawMessage } from "@/config/features";
+import { withdrawMessage } from "@/config/features";
+import { openAddCoins } from "@/utils/coinPurchase";
 import { Skeleton, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
 type Transaction = DisplayTransaction;
@@ -137,16 +138,14 @@ export default function HistoryScreen() {
           </View>
           
           <View style={styles.walletActions}>
-            {COIN_PURCHASE_ENABLED ? (
             <TouchableOpacity 
               style={styles.addMoneyButton} 
               activeOpacity={0.8}
-              onPress={() => router.push("/(main)/add-money" as any)}
+              onPress={() => openAddCoins()}
             >
               <Ionicons name="add-circle" size={20} color="#fff" />
               <Text style={styles.addMoneyButtonText}>Add Money</Text>
             </TouchableOpacity>
-            ) : null}
 
             <TouchableOpacity 
               style={styles.withdrawButton} 

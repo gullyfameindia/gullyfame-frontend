@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
 import { getProfile, getProgress, getPublicProfile } from "@api/services/userService";
 import { getMyKyc } from "@api/services/kycService";
+import { XP_AND_MISSIONS_ENABLED } from "@/config/features";
 import { apiGet, getErrorMessage } from "@api/client";
 import { cacheUserProfile } from "@utils/userSession";
 import { getOwnProfileSnapshot, ownProfileSnapshotReady, saveOwnProfileSnapshot } from "@utils/ownProfileCache";
@@ -104,7 +105,7 @@ export function useOwnProfile() {
         try {
             const [user, progress, competitions, kyc] = await Promise.all([
                 getProfile(),
-                getProgress().catch(() => null),
+                XP_AND_MISSIONS_ENABLED ? getProgress().catch(() => null) : Promise.resolve(null),
                 apiGet<{ total: number }>("user/competitions", { params: { page: 1, limit: 1 } }).catch(() => null),
                 getMyKyc().catch(() => null),
             ]);

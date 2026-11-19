@@ -16,7 +16,8 @@ import { router, useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Circle } from "react-native-svg";
 import { BackIcon } from "@/icons";
-import { COIN_PURCHASE_ENABLED, WITHDRAW_MIN_COINS, withdrawMessage } from "@/config/features";
+import { WITHDRAW_MIN_COINS, withdrawMessage } from "@/config/features";
+import { openAddCoins } from "@/utils/coinPurchase";
 import { getWalletSummary, toDisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
 import { Skeleton, SkeletonGrid, SkeletonRoot } from "@/components/Skeleton/Skeleton";
@@ -77,12 +78,8 @@ export default function CoinsScreen() {
   const currentBalance = walletBalance;
 
   // Handle add money (redirect to add money modal or screen)
-  const handleAddMoney = async () => {
-    router.push({
-      pathname: "/(main)/add-money",
-      params: { fromCoins: "true" }
-    } as any);
-  };
+  // Opens Add Money, or shows "coming soon" while coin buying is off.
+  const handleAddMoney = () => openAddCoins({ fromCoins: "true" });
 
   return (
     <KeyboardAvoidingScreen style={styles.container}>
@@ -144,8 +141,7 @@ export default function CoinsScreen() {
                 </View>
               </View>
 
-              {/* Add Money Button - Inside Balance Card (hidden while coin purchase is off) */}
-              {COIN_PURCHASE_ENABLED ? (
+              {/* Add Money Button - Inside Balance Card */}
               <TouchableOpacity
                 style={styles.addMoneyButton}
                 onPress={handleAddMoney}
@@ -159,7 +155,6 @@ export default function CoinsScreen() {
                   <Text style={styles.addMoneyText}>+ Add GFI Coins</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              ) : null}
 
               {/* Withdraw Button (withdrawals are not built yet; shows the 1,000-coin goal) */}
               {availableBalance > 0 && (

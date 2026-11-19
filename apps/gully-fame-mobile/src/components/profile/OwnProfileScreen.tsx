@@ -44,6 +44,7 @@ import { isPhotoItem } from "@/components/profile/ProfileMediaTile";
 import { useUserReels } from "@/hooks/useUserReels";
 import { useProfileExtras } from "@/hooks/useProfileExtras";
 import { useInteractionReels } from "@/hooks/useInteractionReels";
+import { XP_AND_MISSIONS_ENABLED } from "@/config/features";
 
 const { height } = Dimensions.get("window");
 
@@ -381,7 +382,8 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
           </View>
         ) : null}
 
-        {isFan ? (
+        {/* Level-up stars, Next Rank bar and "How to Level Up": hidden while levels are switched off */}
+        {!XP_AND_MISSIONS_ENABLED ? null : isFan ? (
           <LevelUpSection
             onPress={() => setLevelUpVisible(true)}
             levelPercentage={profileData.levelPercentage || 0}

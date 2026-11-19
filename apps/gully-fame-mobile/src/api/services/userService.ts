@@ -215,6 +215,27 @@ export const toggleFollowUser = (userId: string) => toResult(() => toggleFollow(
 export const getProgress = () => apiGet<Progress>("user/progress");
 export const getDailyMission = () => apiGet<DailyMission>("user/daily-mission");
 
+/** GET user/referral: the user's own code, rewards and invite stats. */
+export interface ReferralSummary {
+  referralCode: string | null;
+  /** Coins the inviter gets per friend who qualifies. */
+  referrerCoins: number;
+  /** Coins the new user gets. */
+  newUserCoins: number;
+  invited: number;
+  rewarded: number;
+  pending: number;
+  coinsEarned: number;
+  /** Code this user signed up with, if any. */
+  usedCode: string | null;
+  usedCodeStatus: "PENDING" | "REWARDED" | null;
+  /** True while this user can still enter a friend's code. */
+  canApplyCode: boolean;
+}
+export const getReferral = () => apiGet<ReferralSummary>("user/referral");
+/** POST user/referral/apply { code }: use a friend's code (new accounts only). */
+export const applyReferralCode = (code: string) => apiPost<ReferralSummary>("user/referral/apply", { code });
+
 // ==================== DISCOVERY ====================
 
 export const getCategories = (page = 1, limit = 50) =>

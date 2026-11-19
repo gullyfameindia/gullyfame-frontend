@@ -35,7 +35,7 @@ import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
 import DrawerMenu from "@components/layout/DrawerMenu";
 import SupportModal from "@/components/modals/SupportModal/SupportModal";
-import { COIN_PURCHASE_ENABLED, EARN_COINS_MESSAGE, TIPPING_ENABLED } from "@/config/features";
+import { COIN_PURCHASE_ENABLED, EARN_COINS_MESSAGE, TIPPING_ENABLED, XP_AND_MISSIONS_ENABLED } from "@/config/features";
 import ReportReelModal from "@/components/modals/ReportReelModal/ReportReelModal";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { scale, getFontSize, wp, spacing } from "@utils/responsive";
@@ -1356,7 +1356,7 @@ export default function GullyReelScreen() {
                       ]}
                       pointerEvents="none"
                     >
-                      <Text style={styles.floatingXPText}>+5 XP 🔥</Text>
+                      <Text style={styles.floatingXPText}>{XP_AND_MISSIONS_ENABLED ? "+5 XP 🔥" : "Voted! 🔥"}</Text>
                     </Animated.View>
                   )}
 
@@ -1571,10 +1571,12 @@ export default function GullyReelScreen() {
                             <View style={styles.commentContent}>
                               <View style={styles.usernameRow}>
                                 <Text style={styles.commentUsername}>{comment.username}</Text>
-                                <Text style={styles.levelText}>
-                                  Lv.
-                                  {comment.level}
-                                </Text>
+                                {XP_AND_MISSIONS_ENABLED && comment.level != null ? (
+                                  <Text style={styles.levelText}>
+                                    Lv.
+                                    {comment.level}
+                                  </Text>
+                                ) : null}
                               </View>
                               <Text style={styles.commentText}>{comment.comment}</Text>
 
@@ -1660,10 +1662,12 @@ export default function GullyReelScreen() {
                                       <View style={styles.replyContent}>
                                         <View style={styles.usernameRow}>
                                           <Text style={styles.replyUsername}>{reply.username}</Text>
-                                          <Text style={styles.levelTextSub}>
-                                            Lv.
-                                            {reply.level}
-                                          </Text>
+                                          {XP_AND_MISSIONS_ENABLED && reply.level != null ? (
+                                            <Text style={styles.levelTextSub}>
+                                              Lv.
+                                              {reply.level}
+                                            </Text>
+                                          ) : null}
                                         </View>
                                         <Text style={styles.replyText}>{reply.comment}</Text>
                                         {reply.authorId && reply.authorId === myUserId ? (

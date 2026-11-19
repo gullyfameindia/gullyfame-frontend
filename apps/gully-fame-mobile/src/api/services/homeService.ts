@@ -53,7 +53,8 @@ export interface HomeScreenData {
   topCompetitors: HomeTopCompetitor[];
   liveCompetitions: HomeCompetition[];
   progress: Progress | null;
-  dailyMission: { target: number; current: number; completed: boolean };
+  // null when daily missions are switched off on the server
+  dailyMission: { target: number; current: number; completed: boolean } | null;
 }
 
 export const HOME_SCREEN_CACHE_KEY = "@gullyfame_home_screen";

@@ -13,12 +13,15 @@ import {
   Alert,
   Share,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import { getCurrentUser } from "@/api/services/userService";
+import { getReferral, applyReferralCode, ReferralSummary } from "@/api/services/userService";
+import { getErrorMessage } from "@/api/client";
+import { toastError, toastSuccess } from "@/components/ui/Toast";
 
 const socialPlatforms = [
   { id: 1, name: "WhatsApp", icon: "whatsapp", provider: FontAwesome5, color: "#25D366" },
@@ -31,18 +34,19 @@ const socialPlatforms = [
 export default function InviteFriendScreen() {
   const insets = useSafeAreaInsets();
   
-  const [userReferralCode, setUserReferralCode] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [codeLoading, setCodeLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [friendCode, setFriendCode] = useState("");
+  const [applying, setApplying] = useState(false);
+  const userReferralCode = summary?.referralCode?.trim() || null;
 
-  // The referral code comes from the signed-in user's profile. Nothing is hardcoded. The API
-  // collection's user/profile has no referralCode field yet, so this normally ends in "coming soon".
+  // GET user/referral: own code, rewards and invite stats (code is created on first visit).
   useEffect(() => {
     let active = true;
-    getCurrentUser()
-      .then((result) => {
-        const code = (result.data as any)?.referralCode;
-        if (active && result.success && typeof code === "string" && code.trim()) setUserReferralCode(code.trim());
+    getReferral()
+      .then((data) => {
+        if (active) setSummary(data);
       })
       .catch(() => {})
       .finally(() => {
@@ -52,6 +56,26 @@ export default function InviteFriendScreen() {
       active = false;
     };
   }, []);
+
+  const handleApplyFriendCode = async () => {
+    const code = friendCode.trim();
+    if (!code || applying) return;
+    setApplying(true);
+    try {
+      const updated = await applyReferralCode(code);
+      setSummary(updated);
+      setFriendCode("");
+      toastSuccess(
+        updated.usedCodeStatus === "REWARDED"
+          ? `Code applied. You got ${updated.newUserCoins} GFI coins!`
+          : "Code applied! Your coins arrive once your phone is verified, your profile is complete and your account is 3 days old."
+      );
+    } catch (error) {
+      toastError(getErrorMessage(error));
+    } finally {
+      setApplying(false);
+    }
+  };
 
   const shareUrl = "https://gullyfame.com/download";
   const shareMessage = `Join me on Gully Fame!${userReferralCode ? ` My referral code: ${userReferralCode}` : ""}\n\nDownload now: ${shareUrl}`;
@@ -138,6 +162,12 @@ export default function InviteFriendScreen() {
         {}
         <View style={styles.referralCard}>
           <Text style={styles.referralTitle}>Your Referral Code</Text>
+          {summary ? (
+            <Text style={styles.rewardText} testID="invite-reward-text">
+              Invite a friend: you get {summary.referrerCoins} GFI coins and your friend gets {summary.newUserCoins} once
+              they verify their phone, complete their profile (name, username and photo) and their account is 3 days old.
+            </Text>
+          ) : null}
           {codeLoading ? (
             <View style={styles.codeBox}>
               <ActivityIndicator size="small" color="#EC9A15" />
@@ -157,16 +187,53 @@ export default function InviteFriendScreen() {
           ) : (
             <View style={styles.comingSoonBox} testID="invite-referral-coming-soon">
               <Ionicons name="time-outline" size={22} color="#EC9A15" />
-              <Text style={styles.comingSoonTitle}>Referral codes are coming soon</Text>
+              <Text style={styles.comingSoonTitle}>Couldn't load your referral code</Text>
               <Text style={styles.comingSoonText}>
-                You can still invite friends now. The links below share the Gully Fame download page.
+                Check your connection and open this page again. You can still share the download link below.
               </Text>
             </View>
           )}
           {userReferralCode ? (
             <Text style={styles.referralSubText}>Share this code with your friends.</Text>
           ) : null}
+          {summary && summary.invited > 0 ? (
+            <Text style={styles.statsText} testID="invite-stats">
+              Invited {summary.invited} · Rewarded {summary.rewarded} · Coins earned {summary.coinsEarned}
+            </Text>
+          ) : null}
         </View>
+
+        {/* Using a friend's code: new accounts only (the server decides with canApplyCode). */}
+        {summary?.canApplyCode ? (
+          <View style={styles.referralCard} testID="invite-apply-code">
+            <Text style={styles.referralTitle}>Got a code from a friend?</Text>
+            <TextInput
+              style={styles.friendCodeInput}
+              placeholder="Enter referral code"
+              placeholderTextColor="#777"
+              value={friendCode}
+              onChangeText={(t) => setFriendCode(t.toUpperCase())}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={12}
+            />
+            <TouchableOpacity
+              style={[styles.applyButton, (!friendCode.trim() || applying) && { opacity: 0.6 }]}
+              onPress={handleApplyFriendCode}
+              disabled={!friendCode.trim() || applying}
+              activeOpacity={0.8}
+            >
+              {applying ? <ActivityIndicator color="#fff" /> : <Text style={styles.copyText}>Apply code</Text>}
+            </TouchableOpacity>
+          </View>
+        ) : summary?.usedCode ? (
+          <Text style={styles.usedCodeText} testID="invite-used-code">
+            You joined with code {summary.usedCode}.{" "}
+            {summary.usedCodeStatus === "REWARDED"
+              ? `You received ${summary.newUserCoins} GFI coins.`
+              : `Your ${summary.newUserCoins} GFI coins arrive once your phone is verified, your profile has a name, username and photo, and your account is 3 days old.`}
+          </Text>
+        ) : null}
 
         {}
         <Text style={styles.sectionTitle}>Share via</Text>
@@ -298,6 +365,46 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 14,
+  },
+  rewardText: {
+    color: "#EC9A15",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+  statsText: {
+    color: "#ccc",
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  friendCodeInput: {
+    alignSelf: "stretch",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#444",
+    color: "#fff",
+    fontSize: 18,
+    letterSpacing: 2,
+    textAlign: "center",
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  applyButton: {
+    alignSelf: "stretch",
+    backgroundColor: "#EC9A15",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  usedCodeText: {
+    color: "#aaa",
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 20,
+    paddingHorizontal: 8,
   },
   referralSubText: {
     color: "#999",

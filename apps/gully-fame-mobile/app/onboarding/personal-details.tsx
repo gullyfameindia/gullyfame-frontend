@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
-import { updateProfile, toBackendGender } from "@api/services/userService";
+import { updateProfile, toBackendGender, applyReferralCode } from "@api/services/userService";
 import { getErrorMessage } from "@api/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -35,6 +35,8 @@ export default function OnboardingPersonalDetails() {
   const [dob, setDob] = useState("");
   const [selectedGender, setSelectedGender] = useState(genders[0]);
   const [saving, setSaving] = useState(false);
+  // Optional friend's referral code (new accounts only; checked by the server).
+  const [referralCode, setReferralCode] = useState("");
   
   
   useEffect(() => {
@@ -84,12 +86,37 @@ export default function OnboardingPersonalDetails() {
         ["userGender", selectedGender],
       ]);
     } catch (error) {
+      setSaving(false);
       Alert.alert("Could not save", getErrorMessage(error));
       return;
-    } finally {
-      setSaving(false);
     }
 
+    // Friend's referral code, if entered. On a problem the user can fix it or go on without it.
+    const code = referralCode.trim();
+    if (code) {
+      try {
+        await applyReferralCode(code);
+        setReferralCode("");
+      } catch (error) {
+        setSaving(false);
+        Alert.alert("Referral code", getErrorMessage(error), [
+          { text: "Edit code", style: "cancel" },
+          {
+            text: "Continue without code",
+            onPress: () => {
+              setReferralCode("");
+              goNext();
+            },
+          },
+        ]);
+        return;
+      }
+    }
+    setSaving(false);
+    goNext();
+  };
+
+  const goNext = () => {
     if (fromKycFlow) {
       const query = [
         `role=${encodeURIComponent(role)}`,
@@ -164,6 +191,23 @@ export default function OnboardingPersonalDetails() {
               />
             </View>
             <Text style={styles.helperText}>You must be 13+ to participate. We never display this publicly.</Text>
+          </View>
+
+          <View style={styles.fieldBlock}>
+            <Text style={styles.fieldLabel}>Referral code (optional)</Text>
+            <View style={styles.dobContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Friend's code"
+                placeholderTextColor="#6B7280"
+                value={referralCode}
+                onChangeText={(t) => setReferralCode(t.toUpperCase())}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={12}
+              />
+            </View>
+            <Text style={styles.helperText}>Got a code from a friend? You both get GFI coins once your profile is complete (name, username and photo) and your account is 3 days old.</Text>
           </View>
 
           <View style={styles.fieldBlock}>
