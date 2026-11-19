@@ -854,12 +854,31 @@ export default function GullyFameHome() {
                 </Text>
               </>
             ) : null}
-            {dailyMission ? (
-              <Text style={[homeExtraStyles.muted, { marginTop: 8 }]}>
-                {dailyMission.completed ? "✅ " : "🎯 "}DAILY MISSION — Vote on {dailyMission.target} videos (
-                {Math.min(dailyMission.current, dailyMission.target)}/{dailyMission.target})
-              </Text>
-            ) : null}
+            {dailyMission ? (() => {
+              const done = Math.min(dailyMission.current, dailyMission.target);
+              const pct = dailyMission.target > 0 ? Math.round((done / dailyMission.target) * 100) : 0;
+              return (
+                <View style={homeExtraStyles.missionCard} testID="home-daily-mission">
+                  <View style={homeExtraStyles.missionHeader}>
+                    <Text style={homeExtraStyles.missionLabel}>DAILY MISSION</Text>
+                    <Text style={homeExtraStyles.missionCount}>
+                      {dailyMission.completed ? "Completed ✓" : `${done}/${dailyMission.target}`}
+                    </Text>
+                  </View>
+                  <Text style={homeExtraStyles.missionTitle}>
+                    Vote on {dailyMission.target} videos
+                  </Text>
+                  <View style={homeExtraStyles.missionTrack}>
+                    <LinearGradient
+                      colors={["#FFE066", "#EC9A15"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[homeExtraStyles.missionFill, { width: `${pct}%` }]}
+                    />
+                  </View>
+                </View>
+              );
+            })() : null}
           </View>
         );
 
@@ -1039,6 +1058,48 @@ const homeExtraStyles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: "#EC9A15",
+  },
+  // Daily mission card: gold accent, progress bar matches the profile's Gully Star bar.
+  missionCard: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(236,154,21,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(236,154,21,0.45)",
+  },
+  missionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  missionLabel: {
+    color: "#EC9A15",
+    fontSize: 11,
+    fontFamily: "Inter_700Bold",
+    letterSpacing: 0.8,
+  },
+  missionCount: {
+    color: "#fff",
+    fontSize: 12,
+    fontFamily: "Inter_600SemiBold",
+  },
+  missionTitle: {
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
+    marginBottom: 8,
+  },
+  missionTrack: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  missionFill: {
+    height: 8,
+    borderRadius: 4,
   },
   // Upcoming Competitions: gold "Join Now ₹1,00,000/-" pill and grey meta line, per the design.
   joinPill: {
