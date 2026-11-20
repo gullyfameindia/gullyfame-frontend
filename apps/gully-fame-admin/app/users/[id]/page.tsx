@@ -1,5 +1,6 @@
 'use client';
 
+import { notify, confirmDialog } from '@/components/Feedback';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useParams, useRouter } from 'next/navigation';
@@ -66,7 +67,7 @@ export default function UserDetailPage() {
     if (!user) return;
     const newStatus = user.status === 'active' ? 'banned' : 'active';
     
-    if (!confirm(`Change status to ${newStatus}?`)) return;
+    if (!(await confirmDialog(`Change status to ${newStatus}?`))) return;
     
     if (actionLock.current) return;
     actionLock.current = true;
@@ -76,13 +77,13 @@ export default function UserDetailPage() {
       
       if (result.success && result.data) {
         setUser({ ...user, status: result.data.status });
-        alert(`User status updated to ${newStatus}`);
+        notify.success(`User status updated to ${newStatus}`);
       } else {
-        alert(result.message || 'Failed to update status');
+        notify.error(result.message || 'Failed to update status');
       }
     } catch (err: any) {
       console.error('Error updating status:', err);
-      alert('Failed to update user status');
+      notify.error('Failed to update user status');
     } finally {
       actionLock.current = false;
       setIsUpdating(false);
@@ -91,7 +92,7 @@ export default function UserDetailPage() {
 
   const handlePasswordReset = async () => {
     if (!newPassword || newPassword.length < 6) {
-      alert('Password must be at least 6 characters');
+      notify.error('Password must be at least 6 characters');
       return;
     }
     
@@ -102,15 +103,15 @@ export default function UserDetailPage() {
       const result = await resetUserPassword(userId, newPassword);
       
       if (result.success) {
-        alert('Password reset successfully!');
+        notify.success('Password reset successfully!');
         setShowPasswordModal(false);
         setNewPassword('');
       } else {
-        alert(result.message || 'Failed to reset password');
+        notify.error(result.message || 'Failed to reset password');
       }
     } catch (err: any) {
       console.error('Error resetting password:', err);
-      alert('Failed to reset password');
+      notify.error('Failed to reset password');
     } finally {
       actionLock.current = false;
       setIsUpdating(false);

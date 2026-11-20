@@ -106,7 +106,7 @@ export default function CutoutToolPanel({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>CUTOUT</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -144,7 +144,7 @@ export default function CutoutToolPanel({
               </View>
 
               <View style={styles.sliderControl}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Decrease feathering"
                   style={styles.sliderButton}
                   onPress={() => setFeathering(Math.max(0, feathering - 10))}
                 >
@@ -157,7 +157,7 @@ export default function CutoutToolPanel({
                   />
                 </View>
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Increase feathering"
                   style={styles.sliderButton}
                   onPress={() => setFeathering(Math.min(100, feathering + 10))}
                 >
@@ -177,7 +177,7 @@ export default function CutoutToolPanel({
               </View>
 
               <View style={styles.sliderControl}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Decrease threshold"
                   style={styles.sliderButton}
                   onPress={() => setThreshold(Math.max(0, threshold - 10))}
                 >
@@ -190,7 +190,7 @@ export default function CutoutToolPanel({
                   />
                 </View>
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Increase threshold"
                   style={styles.sliderButton}
                   onPress={() => setThreshold(Math.min(100, threshold + 10))}
                 >
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#EC9A15",
   },
   helpText: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
     lineHeight: 16,
   },

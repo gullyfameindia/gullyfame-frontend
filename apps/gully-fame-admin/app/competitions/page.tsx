@@ -1,6 +1,8 @@
 'use client';
 
+import { notify, confirmDialog } from '@/components/Feedback';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Plus, Edit, Eye, Trash2, RefreshCw } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
@@ -98,18 +100,18 @@ export default function CompetitionsPage() {
   }, [fetchCompetitions]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this competition?')) return;
+    if (!(await confirmDialog('Are you sure you want to delete this competition?'))) return;
     await run(`delete:${id}`, async () => {
       try {
         const result = await deleteCompetition(id);
         if (result.success) {
-          alert('Competition deleted successfully!');
+          notify.success('Competition deleted successfully!');
           fetchCompetitions();
         } else {
-          alert(result.message || 'Failed to delete competition');
+          notify.error(result.message || 'Failed to delete competition');
         }
       } catch (err: any) {
-        alert('Error deleting competition: ' + err.message);
+        notify.error('Error deleting competition: ' + err.message);
       }
     });
   };
@@ -156,13 +158,13 @@ export default function CompetitionsPage() {
               <RefreshCw className="h-4 w-4" />
               <span>Refresh</span>
             </button>
-            <a
+            <Link
               href="/competitions/create"
               className="flex items-center space-x-2 rounded-lg bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
             >
               <Plus className="h-5 w-5" />
               <span>Create New Competition</span>
-            </a>
+            </Link>
           </div>
         </div>
 

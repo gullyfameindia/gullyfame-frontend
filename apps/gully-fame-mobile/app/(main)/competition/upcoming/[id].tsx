@@ -162,7 +162,7 @@ export default function UpcomingCompetitionScreen() {
       </View>
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerButton}><BackIcon /></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerButton}><BackIcon /></TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{competitionData.title}</Text>
         <View style={{ width: 40 }} />
       </View>

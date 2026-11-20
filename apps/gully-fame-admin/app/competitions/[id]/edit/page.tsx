@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/components/Feedback';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -106,7 +107,7 @@ export default function EditCompetitionPage() {
     if (res.success) {
       router.push(`/competitions/${competitionId}`);
     } else {
-      alert(res.message || 'Failed to update competition');
+      notify.error(res.message || 'Failed to update competition');
     }
   };
 
@@ -267,7 +268,7 @@ export default function EditCompetitionPage() {
                     const file = e.target.files?.[0];
                     if (!file) return;
                     if (file.size > 10 * 1024 * 1024) {
-                      alert('Please choose an image under 10MB.');
+                      notify.error('Please choose an image under 10MB.');
                       return;
                     }
                     setBannerFile(file);

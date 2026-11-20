@@ -248,7 +248,7 @@ export default function VoiceToolPanel({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>VOICE</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -271,7 +271,7 @@ export default function VoiceToolPanel({
         <View style={styles.recordingControls}>
           {!recordedUri ? (
             // Recording mode
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={isRecording ? "Stop recording" : "Start recording"}
               style={styles.recordButton}
               onPress={isRecording ? stopRecording : startRecording}
               activeOpacity={0.8}
@@ -297,7 +297,7 @@ export default function VoiceToolPanel({
           ) : (
             // Playback mode
             <View style={styles.playbackControls}>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Play recording"
                 style={styles.playbackButton}
                 onPress={playRecording}
               >
@@ -307,7 +307,7 @@ export default function VoiceToolPanel({
                   color="#EC9A15"
                 />
               </TouchableOpacity>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Delete recording"
                 style={styles.deleteRecordingButton}
                 onPress={deleteRecording}
               >

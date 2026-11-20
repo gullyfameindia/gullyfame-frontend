@@ -323,7 +323,7 @@ export const fanSelfProfileScreenStyles = StyleSheet.create({
         opacity: 0.5,
     },
     menuItemTextDisabled: {
-        color: "#666",
+        color: "#999",
     },
     menuIconContainer: {
         width: 40,

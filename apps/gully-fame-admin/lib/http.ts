@@ -1,15 +1,16 @@
 'use client';
 
 import { API_BASE_URL } from './config';
-import { getToken, handleUnauthorized } from './session';
+import { handleUnauthorized } from './session';
 import type { ApiResponse } from './apiTypes';
 
 /**
  * The ONE request helper of the admin panel. Every lib/*Api.ts call goes through apiRequest().
  *
  * - URL: API_BASE_URL + path (no double slashes), query params encoded, empty values dropped.
- * - Auth: 'admin' sends `Authorization: Bearer <admin token>`; 'none' sends no token (public reads,
- *   login). The token is never logged.
+ * - Auth: the admin session is an httpOnly cookie (A2), sent with `credentials: 'include'` on every
+ *   request. 'admin' requests add the `X-GF-Admin` header the backend requires for cookie sessions
+ *   (CSRF guard); 'none' requests (public reads, login) do not, so they never act as the admin.
  * - Timeout: 20 s by default, 60 s for uploads; the request is aborted, not left hanging.
  * - JSON guard: a non-JSON body (HTML error page, empty 502) becomes a clean error, never a throw.
  * - Envelope: the backend answers { code, message, data }; code 1 (or success: true) means success,
@@ -75,11 +76,14 @@ export function buildUrl(path: string, query?: Record<string, QueryValue>, base:
   return `${cleanBase}/${cleanPath}${qs ? `${cleanPath.includes('?') ? '&' : '?'}${qs}` : ''}`;
 }
 
-/** Headers for a request: JSON content type when needed, bearer token only for admin requests. */
-export function buildHeaders(auth: AuthMode, hasJsonBody: boolean, token: string | null = getToken()): Record<string, string> {
+/** Header the backend requires before it accepts the admin session cookie. */
+export const ADMIN_SESSION_HEADER = 'X-GF-Admin';
+
+/** Headers for a request: JSON content type when needed, the session header only for admin requests. */
+export function buildHeaders(auth: AuthMode, hasJsonBody: boolean): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (hasJsonBody) headers['Content-Type'] = 'application/json';
-  if (auth === 'admin' && token) headers.Authorization = `Bearer ${token}`;
+  if (auth === 'admin') headers[ADMIN_SESSION_HEADER] = '1';
   return headers;
 }
 
@@ -164,6 +168,8 @@ export async function apiRequest<T = any>(
       response = await fetch(url, {
         method,
         headers: buildHeaders(auth, hasJsonBody),
+        // Sends and receives the httpOnly session cookie (login sets it, logout clears it).
+        credentials: 'include',
         body: options.formData ?? (hasJsonBody ? JSON.stringify(options.body) : undefined),
         signal: controller.signal,
       });

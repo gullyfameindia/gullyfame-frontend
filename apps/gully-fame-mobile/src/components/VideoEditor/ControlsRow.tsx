@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
-import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 
 interface ControlsRowProps {
   isPlaying: boolean;
@@ -34,9 +34,9 @@ const ControlsRow: React.FC<ControlsRowProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Left side: Play button + Multi-select */}
+      {/* Left side: Play button */}
       <View style={styles.leftSection}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={isPlaying ? "Pause" : "Play"}
           style={styles.playButton}
           onPress={onPlayPress}
           activeOpacity={0.7}
@@ -46,10 +46,6 @@ const ControlsRow: React.FC<ControlsRowProps> = ({
             size={24}
             color="#fff"
           />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.multiSelectButton} activeOpacity={0.7}>
-          <Ionicons name="checkbox-outline" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -62,7 +58,7 @@ const ControlsRow: React.FC<ControlsRowProps> = ({
 
       {/* Right side: Undo/Redo */}
       <View style={styles.rightSection}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Undo" hitSlop={10}
           style={[styles.controlButton, !canUndo && styles.controlButtonDisabled]}
           onPress={onUndoPress}
           disabled={!canUndo}
@@ -75,7 +71,7 @@ const ControlsRow: React.FC<ControlsRowProps> = ({
           />
         </TouchableOpacity>
 
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Redo" hitSlop={10}
           style={[styles.controlButton, !canRedo && styles.controlButtonDisabled]}
           onPress={onRedoPress}
           disabled={!canRedo}
@@ -113,14 +109,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  multiSelectButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     justifyContent: "center",
     alignItems: "center",
   },

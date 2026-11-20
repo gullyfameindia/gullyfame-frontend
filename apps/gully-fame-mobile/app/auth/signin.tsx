@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView, Dimensions, Platform, TextInput } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
 import { showGuestModeUnavailable } from "@utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppleIcon, EyeIcon, EyeOffIcon } from "@/icons";
@@ -58,7 +59,7 @@ export default function SignIn() {
         setErrorMessage(result.message);
         return;
       }
-      const profile = await saveUserSession(result.data.token, result.data.user);
+      const profile = await saveUserSession(result.data.token, result.data.user, result.data.refreshToken);
       await AsyncStorage.setItem("accountCreatedVia", "normal");
       setRole(profile.role);
       registerPushTokenWithBackend();
@@ -136,7 +137,7 @@ export default function SignIn() {
                 secureTextEntry={!showPassword}
               />
               {password.length > 0 && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                   testID="signin-toggle-password"
@@ -207,36 +208,35 @@ export default function SignIn() {
             )}
           </TouchableOpacity>
 
-          {}
-          <View style={styles.continueWithContainer}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.continueWithText}>OR Continue With</Text>
-            <View style={styles.separatorLine} />
-          </View>
+          {SOCIAL_LOGIN_ENABLED && (
+            <>
+              <View style={styles.continueWithContainer}>
+                <View style={styles.separatorLine} />
+                <Text style={styles.continueWithText}>OR Continue With</Text>
+                <View style={styles.separatorLine} />
+              </View>
 
-          {}
-          <View style={styles.socialIconsContainer}>
-            {
-
-}
-            {Platform.OS === "ios" && (
-              <TouchableOpacity
-                style={[
-                  styles.socialIconButton,
-                  isSocialLoading && styles.socialIconButtonDisabled,
-                ]}
-                activeOpacity={0.7}
-                onPress={handleAppleLogin}
-                disabled={isSocialLoading}
-              >
-                {isSocialLoading ? (
-                  <ActivityIndicator color="#666" size="small" />
-                ) : (
-                  <AppleIcon size={40} />
+              <View style={styles.socialIconsContainer}>
+                {Platform.OS === "ios" && (
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Apple"
+                    style={[
+                      styles.socialIconButton,
+                      isSocialLoading && styles.socialIconButtonDisabled,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={handleAppleLogin}
+                    disabled={isSocialLoading}
+                  >
+                    {isSocialLoading ? (
+                      <ActivityIndicator color="#666" size="small" />
+                    ) : (
+                      <AppleIcon size={40} />
+                    )}
+                  </TouchableOpacity>
                 )}
-              </TouchableOpacity>
-            )}
-          </View>
+              </View>
+            </>
+          )}
 
           {}
           <View style={styles.createAccountContainer}>

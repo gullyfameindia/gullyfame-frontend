@@ -1,3 +1,5 @@
+const path = require('path');
+
 // The Content-Security-Policy is built per request (with a nonce) in middleware.ts.
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -11,6 +13,8 @@ const securityHeaders = [
 
 const nextConfig = {
   output: 'standalone',
+  // Monorepo: trace files from the repo root (where node_modules and package-lock.json live).
+  outputFileTracingRoot: path.join(__dirname, '../..'),
   reactStrictMode: true,
   poweredByHeader: false,
   productionBrowserSourceMaps: false,

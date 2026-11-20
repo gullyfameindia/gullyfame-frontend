@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 /**
  * Route-level error boundary: a crash inside one page shows this instead of a blank screen,
@@ -34,12 +35,12 @@ export default function Error({
           >
             Try again
           </button>
-          <a
+          <Link
             href="/"
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>

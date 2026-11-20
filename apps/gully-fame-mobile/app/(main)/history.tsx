@@ -10,14 +10,13 @@ import {
   StatusBar,
   Platform,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { getWallet, toDisplayTransaction, DisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
 import { toastError } from "@/components/ui/Toast";
-import { withdrawMessage } from "@/config/features";
+import { WITHDRAW_ROUTE } from "@/config/features";
 import { openAddCoins } from "@/utils/coinPurchase";
 import { Skeleton, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
@@ -25,8 +24,7 @@ type Transaction = DisplayTransaction;
 
 const PAGE_SIZE = 20;
 
-const showWithdrawUnavailable = (balance: number) =>
-  Alert.alert("Withdraw GFI Coins", withdrawMessage(balance));
+
 
 export default function HistoryScreen() {
   const [filter, setFilter] = useState<"all" | "earned" | "spent">("all");
@@ -94,7 +92,7 @@ export default function HistoryScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={28} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Wallet & History</Text>
@@ -150,7 +148,7 @@ export default function HistoryScreen() {
             <TouchableOpacity 
               style={styles.withdrawButton} 
               activeOpacity={0.8}
-              onPress={() => showWithdrawUnavailable(totalBalance)}
+              onPress={() => router.push(WITHDRAW_ROUTE as any)}
             >
               <MaterialIcons name="account-balance" size={20} color="#fff" />
               <Text style={styles.withdrawButtonText}>Withdraw</Text>
@@ -445,7 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   txDate: {
-    color: "#666",
+    color: "#999",
     fontSize: 11,
   },
   txAmountContainer: {
@@ -466,7 +464,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyStateText: {
-    color: "#666",
+    color: "#999",
     fontSize: 15,
     marginTop: 12,
   },

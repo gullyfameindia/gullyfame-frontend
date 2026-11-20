@@ -1,5 +1,6 @@
 'use client';
 
+import { notify, confirmDialog } from '@/components/Feedback';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Building2, Eye, Edit, Trash2, Plus, Mail, Lock, X, Save, CheckCircle, Copy, Check, RefreshCw, Loader2 } from 'lucide-react';
@@ -191,10 +192,10 @@ export default function SponsorsPage() {
         
         await fetchSponsors();
       } else {
-        alert(result.message || 'Failed to create sponsor');
+        notify.error(result.message || 'Failed to create sponsor');
       }
     } catch (err: any) {
-      alert('Error creating sponsor: ' + err.message);
+      notify.error('Error creating sponsor: ' + err.message);
     } finally {
       submitLock.current = false;
       setSubmitting(false);
@@ -222,15 +223,15 @@ export default function SponsorsPage() {
       });
       
       if (result.success) {
-        alert('Sponsor updated successfully!');
+        notify.success('Sponsor updated successfully!');
         setShowEditModal(false);
         setEditingSponsor(null);
         await fetchSponsors();
       } else {
-        alert(result.message || 'Failed to update sponsor');
+        notify.error(result.message || 'Failed to update sponsor');
       }
     } catch (err: any) {
-      alert('Error updating sponsor: ' + err.message);
+      notify.error('Error updating sponsor: ' + err.message);
     } finally {
       submitLock.current = false;
       setSubmitting(false);
@@ -239,7 +240,7 @@ export default function SponsorsPage() {
 
   const handleDeleteSponsor = async (sponsor: Sponsor) => {
     if (submitLock.current) return;
-    if (!confirm(`Are you sure you want to deactivate ${sponsor.email}?`)) return;
+    if (!(await confirmDialog(`Are you sure you want to deactivate ${sponsor.email}?`))) return;
     submitLock.current = true;
     
     try {
@@ -248,13 +249,13 @@ export default function SponsorsPage() {
       const result = await deleteSponsor(sponsorId, sponsor.email);
       
       if (result.success) {
-        alert('Sponsor deactivated successfully!');
+        notify.success('Sponsor deactivated successfully!');
         await fetchSponsors();
       } else {
-        alert(result.message || 'Failed to deactivate sponsor');
+        notify.error(result.message || 'Failed to deactivate sponsor');
       }
     } catch (err: any) {
-      alert('Error deactivating sponsor: ' + err.message);
+      notify.error('Error deactivating sponsor: ' + err.message);
     } finally {
       submitLock.current = false;
       setSubmitting(false);

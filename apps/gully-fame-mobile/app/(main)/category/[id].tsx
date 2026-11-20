@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ImageBackground, StatusBar, Modal, Animated } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ImageBackground, StatusBar, Modal, Animated, ActivityIndicator } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, G, Circle, Rect } from "react-native-svg";
 import { getCategories } from "@/api/services/userService";
 import { getFollowedCategories, setCategoryFollowed } from "@/utils/followedCategories";
 import { TALENT_CATEGORIES } from "@/constants/talentCategories";
+import { listCompetitionsByCategory, getCompetitionReels, type CompetitionListItem } from "@/api/services/competitionService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,14 +23,36 @@ const defaultCategoryData = {
   banner: require("@assets/images/carousel1.png"),
 };
 
-const sampleReels: { id: number; thumbnail: any }[] = [];
+type CategoryComp = {
+  id: string;
+  title: string;
+  image: any;
+  prize: string;
+  participants: number;
+  startDate: string;
+  endDate: string;
+};
+type CategoryReel = { id: string; competitionId: string; thumbnail: any; votes: number };
 
-const liveCompetitions: any[] = [];
+const PLACEHOLDER_IMAGE = require("@assets/images/carousel1.png");
 
-const upcomingCompetitions: any[] = [];
+const formatDay = (iso?: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+};
 
-const pastCompetitions: any[] = [];
+const toCard = (c: CompetitionListItem): CategoryComp => ({
+  id: String(c._id),
+  title: c.title,
+  image: c.imageUrl ? { uri: c.imageUrl } : PLACEHOLDER_IMAGE,
+  prize: `₹${Number(c.prize || 0).toLocaleString("en-IN")}`,
+  participants: c.participants || 0,
+  startDate: formatDay(c.startDate),
+  endDate: c.endDate ? `Ends ${formatDay(c.endDate)}` : "",
+});
 
+// Top performers per category need a backend endpoint; the section stays hidden while empty.
 const topPerformers: any[] = [];
 
 
@@ -196,6 +219,61 @@ export default function CategoryDetailScreen() {
       setActiveTab("reels");
     }
   }, [tab]);
+  // Competitions and reels in this category (N1).
+  const [liveCompetitions, setLiveCompetitions] = useState<CategoryComp[]>([]);
+  const [upcomingCompetitions, setUpcomingCompetitions] = useState<CategoryComp[]>([]);
+  const [pastCompetitions, setPastCompetitions] = useState<CategoryComp[]>([]);
+  const [sampleReels, setSampleReels] = useState<CategoryReel[]>([]);
+  const [listsError, setListsError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  // Loading until the lists for this category (and retry) have arrived.
+  const listsKey = `${categoryId}:${reloadKey}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const listsLoading = loadedKey !== listsKey;
+
+  useEffect(() => {
+    if (!categoryId) return;
+    let cancelled = false;
+    // Talent keys (e.g. "fashion") are sent as their display name; backend ids are sent as is.
+    const query = matchTalent(categoryId)?.name || categoryId;
+    (async () => {
+      try {
+        const comps = await listCompetitionsByCategory(query);
+        if (cancelled) return;
+        const live = comps.filter((c) => c.normalizedStatus === "LIVE");
+        setLiveCompetitions(live.map(toCard));
+        setUpcomingCompetitions(comps.filter((c) => c.normalizedStatus === "UPCOMING").map(toCard));
+        setPastCompetitions(comps.filter((c) => c.normalizedStatus === "ENDED").map(toCard));
+
+        // Reels: the latest entries of up to 3 live competitions in this category.
+        const pages = await Promise.all(
+          live.slice(0, 3).map((c) => getCompetitionReels(String(c._id), null, 12).catch(() => null))
+        );
+        if (cancelled) return;
+        const reels: CategoryReel[] = [];
+        pages.forEach((p) =>
+          p?.reels.forEach((r) =>
+            reels.push({
+              id: String(r._id),
+              competitionId: p.competitionId,
+              thumbnail: r.thumbnail_url ? { uri: r.thumbnail_url } : PLACEHOLDER_IMAGE,
+              votes: r.stats?.votes || 0,
+            })
+          )
+        );
+        setSampleReels(reels.sort((a, b) => b.votes - a.votes).slice(0, 24));
+        setListsError(false);
+      } catch {
+        if (!cancelled) setListsError(true);
+      } finally {
+        if (!cancelled) setLoadedKey(listsKey);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryId, listsKey]);
+
   const [isFollowing, setIsFollowing] = useState(false);
   const talentKey = matchTalent(category.name)?.key;
   useEffect(() => {
@@ -244,7 +322,7 @@ export default function CategoryDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
             </Svg>
@@ -361,10 +439,25 @@ export default function CategoryDetailScreen() {
 
 
               if (filteredComps.length === 0) {
+                if (listsLoading) {
+                  return (
+                    <View style={styles.emptyState}>
+                      <ActivityIndicator color="#EC9A15" />
+                    </View>
+                  );
+                }
                 return (
                   <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>Competitions by category are coming soon</Text>
-                    <Text style={styles.emptyStateSubtext}>Browse all competitions from the home screen.</Text>
+                    <Text style={styles.emptyStateText}>
+                      {listsError ? "Couldn't load competitions" : "No competitions in this category yet"}
+                    </Text>
+                    {listsError ? (
+                      <TouchableOpacity accessibilityRole="button" onPress={() => setReloadKey((k) => k + 1)}>
+                        <Text style={[styles.emptyStateSubtext, { color: "#EC9A15" }]}>Tap to try again</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={styles.emptyStateSubtext}>Browse all competitions from the home screen.</Text>
+                    )}
                   </View>
                 );
               }
@@ -515,7 +608,7 @@ export default function CategoryDetailScreen() {
                                   <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
                                     <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#FFD700"/>
                                   </Svg>
-                                  <Text style={styles.compDetailTextNew}>Winner: {comp.winner}</Text>
+                                  <Text style={styles.compDetailTextNew}>Ended · {comp.participants} joined</Text>
                                 </View>
                               </View>
                               <View style={styles.compCardFooterNew}>
@@ -706,18 +799,23 @@ export default function CategoryDetailScreen() {
           </View>
         ) : (
           <View style={styles.content}>
-            {sampleReels.length === 0 && (
+            {sampleReels.length === 0 && listsLoading && (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>Reels by category are coming soon</Text>
+                <ActivityIndicator color="#EC9A15" />
+              </View>
+            )}
+            {sampleReels.length === 0 && !listsLoading && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No reels in this category yet</Text>
                 <Text style={styles.emptyStateSubtext}>Watch the latest reels in GullyReel.</Text>
               </View>
             )}
             <View style={styles.reelsGrid}>
               {sampleReels.map((reel) => (
-                <TouchableOpacity 
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open reel" 
                   key={reel.id} 
                   style={styles.reelCard}
-                  onPress={() => router.push(`/(main)/reel?reelId=${reel.id}&categoryId=${categoryId}&from=category` as any)}
+                  onPress={() => router.push(`/(main)/reel?startReelId=${reel.id}&competitionId=${reel.competitionId}&from=category` as any)}
                   activeOpacity={0.9}
                 >
                   <Image source={reel.thumbnail} style={styles.reelImage} />
@@ -727,20 +825,9 @@ export default function CategoryDetailScreen() {
                   >
                     <View style={styles.reelStats}>
                       <View style={styles.reelStat}>
-                        {
-
-
-}
-                        {}
-                      </View>
-                      <View style={styles.reelStat}>
-                        {
-
-}
-                        {}
+                        <Text style={styles.reelStatText}>🔥 {reel.votes.toLocaleString("en-IN")}</Text>
                       </View>
                     </View>
-                    {}
                   </LinearGradient>
                 </TouchableOpacity>
               ))}

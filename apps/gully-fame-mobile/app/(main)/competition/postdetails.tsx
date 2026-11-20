@@ -98,7 +98,7 @@ export default function PostDetailsScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerBackButton}>
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
@@ -149,7 +149,7 @@ export default function PostDetailsScreen() {
               <Text style={styles.toggleTitle}>Make Post Public</Text>
               <Text style={styles.toggleSubtitle}>Visible to all users on timelines</Text>
             </View>
-            <Switch value={makePublic} onValueChange={setMakePublic} trackColor={{ true: "#FF8C00" }} />
+            <Switch value={makePublic} onValueChange={setMakePublic} trackColor={{ true: "#EC9A15" }} />
           </View>
 
           <View style={styles.toggleRow}>
@@ -157,7 +157,7 @@ export default function PostDetailsScreen() {
               <Text style={styles.toggleTitle}>Tag Dancers</Text>
               <Text style={styles.toggleSubtitle}>@Mention your friends or crew members</Text>
             </View>
-            <Switch value={allowMentions} onValueChange={setAllowMentions} trackColor={{ true: "#FF8C00" }} />
+            <Switch value={allowMentions} onValueChange={setAllowMentions} trackColor={{ true: "#EC9A15" }} />
           </View>
 
           <View style={styles.toggleRow}>
@@ -165,7 +165,7 @@ export default function PostDetailsScreen() {
               <Text style={styles.toggleTitle}>Enable Tips for this Post</Text>
               <Text style={styles.toggleSubtitle}>Allow fans to send you love instantly</Text>
             </View>
-            <Switch value={enableTips} onValueChange={setEnableTips} trackColor={{ true: "#FF8C00" }} />
+            <Switch value={enableTips} onValueChange={setEnableTips} trackColor={{ true: "#EC9A15" }} />
           </View>
         </View>
 
@@ -197,7 +197,7 @@ export default function PostDetailsScreen() {
         </View>
 
         <View style={styles.guidelinesRow}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="checkbox" accessibilityLabel="I accept the guidelines" accessibilityState={{ checked: guidelinesAccepted }}
             style={[styles.checkbox, guidelinesAccepted && styles.checkboxChecked]}
             onPress={() => setGuidelinesAccepted((prev) => !prev)}
             activeOpacity={0.7}
@@ -213,7 +213,7 @@ export default function PostDetailsScreen() {
 
         <TouchableOpacity style={styles.submitButton} activeOpacity={0.85} onPress={handleSubmit}>
           <LinearGradient
-            colors={['#FF6B35', '#FF8C00']}
+            colors={['#FF6B35', '#EC9A15']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.submitGradient}
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   headerActionText: {
-    color: "#FF8C00",
+    color: "#EC9A15",
     fontSize: 13,
   },
   mediaCard: {
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1f1f1f",
   },
   emptyMediaText: {
-    color: "#777",
+    color: "#999",
     fontSize: 14,
   },
   captionContainer: {
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   captionHelper: {
-    color: "#FF8C00",
+    color: "#EC9A15",
     marginTop: 8,
   },
   section: {
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     borderColor: "#2b2b2b",
   },
   categoryChipActive: {
-    borderColor: "#FF8C00",
+    borderColor: "#EC9A15",
     backgroundColor: "rgba(255,108,54,0.18)",
   },
   categoryChipText: {
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   categoryChipTextActive: {
-    color: "#FF8C00",
+    color: "#EC9A15",
   },
   toggleRow: {
     backgroundColor: "#121212",
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,108,54,0.15)",
   },
   changeButtonText: {
-    color: "#FF8C00",
+    color: "#EC9A15",
     fontSize: 12,
   },
   linkCard: {
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#222",
   },
   linkCardPlaceholderText: {
-    color: "#FF8C00",
+    color: "#EC9A15",
     fontSize: 16,
   },
   linkCardContent: {
@@ -437,14 +437,14 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: "#FF8C00",
+    borderColor: "#EC9A15",
     marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
   },
   checkboxChecked: {
-    backgroundColor: "#FF8C00",
+    backgroundColor: "#EC9A15",
   },
   guidelinesText: {
     color: "#fff",

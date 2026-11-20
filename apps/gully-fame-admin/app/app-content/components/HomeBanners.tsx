@@ -1,5 +1,6 @@
 'use client';
 
+import { confirmDialog } from '@/components/Feedback';
 import { useEffect, useState } from 'react';
 import { Image as ImageIcon, Plus, X, Edit2, Trash2, Loader2 } from 'lucide-react';
 import type { Banner } from '@/lib/bannerApi';
@@ -146,7 +147,7 @@ export default function HomeBanners() {
   };
 
   const handleDeleteBanner = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this banner?')) {
+    if (!(await confirmDialog('Are you sure you want to delete this banner?'))) {
       return;
     }
 

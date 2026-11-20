@@ -2,7 +2,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { unblockUser, useBlockedUsers, type BlockedUser } from "@/utils/moderation";
-import { toastSuccess } from "@/components/ui/Toast";
+import { toastError, toastSuccess } from "@/components/ui/Toast";
+import { getErrorMessage } from "@/api/client";
 
 export default function BlockedUsersScreen() {
   const blocked = useBlockedUsers();
@@ -13,8 +14,12 @@ export default function BlockedUsersScreen() {
       {
         text: "Unblock",
         onPress: async () => {
-          await unblockUser(user.id);
-          toastSuccess("User unblocked");
+          try {
+            await unblockUser(user.id);
+            toastSuccess("User unblocked");
+          } catch (error) {
+            toastError(getErrorMessage(error));
+          }
         },
       },
     ]);

@@ -59,7 +59,7 @@ export default function ForgotPassword() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
             <Svg width={20} height={20} viewBox="0 0 16 16" fill="none">
               <Path
                 d="M16 7H3.83L9.42 1.41L8 0L0 8L8 16L9.41 14.59L3.83 9H16V7Z"

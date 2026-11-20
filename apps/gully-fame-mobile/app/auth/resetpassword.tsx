@@ -122,7 +122,7 @@ export default function ResetPassword() {
       >
         {/* Header with Back Arrow and Logo */}
         <View style={styles.header}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
             onPress={() => router.back()}
             style={styles.backButton}
           >
@@ -162,7 +162,7 @@ export default function ResetPassword() {
               onChangeText={handlePasswordChange}
             />
             {password.length > 0 && (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
               >
@@ -189,7 +189,7 @@ export default function ResetPassword() {
               onChangeText={handleConfirmPasswordChange}
             />
             {confirmPassword.length > 0 && (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
                 style={styles.eyeIcon}
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >

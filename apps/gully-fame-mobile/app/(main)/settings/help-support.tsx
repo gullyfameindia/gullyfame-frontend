@@ -62,7 +62,7 @@ export default function HelpSupportScreen() {
 
       {}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
            <BackIcon color="white" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help & Support</Text>
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   contactTiming: {
-    color: "#777",
+    color: "#999",
     fontSize: 11,
   },
   faqList: {

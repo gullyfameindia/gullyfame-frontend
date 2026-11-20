@@ -69,10 +69,28 @@ export async function cancelActiveUpload(): Promise<void> {
   activeTask = null;
 }
 
+/**
+ * The backend has no tags field, so hashtags are added to the end of the caption
+ * (reel search matches the caption). Tags already written in the caption are not repeated.
+ */
+export function captionWithTags(caption: string, tags?: string[]): string {
+  const text = caption.trim();
+  const present = new Set((text.match(/#[\p{L}\p{N}_]+/gu) || []).map((t) => t.toLowerCase()));
+  const extra: string[] = [];
+  for (const raw of tags || []) {
+    const word = String(raw).trim().replace(/^#+/, "").replace(/\s+/g, "");
+    const tag = `#${word}`;
+    if (!word || present.has(tag.toLowerCase())) continue;
+    present.add(tag.toLowerCase());
+    extra.push(tag);
+  }
+  return [text, extra.join(" ")].filter(Boolean).join(text && extra.length ? "\n\n" : "");
+}
+
 const reelBody = (videoUrl: string, request: VideoUploadRequest) => ({
   video_url: videoUrl,
   thumbnail_url: request.thumbnail || "",
-  caption: (request.description || request.title || "").trim(),
+  caption: captionWithTags(request.description || request.title || "", request.tags),
   ...(request.competitionId ? { competitionId: request.competitionId } : {}),
   music: request.music?.trackId ? { id: request.music.trackId, name: request.music.title } : { id: "", name: "" },
   ...(request.ctaLink?.url ? { ctaLink: request.ctaLink } : {}),

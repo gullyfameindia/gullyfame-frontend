@@ -45,7 +45,7 @@ export default function VerifyIdentityScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerBackButton}>
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
@@ -60,13 +60,13 @@ export default function VerifyIdentityScreen() {
               <Svg width={64} height={64} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M12 2a7 7 0 0 1 7 7v2a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"
-                  stroke="#FF8C00"
+                  stroke="#EC9A15"
                   strokeWidth={2}
                   strokeLinecap="round"
                 />
                 <Path
                   d="M9.172 14.828A4.001 4.001 0 0 1 8 17v1m8-3a4.001 4.001 0 0 0 1.172 2.828"
-                  stroke="#FF8C00"
+                  stroke="#EC9A15"
                   strokeWidth={2}
                   strokeLinecap="round"
                 />
@@ -88,7 +88,7 @@ export default function VerifyIdentityScreen() {
             onPress={handleVerification}
           >
             <LinearGradient
-              colors={hasVerified ? ["#22C55E", "#16A34A"] : ['#FF6B35', '#FF8C00']}
+              colors={hasVerified ? ["#22C55E", "#16A34A"] : ['#FF6B35', '#EC9A15']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.verifyGradient}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { isAuthenticated as hasStoredToken, getCurrentAdmin } from '@/lib/authApi';
+import { getCurrentAdmin } from '@/lib/authApi';
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -24,18 +24,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const hasToken = hasStoredToken();
-
-      if (!hasToken) {
-        console.warn('No token found, redirecting to /login');
-        if (!cancelled) {
-          setIsAuthed(false);
-          setIsChecking(false);
-          router.replace('/login');
-        }
-        return;
-      }
-
+      // The session is an httpOnly cookie the page cannot see, so always ask the server.
       const result = await getCurrentAdmin();
       if (cancelled) return;
 

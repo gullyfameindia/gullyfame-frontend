@@ -17,7 +17,8 @@ interface CaptureControlsProps {
   onRecordPress: () => void;
   onRecordLongPress?: () => void;
   onRecordPressOut?: () => void;
-  onLenses: () => void;
+  /** Leave out to hide the Lenses button (see LENSES_ENABLED). */
+  onLenses?: () => void;
   onDeleteLast: () => void;
   onNext: () => void;
   /** Replaces the Lenses/shutter row while the lens carousel is open. */
@@ -55,7 +56,7 @@ const CaptureControls: React.FC<CaptureControlsProps> = ({
       {lensCarousel ?? (
         <View style={styles.row}>
           <View style={styles.side}>
-            {!isRecording && (
+            {!isRecording && onLenses && (
               <TouchableOpacity style={styles.sideBtn} onPress={onLenses} accessibilityLabel="Lenses">
                 <View style={styles.lensIcon}>
                   <MaterialCommunityIcons name="camera-iris" size={26} color="#fff" />

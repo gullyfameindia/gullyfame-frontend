@@ -37,9 +37,9 @@ import {
 import { socketChatService } from "@api/services/socketChatService";
 import { getErrorMessage } from "@api/client";
 import { getChatContacts, rememberChatContact, fallbackChatName } from "@utils/chatContacts";
-import { showToast, toastError, toastSuccess } from "@components/ui/Toast";
+import { toastError, toastSuccess } from "@components/ui/Toast";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BackIcon, MicIcon, SendIcon } from "@/icons";
+import { BackIcon, SendIcon } from "@/icons";
 import { chatScreenStyles as styles } from "@/styles/chatScreenStyles";
 import Message from "@/components/ChatMessage/ChatMessage";
 import { Skeleton, SkeletonRoot } from "@/components/Skeleton/Skeleton";
@@ -189,13 +189,6 @@ export default function ChatDetailScreen() {
     } finally {
       setSending(false);
     }
-  };
-
-  const handleMicPress = () => {
-    showToast("Voice messages aren't available yet.", "info");
-    // Voice recording feature not implemented in managed Expo workflow
-    // Would require native audio module (expo-av supports playback but not voice memo recording)
-    // TODO: Implement voice message recording when available
   };
 
   
@@ -447,7 +440,7 @@ export default function ChatDetailScreen() {
           </>
         ) : (
           <>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
               onPress={() => router.back()}
               testID="chat-back"
               style={styles.headerButton}
@@ -471,7 +464,7 @@ export default function ChatDetailScreen() {
                 </View>
               </View>
             </View>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="More options"
               style={styles.headerButton}
               onPress={() => setShowMenu(true)}
               testID="chat-menu"
@@ -640,11 +633,8 @@ export default function ChatDetailScreen() {
             onChangeText={setMessage}
             multiline
           />
-          <TouchableOpacity style={styles.micButton} onPress={handleMicPress}>
-            <MicIcon />
-          </TouchableOpacity>
         </View>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Send message"
           style={[
             styles.sendButton,
             (!message.trim() || sending) && styles.sendButtonDisabled,
@@ -680,7 +670,7 @@ export default function ChatDetailScreen() {
               { paddingTop: Math.max(insets.top, 10) + 10 },
             ]}
           >
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
               onPress={() => {
                 setShowForwardScreen(false);
                 setSelectedForwardChats([]);
@@ -781,10 +771,7 @@ export default function ChatDetailScreen() {
               style={styles.menuItem}
               onPress={() => {
                 setShowMenu(false);
-                Alert.alert("Report", "Report this user's messages? This opens an email to our support team.", [
-                  { text: "Cancel", style: "cancel" },
-                  { text: "Report", style: "destructive", onPress: () => reportContent("chat", chatUserId) },
-                ]);
+                reportContent("chat", chatUserId);
               }}
             >
               <Text style={[styles.menuItemText, styles.menuItemDanger]}>
@@ -804,8 +791,12 @@ export default function ChatDetailScreen() {
                       text: "Block",
                       style: "destructive",
                       onPress: async () => {
-                        await blockUser(chatUserId, (name as string) || "User");
-                        router.back();
+                        try {
+                          await blockUser(chatUserId, (name as string) || "User");
+                          router.back();
+                        } catch (error) {
+                          Alert.alert("Couldn't block", getErrorMessage(error));
+                        }
                       },
                     },
                   ]

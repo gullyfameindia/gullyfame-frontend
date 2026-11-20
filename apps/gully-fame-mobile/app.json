@@ -22,6 +22,7 @@
       "backgroundColor": "#000000",
       "versionCode": 1,
       "package": "com.gullyfame.mobile",
+      "googleServicesFile": "./google-services.json",
       "icon": "./assets/images/app-icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon-adaptive-foreground.png",
@@ -42,7 +43,8 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO",
-        "android.permission.ACTIVITY_RECOGNITION"
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "allowBackup": false,
       "softwareKeyboardLayoutMode": "resize"
@@ -91,7 +93,19 @@
       "expo-font",
       "expo-image",
       "expo-secure-store",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/app-icon-adaptive-foreground.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#161616",
+          "dark": {
+            "image": "./assets/images/app-icon-adaptive-foreground.png",
+            "backgroundColor": "#161616"
+          }
+        }
+      ],
       "expo-status-bar",
       "expo-video",
       "expo-web-browser",

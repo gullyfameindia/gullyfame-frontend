@@ -133,7 +133,7 @@ export default function AdjustToolPanel({
               <Text style={styles.resetButtonText}>Reset All</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
             <Ionicons name="close" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -174,7 +174,7 @@ export default function AdjustToolPanel({
                     {value}
                   </Text>
                   {!isDefault && (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel="Reset"
                       style={styles.resetIconButton}
                       onPress={() => resetAdjustment(config.key)}
                     >

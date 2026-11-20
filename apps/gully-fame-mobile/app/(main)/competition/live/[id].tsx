@@ -252,11 +252,11 @@ export default function LiveCompetitionScreen() {
       )}
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push("/(main)/home")} style={styles.headerButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.push("/(main)/home")} style={styles.headerButton}>
           <BackIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{competitionData.title}</Text>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Share"
           onPress={() => {
             shareSlideAnim.setValue(height);
             setShareModalVisible(true);

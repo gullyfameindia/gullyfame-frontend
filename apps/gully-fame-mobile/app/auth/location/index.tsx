@@ -35,7 +35,8 @@ const handleEnableLocation = async () => {
       return;
     }
     const position = await Promise.race([
-      Location.getCurrentPositionAsync({}),
+      // Approximate location is enough for "near you"; the app only asks for coarse location.
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Location timeout")), 8000)),
     ]);
     if (await getAuthToken()) {

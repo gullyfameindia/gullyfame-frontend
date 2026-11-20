@@ -1,5 +1,6 @@
 'use client';
 
+import { confirmDialog } from '@/components/Feedback';
 import { useEffect, useState } from 'react';
 import {
   createLibraryItem,
@@ -158,7 +159,7 @@ export default function MediaLibrary({ kind }: { kind: LibraryKind }) {
   };
 
   const handleDelete = async (item: LibraryItem) => {
-    if (!window.confirm(`Delete "${item.name}"? It will disappear from the app.`)) return;
+    if (!(await confirmDialog(`Delete "${item.name}"? It will disappear from the app.`))) return;
     setBusyId(item.id);
     setError(null);
     const r = await deleteLibraryItem(kind, item.id);

@@ -79,7 +79,7 @@ export default function Onboarding1() {
               },
             ]}
           >
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Skip"
               onPress={async () => {
                 await AsyncStorage.setItem("hasSeenOnboarding", "true");
                 router.replace("/(main)/home" as any);
@@ -96,7 +96,7 @@ export default function Onboarding1() {
               <View style={styles.dot} />
             </View>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Next"
               onPress={() => router.push("/auth/onboarding2")}
               style={styles.nextButton}
             >

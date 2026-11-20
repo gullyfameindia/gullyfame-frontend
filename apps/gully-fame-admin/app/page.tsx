@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Image, Palette, HelpCircle, Music, Volume2, Smile, Sparkles, ChevronRight } from 'lucide-react';
+import { Image, Palette, HelpCircle, Music, Volume2, Smile, Sparkles, ChevronRight, Users, Trophy, Film, Coins, Building2, Radio } from 'lucide-react';
+import { getQuickStats, type QuickStatsResponse } from '@/lib/dashboardApi';
+import { getUserRole } from '@/lib/auth';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatCard from '@/components/StatCard';
 import { getBanners } from '@/lib/bannerApi';
@@ -71,10 +73,17 @@ const tiles: Tile[] = [
 export default function Dashboard() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [name, setName] = useState('');
+  const [stats, setStats] = useState<QuickStatsResponse | null>(null);
 
   useEffect(() => {
     const admin = getStoredAdmin();
     setName(admin?.name || admin?.email || '');
+    // Platform numbers (GET admin/dashboard/quick-stats) are for platform admins only.
+    if (getUserRole() === 'admin') {
+      getQuickStats().then((r) => {
+        if (r.success && r.data) setStats(r.data);
+      });
+    }
     tiles.forEach(async (t) => {
       const r = await t.load();
       setCounts((c) => ({ ...c, [t.key]: r.success ? r.count : -1 }));
@@ -97,6 +106,21 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {stats && (
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-gray-900">Platform</h2>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+              <StatCard title="Users" value={stats.totalUsers.toLocaleString()} icon={Users} color="blue" />
+              <StatCard title="Live competitions" value={stats.activeCompetitions} icon={Radio} color="red" />
+              <StatCard title="All competitions" value={stats.totalCompetitions} icon={Trophy} color="primary" />
+              <StatCard title="Reels" value={stats.totalReels.toLocaleString()} icon={Film} color="purple" />
+              <StatCard title="Coins tipped" value={stats.tipsGiven.toLocaleString()} icon={Coins} color="yellow" />
+              <StatCard title="Active sponsors" value={stats.activeSponsors} icon={Building2} color="green" />
+            </div>
+          </div>
+        )}
+
+        <h2 className="text-sm font-semibold text-gray-900">App content</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {tiles.map((t) => (
             <Link key={t.key} href={`/app-content?tab=${t.tab}`} className="group block">

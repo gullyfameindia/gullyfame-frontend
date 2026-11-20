@@ -1,7 +1,7 @@
 # GullyFame India – Frequently Asked Questions (FAQs)
 
-**Effective Date:** 2026  
-**Last Updated:** September 2026
+**Effective Date:** 3 September 2026  
+**Last Updated:** 3 September 2026
 
 ---
 

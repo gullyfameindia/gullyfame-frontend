@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { safeIdParam } from "@/utils/routeParams";
 import { Stack, router } from 'expo-router';
-import { registerDeviceForNotifications, setupNotificationListeners } from '@/api/services/notificationIntegrationService';
+import { setupNotificationListeners } from '@/api/services/notificationIntegrationService';
+import { askForNotificationsOnce } from '@/utils/pushToken';
 import { socketChatService } from '@/api/services/socketChatService';
 import { getAuthToken } from "@/api/client";
 import { openCompetition } from "@/utils/openCompetition";
+import ReportHost from "@/components/ReportHost/ReportHost";
 
 // Push payloads from the backend carry ids (competitionId, reelId, fromUserId), not a type.
 const openFromPush = (data: Record<string, any> | undefined) => {
@@ -24,7 +26,8 @@ export default function MainLayout() {
     (async () => {
       try {
         if (await getAuthToken()) {
-          registerDeviceForNotifications();
+          // Explain first, then ask (once) for notification permission, now that the user is signed in.
+          setTimeout(() => { askForNotificationsOnce(); }, 1500);
           socketChatService.connect();
           unsubscribe = setupNotificationListeners(undefined, (content) => openFromPush(content.data as any));
         }
@@ -38,6 +41,8 @@ export default function MainLayout() {
   if (!isReady) return null;
 
   return (
+    <>
+    <ReportHost />
     <Stack
       screenOptions={{
         headerShown: false,
@@ -61,6 +66,7 @@ export default function MainLayout() {
         }}
       />
     </Stack>
+    </>
   );
 }
 

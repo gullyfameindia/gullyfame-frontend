@@ -124,7 +124,7 @@ export default function SupportModal({
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Support @{creatorName}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -186,7 +186,7 @@ export default function SupportModal({
                 <TextInput
                   style={styles.customInput}
                   placeholder="Enter coin amount"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#999"
                   keyboardType="number-pad"
                   value={customAmount}
                   onChangeText={(text) => {
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   coinLabel: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
   },
   section: {
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     color: "#EC9A15",
   },
   packageLabel: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
   },
   customInputContainer: {

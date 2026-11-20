@@ -82,20 +82,30 @@ describe('URL building', () => {
 });
 
 describe('auth header rules', () => {
-  test('admin requests carry the admin token, public ones carry none', () => {
-    assert.equal(http.buildHeaders('admin', false, 'admin-token').Authorization, 'Bearer admin-token');
-    assert.equal(http.buildHeaders('none', false, 'admin-token').Authorization, undefined);
-    assert.equal(http.buildHeaders('admin', true, 'x')['Content-Type'], 'application/json');
-    assert.equal(http.buildHeaders('admin', false, 'x')['Content-Type'], undefined);
+  test('admin requests carry the session header, public ones do not; no bearer token ever', () => {
+    assert.equal(http.buildHeaders('admin', false)['X-GF-Admin'], '1');
+    assert.equal(http.buildHeaders('none', false)['X-GF-Admin'], undefined);
+    assert.equal(http.buildHeaders('admin', false).Authorization, undefined);
+    assert.equal(http.buildHeaders('admin', true)['Content-Type'], 'application/json');
+    assert.equal(http.buildHeaders('admin', false)['Content-Type'], undefined);
   });
 
-  test('public/* and login calls send no token even when signed in', async () => {
-    storage.set('gf_admin_token', 'admin-token');
+  test('every request sends cookies; only admin calls send the session header (A2)', async () => {
     await http.apiRequest('GET', 'public/splash', { auth: 'none' });
-    await http.apiRequest('POST', 'admin/login', { auth: 'none', body: { email: 'a@b.c', password: 'p', role: 'ADMIN' } });
+    await http.apiRequest('POST', 'admin/login', { auth: 'none', body: { email: 'a@b.c', password: 'p' } });
     await http.apiRequest('GET', 'admin/users');
-    const auth = requests.map((r) => (r.init.headers as Record<string, string>).Authorization);
-    assert.deepEqual(auth, [undefined, undefined, 'Bearer admin-token']);
+    assert.deepEqual(requests.map((r) => r.init.credentials), ['include', 'include', 'include']);
+    const marker = requests.map((r) => (r.init.headers as Record<string, string>)['X-GF-Admin']);
+    assert.deepEqual(marker, [undefined, undefined, '1']);
+  });
+
+  test('a token left by an older build is removed from localStorage', async () => {
+    storage.set('gf_admin_token', 'old');
+    storage.set('userRole', 'admin');
+    const session = await import('../session.ts');
+    session.clearSession();
+    assert.equal(storage.get('gf_admin_token'), undefined);
+    assert.equal(storage.get('userRole'), undefined);
   });
 });
 
@@ -127,12 +137,12 @@ describe('envelope parsing', () => {
 
 describe('401 handling', () => {
   test('a 401 on an admin request clears the session and returns to /login', async () => {
-    storage.set('gf_admin_token', 'expired');
+    storage.set('gf_admin_data', JSON.stringify({ email: 'a@b.c', role: 'ADMIN' }));
     replies = [{ status: 401, body: { code: 3, message: 'invalid token', data: null } }];
-    const r = await http.apiRequest('GET', 'admin/getDetails');
+    const r = await http.apiRequest('GET', 'admin/session');
     assert.equal(r.success, false);
     assert.equal(r.error, 'UNAUTHORIZED');
-    assert.equal(storage.get('gf_admin_token'), undefined);
+    assert.equal(storage.get('gf_admin_data'), undefined);
     assert.equal(fakeWindow.location.href, '/login');
   });
 

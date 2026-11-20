@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/components/Feedback';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { AlertCircle, CheckCircle, XCircle, Eye, RefreshCw, Loader2, Filter, Search, FileText, User, MessageSquare } from 'lucide-react';
@@ -100,11 +101,11 @@ export default function ReportsPage() {
         setResolutionNotes('');
         fetchReports(); 
       } else {
-        alert(result.message || 'Failed to update report status');
+        notify.error(result.message || 'Failed to update report status');
       }
     } catch (err: any) {
       console.error('Error updating report status:', err);
-      alert('Error updating report status: ' + err.message);
+      notify.error('Error updating report status: ' + err.message);
     } finally {
       submittingRef.current = false;
       setUpdatingStatus(false);

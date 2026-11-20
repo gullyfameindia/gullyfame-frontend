@@ -69,7 +69,7 @@ export default function Onboarding4() {
               },
             ]}
           >
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Skip"
               onPress={async () => {
                 await AsyncStorage.setItem("hasSeenOnboarding", "true");
                 router.replace("/(main)/home" as any);
@@ -86,7 +86,7 @@ export default function Onboarding4() {
               <View style={[styles.dot, styles.activeDot]} />
             </View>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Get started"
               onPress={async () => {
                 await AsyncStorage.setItem("hasSeenOnboarding", "true");
                 router.push("./createaccount" as any);

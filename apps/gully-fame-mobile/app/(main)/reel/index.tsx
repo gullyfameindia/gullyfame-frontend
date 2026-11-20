@@ -60,7 +60,7 @@ import {
 import { apiGet, getErrorMessage } from "@api/client";
 import { sendMessage } from "@api/services/chatService";
 import { showToast, toastError, toastSuccess } from "@/components/ui/Toast";
-import { blockUser, getBlockedUserIds } from "@/utils/moderation";
+import { blockUser, getBlockedUserIds, reportContent } from "@/utils/moderation";
 import {
   HomeIconSVG,
   ReelIconSVG,
@@ -1095,7 +1095,7 @@ export default function GullyReelScreen() {
         isFocused && currentVisibleIndex !== null && Math.abs(currentVisibleIndex - index) <= 1;
       return (
         <View style={styles.reelContainer}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityLabel="Reel video. Tap to play or pause, double tap to vote"
             activeOpacity={1}
             onPress={() => {
               const now = Date.now();
@@ -1142,7 +1142,7 @@ export default function GullyReelScreen() {
           </TouchableOpacity>
 
           <View style={styles.overlay} pointerEvents="box-none">
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="More options"
               style={styles.threeDotsButton}
               onPress={() => {
                 setCurrentReelForMenu(reel.id);
@@ -1196,7 +1196,7 @@ export default function GullyReelScreen() {
                 <Text style={styles.actionIconCount}>{reel.shares || 0}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Download"
                 style={styles.rightActionButton}
                 onPress={() => {
                   setSelectedReelForDownload(reel);
@@ -1423,7 +1423,7 @@ export default function GullyReelScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
 
       <View style={styles.backButtonContainer}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} style={styles.backButton} onPress={handleBackPress}>
           <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
             <Path
               d="M19 12H5M12 19l-7-7 7-7"
@@ -1600,6 +1600,13 @@ export default function GullyReelScreen() {
                                   <TouchableOpacity onPress={() => handleDeleteComment(comment)} accessibilityLabel="Delete comment">
                                     <Text style={styles.commentReply}>Delete</Text>
                                   </TouchableOpacity>
+                                ) : comment._backendId ? (
+                                  <TouchableOpacity
+                                    onPress={() => reportContent("comment", comment._backendId)}
+                                    accessibilityLabel="Report comment"
+                                  >
+                                    <Text style={styles.commentReply}>Report</Text>
+                                  </TouchableOpacity>
                                 ) : null}
                               </View>
 
@@ -1674,6 +1681,13 @@ export default function GullyReelScreen() {
                                           <TouchableOpacity onPress={() => handleDeleteComment(reply)} accessibilityLabel="Delete reply">
                                             <Text style={[styles.commentReply, { marginTop: 4 }]}>Delete</Text>
                                           </TouchableOpacity>
+                                        ) : reply._backendId ? (
+                                          <TouchableOpacity
+                                            onPress={() => reportContent("comment", reply._backendId as string)}
+                                            accessibilityLabel="Report reply"
+                                          >
+                                            <Text style={[styles.commentReply, { marginTop: 4 }]}>Report</Text>
+                                          </TouchableOpacity>
                                         ) : null}
                                       </View>
                                       <TouchableOpacity
@@ -1729,7 +1743,7 @@ export default function GullyReelScreen() {
                       <TextInput
                         style={styles.commentInput}
                         placeholder="Add a comment..."
-                        placeholderTextColor="#666"
+                        placeholderTextColor="#999"
                         value={commentText}
                         onChangeText={setCommentText}
                         multiline
@@ -2178,7 +2192,12 @@ export default function GullyReelScreen() {
                               text: "Block",
                               style: "destructive",
                               onPress: async () => {
-                                await blockUser(target.userId, target.username);
+                                try {
+                                  await blockUser(target.userId, target.username);
+                                } catch (error) {
+                                  toastError(getErrorMessage(error));
+                                  return;
+                                }
                                 setReels((prev) => prev.filter((r) => r.userId !== target.userId));
                                 toastSuccess("User blocked");
                               },
@@ -2524,7 +2543,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   gamifiedPostButtonTextDisabled: {
-    color: "#666",
+    color: "#999",
   },
   container: {
     flex: 1,
@@ -3219,7 +3238,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   postButtonTextDisabled: {
-    color: "#666",
+    color: "#999",
   },
   shareHeader: {
     flexDirection: "row",

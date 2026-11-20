@@ -1,5 +1,6 @@
 'use client';
 
+import { notify, confirmDialog } from '@/components/Feedback';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useParams, useRouter } from 'next/navigation';
@@ -67,7 +68,7 @@ export default function UserKycPage() {
   }, [fetchData]);
 
   const handleApprove = async () => {
-    if (!confirm('Approve this KYC submission?')) return;
+    if (!(await confirmDialog('Approve this KYC submission?'))) return;
     
     if (actionLock.current) return;
     actionLock.current = true;
@@ -77,14 +78,14 @@ export default function UserKycPage() {
       
       if (result.success && result.data) {
         setKyc(result.data);
-        alert('KYC approved successfully!');
+        notify.success('KYC approved successfully!');
         fetchData(); 
       } else {
-        alert(result.message || 'Failed to approve KYC');
+        notify.error(result.message || 'Failed to approve KYC');
       }
     } catch (err: any) {
       console.error('Error approving KYC:', err);
-      alert('Failed to approve KYC');
+      notify.error('Failed to approve KYC');
     } finally {
       actionLock.current = false;
       setIsUpdating(false);
@@ -93,7 +94,7 @@ export default function UserKycPage() {
 
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      alert('Please provide a rejection reason');
+      notify.error('Please provide a rejection reason');
       return;
     }
     
@@ -105,16 +106,16 @@ export default function UserKycPage() {
       
       if (result.success && result.data) {
         setKyc(result.data);
-        alert('KYC rejected successfully!');
+        notify.success('KYC rejected successfully!');
         setShowRejectModal(false);
         setRejectionReason('');
         fetchData(); 
       } else {
-        alert(result.message || 'Failed to reject KYC');
+        notify.error(result.message || 'Failed to reject KYC');
       }
     } catch (err: any) {
       console.error('Error rejecting KYC:', err);
-      alert('Failed to reject KYC');
+      notify.error('Failed to reject KYC');
     } finally {
       actionLock.current = false;
       setIsUpdating(false);

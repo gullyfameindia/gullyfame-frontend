@@ -14,6 +14,7 @@ import {
 } from "@/api/services/notificationIntegrationService";
 import { getErrorMessage } from "@/api/client";
 import { getProfile, toggleNotifications } from "@/api/services/userService";
+import { registerPushTokenWithBackend } from "@/utils/pushToken";
 
 /** Notifications loaded per page. */
 const PAGE_SIZE = 30;
@@ -129,6 +130,8 @@ export default function NotificationsScreen() {
     setSavingPush(true);
     try {
       setPushEnabled(await toggleNotifications(enabled));
+      // The user chose this, so it is the right moment to show the system dialog.
+      if (enabled) registerPushTokenWithBackend({ prompt: true });
     } catch (error) {
       setPushEnabled(previous);
       toastError(getErrorMessage(error));
@@ -363,7 +366,7 @@ export default function NotificationsScreen() {
       {}
       <View style={responsiveStyles.headerContainer}>
         <View style={responsiveStyles.header}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
             onPress={() => router.back()}
             style={responsiveStyles.headerButton}
           >

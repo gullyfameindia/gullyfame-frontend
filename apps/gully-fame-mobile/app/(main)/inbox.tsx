@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   Dimensions,
   StatusBar,
@@ -374,7 +374,7 @@ export default function InboxScreen() {
       {}
       <View style={responsiveStyles.headerContainer}>
         <View style={responsiveStyles.header}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
             onPress={() => router.back()}
             style={responsiveStyles.headerButton}
           >
@@ -387,7 +387,7 @@ export default function InboxScreen() {
           >
             {isSelectionMode ? `${selectedChats.length} selected` : "Chats"}
           </Text>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={isSelectionMode ? "Cancel selection" : "More options"}
             style={responsiveStyles.headerButton}
             onPress={() => {
               if (isSelectionMode) {
@@ -472,12 +472,17 @@ export default function InboxScreen() {
       {loading ? (
         <SkeletonList rows={8} trailing style={{ paddingHorizontal: 16 }} />
       ) : (
-        <ScrollView
+        // FlatList draws only the rows on screen, so long chat lists stay smooth.
+        <FlatList
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={responsiveStyles.scrollContent}
-        >
-          {currentChats.length === 0 ? (
+          data={currentChats}
+          keyExtractor={(chat) => chat.id}
+          initialNumToRender={12}
+          windowSize={7}
+          ListFooterComponent={<View style={{ height: scaleVertical(40) }} />}
+          ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
                 {loadError || (activeTab === "Archived" ? "No archived chats." : "No chats yet. Start a conversation!")}
@@ -488,8 +493,8 @@ export default function InboxScreen() {
                 </TouchableOpacity>
               ) : null}
             </View>
-          ) : (
-            currentChats.map((chat) => {
+          }
+          renderItem={({ item: chat }) => {
               const panResponder = createPanResponder(chat.id);
               const swipeX =
                 swipeAnimations.current[chat.id] || new Animated.Value(0);
@@ -768,10 +773,8 @@ export default function InboxScreen() {
                   </Animated.View>
                 </View>
               );
-            })
-          )}
-          <View style={{ height: scaleVertical(40) }} />
-        </ScrollView>
+          }}
+        />
       )}
 
       {}
@@ -859,9 +862,14 @@ export default function InboxScreen() {
                   style: "destructive",
                   onPress: async () => {
                     const all = [...allChatsList, ...archivedChatsList];
-                    for (const id of selectedChats) {
-                      const chat = all.find((c) => c.id === id);
-                      await blockUser(id, chat?.name || "User");
+                    try {
+                      for (const id of selectedChats) {
+                        const chat = all.find((c) => c.id === id);
+                        await blockUser(id, chat?.name || "User");
+                      }
+                    } catch (error) {
+                      toastError(getErrorMessage(error));
+                      return;
                     }
                     setAllChatsList((prev) => prev.filter((c) => !selectedChats.includes(c.id)));
                     setArchivedChatsList((prev) => prev.filter((c) => !selectedChats.includes(c.id)));
@@ -878,18 +886,14 @@ export default function InboxScreen() {
           <TouchableOpacity
             style={styles.selectionActionButton}
             onPress={() => {
-              Alert.alert("Report", `Report ${selectedChats.length} user(s)? This opens an email to our support team.`, [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Report",
-                  style: "destructive",
-                  onPress: () => {
-                    reportContent("user", selectedChats.join(", "));
-                    setSelectedChats([]);
-                    setIsSelectionMode(false);
-                  },
-                },
-              ]);
+              // One conversation at a time: the report carries that person's recent messages.
+              if (selectedChats.length !== 1) {
+                Alert.alert("Report", "Select one chat to report.");
+                return;
+              }
+              reportContent("chat", selectedChats[0]);
+              setSelectedChats([]);
+              setIsSelectionMode(false);
             }}
           >
             <Text style={styles.selectionActionText}>Report</Text>

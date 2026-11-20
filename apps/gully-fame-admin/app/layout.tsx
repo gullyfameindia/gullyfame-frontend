@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { headers } from 'next/headers'
 import AuthGuard from '@/components/AuthGuard'
+import FeedbackHost from '@/components/Feedback'
 
 export const metadata: Metadata = {
   title: 'Gully Fame Admin',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
@@ -22,12 +23,13 @@ export default function RootLayout({
   // Reading request headers opts every page into dynamic rendering. That is required for the
   // per-request CSP nonce set in middleware.ts: a statically prerendered page would be built
   // once with no nonce and its inline scripts would be blocked.
-  headers()
+  await headers()
 
   return (
     <html lang="en">
       <body>
         <AuthGuard>{children}</AuthGuard>
+        <FeedbackHost />
       </body>
     </html>
   )

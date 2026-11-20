@@ -1,7 +1,7 @@
 # PRIVACY POLICY - GULLYFAME INDIA
 
-**Effective Date:** 2026  
-**Last Updated:** September 2026  
+**Effective Date:** 3 September 2026  
+**Last Updated:** 3 September 2026  
 **Version:** 1.0
 
 ---
@@ -213,10 +213,11 @@ Where personal data is processed or transferred outside India, GullyFame will do
 
 For privacy-related queries, complaints, or requests, contact:
 
-**Data Protection Officer / Privacy Officer**  
-Email: grievances@gullyfame.com  
-Phone: +91-XXXXXXXXXX  
-Address: [To be filled with registered office address]
+**Data Protection Officer / Privacy Officer / Grievance Officer**  
+Name: Dhruv Kathuria  
+Email: admin@gullyfame.com  
+Phone: +91 98212 34605  
+Address: Gully Fame India Private Limited, House 55B, Ground Floor, Najafgarh Road, (West Delhi) Delhi - 110015
 
 GullyFame India will acknowledge and address grievances within timelines prescribed by applicable law and the applicable Grievance Redressal Policy.
 

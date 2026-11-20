@@ -154,7 +154,7 @@ export default function StickersToolPanel({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>STICKERS</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -170,7 +170,7 @@ export default function StickersToolPanel({
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10} onPress={() => setSearchQuery("")}>
             <Ionicons name="close-circle" size={20} color="#888" />
           </TouchableOpacity>
         )}
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyText: {
-    color: "#666",
+    color: "#999",
     fontSize: 16,
     marginTop: 12,
     textAlign: "center",

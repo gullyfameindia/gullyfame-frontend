@@ -165,6 +165,22 @@ export async function listCompetitionsByStatus(
   return out;
 }
 
+/**
+ * All competitions in one category (a Category id or its name), any status.
+ * Uses GET /search?type=competitions&category=...
+ */
+export async function listCompetitionsByCategory(category: string, maxPages = 5): Promise<CompetitionListItem[]> {
+  const out: CompetitionListItem[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const result = await searchCompetitionsPage("", page, 50, category);
+    for (const c of result.results) {
+      out.push({ ...c, normalizedStatus: normalizeCompetitionStatus(c.status), imageUrl: c.image || c.image_url || "" });
+    }
+    if (!result.hasMore) break;
+  }
+  return out;
+}
+
 export const competitionService = {
   getCompetitionDetails,
   getLeaderboard,
@@ -173,6 +189,7 @@ export const competitionService = {
   inviteToCompetition,
   getMyCompetitions,
   getLiveMatrix,
+  listCompetitionsByCategory,
   listCompetitionsByStatus,
   getDetails: (id: string) => toResult(() => getCompetitionDetails(id)),
   join: (id: string) => toResult(() => joinCompetition(id), "You're in! Competition joined."),

@@ -158,7 +158,7 @@ export const MusicLibraryModal: React.FC<MusicLibraryModalProps> = ({
           {/* Header Bar */}
           <View style={styles.header}>
             <View style={styles.dragHandle} />
-            <TouchableOpacity onPress={onCancel} style={styles.closeBtn}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onCancel} style={styles.closeBtn}>
               <Ionicons name="close" size={24} color="#FFF" />
             </TouchableOpacity>
           </View>
@@ -184,7 +184,7 @@ export const MusicLibraryModal: React.FC<MusicLibraryModalProps> = ({
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10} onPress={() => setSearchQuery('')}>
                 <Ionicons name="close-circle" size={18} color="#888" />
               </TouchableOpacity>
             )}

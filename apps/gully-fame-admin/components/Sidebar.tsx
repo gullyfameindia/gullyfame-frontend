@@ -12,7 +12,12 @@ import {
   FileText, 
   LogOut,
   X,
-  Building2
+  Building2,
+  ShieldAlert,
+  Wallet,
+  Gift,
+  Megaphone,
+  Banknote
 } from 'lucide-react';
 import { UserRole } from '@/lib/types';
 import { logoutAdmin, getStoredAdmin } from '@/lib/authApi';
@@ -34,7 +39,12 @@ const navigation: NavItem[] = [
   { name: 'Competitions', href: '/competitions', icon: Trophy, roles: ['admin', 'sponsor'] },
   { name: 'Users', href: '/users', icon: Users, roles: ['admin'] },
   { name: 'Tips & Earnings', href: '/tips', icon: Coins, roles: ['admin'] },
+  { name: 'Wallets', href: '/wallets', icon: Wallet, roles: ['admin'] },
+  { name: 'Withdrawals', href: '/withdrawals', icon: Banknote, roles: ['admin'] },
+  { name: 'Referrals', href: '/referrals', icon: Gift, roles: ['admin'] },
+  { name: 'Broadcasts', href: '/broadcasts', icon: Megaphone, roles: ['admin'] },
   { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['admin'] },
+  { name: 'User Reports', href: '/user-reports', icon: ShieldAlert, roles: ['admin'] },
   { name: 'Sponsors', href: '/sponsors', icon: Building2, roles: ['admin'] },
 ];
 

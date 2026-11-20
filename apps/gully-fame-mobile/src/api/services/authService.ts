@@ -30,6 +30,8 @@ export interface LoginRequest {
 export interface PasswordLoginData {
   user: BackendUser;
   token: string;
+  /** Rotating refresh token (POST auth/refresh); missing from older servers. */
+  refreshToken?: string;
 }
 
 export interface OtpRequestData {
@@ -46,6 +48,8 @@ export interface VerifyOtpRequest {
 
 export interface VerifyOtpData {
   token: string;
+  /** Rotating refresh token (POST auth/refresh); missing from older servers. */
+  refreshToken?: string;
   userId: string;
   isNewUser: boolean;
   /** Filled in by the client from GET /user/profile right after verification. */
@@ -53,6 +57,8 @@ export interface VerifyOtpData {
 }
 
 export interface SocialLoginRequest {
+  /** Google ID token, for the server to verify (backend B1). */
+  idToken?: string;
   googleId?: string;
   appleId?: string;
   facebookId?: string;

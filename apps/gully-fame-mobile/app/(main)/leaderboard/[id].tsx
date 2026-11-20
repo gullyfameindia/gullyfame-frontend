@@ -133,13 +133,13 @@ export default function MyFameScreen() {
       <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
           <BackIcon color="white" size={24} />
         </TouchableOpacity>
         
         <Text style={styles.headerTitle}>Leaderboard</Text>
         
-        <TouchableOpacity onPress={() => router.push("/(main)/invite-friend" as any)} style={styles.backButton} activeOpacity={0.7}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Invite friends" onPress={() => router.push("/(main)/invite-friend" as any)} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="gift-outline" size={26} color="#EC9A15" />
         </TouchableOpacity>
       </View>

@@ -378,7 +378,7 @@ export default function EditScreen() {
 
       {/* Top Bar */}
       <SafeAreaView style={styles.topBar} edges={["top"]}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
           style={styles.closeButton}
           onPress={() => router.back()}
         >
@@ -391,10 +391,6 @@ export default function EditScreen() {
         </View>
 
         <View style={styles.topBarRight}>
-          <TouchableOpacity style={styles.searchButton}>
-            <Ionicons name="search" size={22} color="#fff" />
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.hdButton}
             onPress={() => setHdEnabled(!hdEnabled)}
@@ -644,9 +640,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  searchButton: {
-    padding: 4,
-  },
   hdButton: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -655,7 +648,7 @@ const styles = StyleSheet.create({
     borderColor: "#666",
   },
   hdButtonText: {
-    color: "#666",
+    color: "#999",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -705,7 +698,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   videoPlaceholderText: {
-    color: "#666",
+    color: "#999",
     fontSize: 14,
     marginTop: 8,
   },

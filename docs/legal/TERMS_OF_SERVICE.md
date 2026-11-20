@@ -1,13 +1,13 @@
 # Terms of Service - GullyFame India
 
-**Effective Date:** 2026  
-**Last Updated:** September 2026
+**Effective Date:** 3 September 2026  
+**Last Updated:** 3 September 2026
 
 ---
 
 ## 1. AGREEMENT AND SCOPE
 
-These Terms of Service ("Terms") constitute a legally binding agreement between you and **GullyFame India**, a company incorporated under the laws of India with its registered office at **[To be filled with registered office address]** ("we," "us," or "our"), governing your access to and use of the GullyFame India mobile application, website, software, features, content, tools, and related services (collectively, the "Platform").
+These Terms of Service ("Terms") constitute a legally binding agreement between you and **Gully Fame India Private Limited** ("GullyFame India"), a company incorporated under the laws of India with its registered office at **House 55B, Ground Floor, Najafgarh Road, (West Delhi) Delhi - 110015** ("we," "us," or "our"), governing your access to and use of the GullyFame India mobile application, website, software, features, content, tools, and related services (collectively, the "Platform").
 
 By registering, accessing, browsing, or using the Platform, you agree to these Terms, the Privacy Policy and any additional terms displayed for a particular feature, competition, promotion, creator programme, or transaction service.
 
@@ -364,9 +364,13 @@ These Terms, together with the Privacy Policy and applicable feature-specific te
 
 **CIN:** U62099DL2025PTC455455
 
+**GSTIN:** 07AAMCG3793P1ZP
+
 **Registered Office:** House 55B, Ground Floor, Najafgarh Road, (West Delhi) Delhi - 110015
 
 **Grievance Office:** House 55B, Ground Floor, Najafgarh Road, (West Delhi) Delhi - 110015
+
+**Grievance Officer:** Dhruv Kathuria
 
 **Email:** admin@gullyfame.com
 
@@ -376,4 +380,4 @@ These Terms, together with the Privacy Policy and applicable feature-specific te
 
 ---
 
-**Last Updated:** September 2026
+**Last Updated:** 3 September 2026

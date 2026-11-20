@@ -23,6 +23,8 @@ import LensOverlay from "@modules/video-editor/camera-module/components/capture/
 import LensBar from "@modules/video-editor/camera-module/components/capture/LensBar";
 import PhotoPreview from "@modules/video-editor/camera-module/components/capture/PhotoPreview";
 import { useLenses, type Lens } from "@modules/video-editor/camera-module/components/capture/lenses";
+import { LENSES_ENABLED } from "@/config/features";
+import { clearCameraSession, loadCameraSession, saveCameraSession } from "@/utils/cameraSession";
 import { capturePhotoWithLens } from "@modules/video-editor/camera-module/components/capture/photoCapture";
 import * as Haptics from "expo-haptics";
 import { importGalleryAsset } from "@modules/video-editor/camera-module/utils/clipImport";
@@ -205,6 +207,52 @@ export default function TikTokCameraScreen() {
   const [, setRecordingTime] = useState("00:00");
   const [cameraReady, setCameraReady] = useState(false);
   const [recordedClips, setRecordedClips] = useState<VideoClip[]>([]);
+
+  // Keep the clip list on disk so recordings survive Android closing the app before posting.
+  // Saving starts only after the restore check, so the empty initial list can't wipe a saved session.
+  const clipSessionReady = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const saved = await loadCameraSession<VideoClip>(competitionId);
+      if (cancelled) return;
+      if (saved.length === 0) {
+        clipSessionReady.current = true;
+        return;
+      }
+      Alert.alert(
+        "Continue your recording?",
+        `You have ${saved.length} unposted clip${saved.length === 1 ? "" : "s"} from last time.`,
+        [
+          {
+            text: "Discard",
+            style: "destructive",
+            onPress: () => {
+              clipSessionReady.current = true;
+              clearCameraSession();
+            },
+          },
+          {
+            text: "Continue",
+            onPress: () => {
+              clipSessionReady.current = true;
+              setRecordedClips((current) => (current.length > 0 ? [...saved, ...current] : saved));
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Checked once, when the camera opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (!clipSessionReady.current) return;
+    saveCameraSession(recordedClips, competitionId);
+  }, [recordedClips, competitionId]);
   const [, setCurrentRecordingSegments] = useState<string[]>([]); // Track segments during camera flip
   const [selectedClipIndex, setSelectedClipIndex] = useState<number | null>(null);
   const [selectedMusicTrack, setSelectedMusicTrack] = useState<any | null>(null);
@@ -876,7 +924,14 @@ export default function TikTokCameraScreen() {
       setLoadingFilters(true);
       const response = await listFilters(undefined, 1, 50);
       if (response.success && response.data?.filters) {
-        setFilterList(response.data.filters);
+        // Only list filters this device can draw (a backend filter needs a matching on-device preset),
+        // so users never pick one that shows "Not supported yet". The preset is stored on each item so
+        // swiping between filters applies it too.
+        setFilterList(
+          response.data.filters
+            .map((filter: any) => ({ ...filter, presetId: matchPresetByName(filter.name) }))
+            .filter((filter: any) => !!filter.presetId)
+        );
       } else {
         setFilterList([]);
       }
@@ -1079,7 +1134,7 @@ export default function TikTokCameraScreen() {
             disabled={isCapturing}
             onModeChange={(mode) => !isCapturing && setRecordingMode(mode)}
             onRecordPress={handleShutterPress}
-            onLenses={openLenses}
+            onLenses={LENSES_ENABLED ? openLenses : undefined}
             onDeleteLast={() => {
               const last = recordedClips[recordedClips.length - 1];
               if (last) deleteClip(last.id);
@@ -1369,7 +1424,7 @@ export default function TikTokCameraScreen() {
               <View style={styles.filterGridContainer} onStartShouldSetResponder={() => true}>
                 <View style={styles.filterGridHeader}>
                   <Text style={styles.filterGridTitle}>Filters</Text>
-                  <TouchableOpacity onPress={() => setShowFilterGrid(false)}>
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={() => setShowFilterGrid(false)}>
                     <CloseIcon size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>

@@ -148,7 +148,7 @@ export default function DoodlesToolPanel({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>DOODLES</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -190,7 +190,7 @@ export default function DoodlesToolPanel({
           <Text style={styles.sectionLabel}>Brush Color</Text>
           <View style={styles.colorGrid}>
             {PRESET_COLORS.map((color) => (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Colour ${color}`}
                 key={color}
                 style={[
                   styles.colorSwatch,
@@ -264,7 +264,7 @@ export default function DoodlesToolPanel({
             Doodle Duration: {doodleDuration.toFixed(1)}s
           </Text>
           <View style={styles.durationControl}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Shorten duration"
               style={styles.durationButton}
               onPress={() => handleDurationChange(-0.5)}
             >
@@ -276,7 +276,7 @@ export default function DoodlesToolPanel({
                 Visible at {currentTime.toFixed(1)}s
               </Text>
             </View>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Lengthen duration"
               style={styles.durationButton}
               onPress={() => handleDurationChange(0.5)}
             >
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   actionTextDisabled: {
-    color: "#666",
+    color: "#999",
   },
   countBadge: {
     backgroundColor: "#2a2a2a",

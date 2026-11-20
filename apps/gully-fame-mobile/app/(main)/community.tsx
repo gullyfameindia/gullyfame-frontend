@@ -27,7 +27,7 @@ export default function CommunityScreen() {
       <ScrollView contentContainerStyle={styles.mainScrollContainer}>
         {}
         <View style={styles.header}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
             onPress={() => router.push("/(main)")}
             style={styles.backButton}
             testID="community-back"

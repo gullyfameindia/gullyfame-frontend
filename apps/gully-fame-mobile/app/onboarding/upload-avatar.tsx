@@ -216,7 +216,7 @@ export default function OnboardingUploadAvatar() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
             onPress={() => router.back()}
             style={styles.headerBackButton}
           >

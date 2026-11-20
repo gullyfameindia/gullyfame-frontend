@@ -1,5 +1,6 @@
 'use client';
 
+import { confirmDialog } from '@/components/Feedback';
 import { useEffect, useState } from 'react';
 import defaults from '@/lib/appDefaultContent.json';
 import { deleteFaq, getFaqs, saveFaq, toggleFaq, type Faq } from '@/lib/contentLibraryApi';
@@ -36,7 +37,7 @@ export default function Faqs() {
   const [importing, setImporting] = useState(false);
 
   const importDefaults = async () => {
-    if (!window.confirm(`Add the ${defaults.faqs.length} FAQs that are built into the app? Existing FAQs are kept.`)) return;
+    if (!(await confirmDialog(`Add the ${defaults.faqs.length} FAQs that are built into the app? Existing FAQs are kept.`))) return;
     setImporting(true);
     setError(null);
     for (const f of defaults.faqs) {
@@ -123,7 +124,7 @@ export default function Faqs() {
                     <button
                       type="button"
                       disabled={busyId === faq.id}
-                      onClick={() => window.confirm('Delete this FAQ?') && run(faq, deleteFaq)}
+                      onClick={async () => (await confirmDialog('Delete this FAQ?')) && run(faq, deleteFaq)}
                       className="text-red-600 hover:text-red-700 disabled:opacity-60"
                     >
                       Delete

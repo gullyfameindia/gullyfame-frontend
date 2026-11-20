@@ -126,7 +126,7 @@ export default function ChangePassword() {
       >
         {/* Header with Back Arrow */}
         <View style={styles.header}>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
             onPress={() => router.back()}
             style={styles.backButton}
           >
@@ -165,7 +165,7 @@ export default function ChangePassword() {
               value={currentPassword}
               onChangeText={setCurrentPassword}
             />
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={showCurrentPassword ? "Hide password" : "Show password"}
               style={styles.eyeIcon}
               onPress={() => setShowCurrentPassword(!showCurrentPassword)}
             >
@@ -190,7 +190,7 @@ export default function ChangePassword() {
               value={newPassword}
               onChangeText={handleNewPasswordChange}
             />
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={showNewPassword ? "Hide password" : "Show password"}
               style={styles.eyeIcon}
               onPress={() => setShowNewPassword(!showNewPassword)}
             >
@@ -215,7 +215,7 @@ export default function ChangePassword() {
               value={retypePassword}
               onChangeText={handleRetypePasswordChange}
             />
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={showRetypePassword ? "Hide password" : "Show password"}
               style={styles.eyeIcon}
               onPress={() => setShowRetypePassword(!showRetypePassword)}
             >

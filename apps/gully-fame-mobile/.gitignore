@@ -106,3 +106,7 @@ ios/sentry.properties
 
 # Local device audit captures (never commit)
 audit-output/
+
+# Firebase app config (EAS still uploads it: .easignore does not exclude it)
+google-services.json
+GoogleService-Info.plist

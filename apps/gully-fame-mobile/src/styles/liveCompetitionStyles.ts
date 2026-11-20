@@ -805,7 +805,7 @@ export const liveCompetitionStyles = StyleSheet.create({
         marginBottom: 16,
     },
     pendingBadgeText: {
-        color: "#FF8C00",
+        color: "#EC9A15",
         fontSize: 13,
         letterSpacing: 0.5,
     },

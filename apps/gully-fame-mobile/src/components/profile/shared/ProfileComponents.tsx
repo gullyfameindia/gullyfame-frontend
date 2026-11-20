@@ -273,7 +273,7 @@ export const UserInfoSection = ({
                 )}
 
                 {showEditButton && onEditBio && (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel="Edit bio"
                         style={styles.editBioButton}
                         onPress={onEditBio}
                     >

@@ -68,7 +68,7 @@ function UpgradeFanToParticipantModal({
                             resizeMode="cover" // Fills the space perfectly
                         />
                         {/* Absolute positioned neatly inside the image */}
-                        <TouchableOpacity
+                        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10}
                             onPress={onClose}
                             style={styles.upgradeCross}
                         >

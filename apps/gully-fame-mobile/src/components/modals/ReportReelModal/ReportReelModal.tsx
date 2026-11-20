@@ -17,14 +17,17 @@ import {
   REPORT_DETAILS_MAX_LENGTH,
   REPORT_REASONS,
   ReportReason,
-  reportReel,
+  ReportTargetKind,
+  reportTarget,
 } from "@/api/services/reportService";
 import { getErrorMessage } from "@/api/client";
 
 interface ReportReelModalProps {
   visible: boolean;
-  /** Backend id of the reel being reported. */
+  /** Backend id of what is being reported (a reel unless `kind` says otherwise). */
   reelId: string | null;
+  /** What is reported: reel (default), user, comment or chat. */
+  kind?: ReportTargetKind;
   onClose: () => void;
   /** Called after the server accepted the report. */
   onReported?: (reelId: string, alreadyReported: boolean) => void;
@@ -33,7 +36,9 @@ interface ReportReelModalProps {
 const THEME = "#EC9A15";
 
 /** Bottom sheet: pick a reason, optionally add details, send. */
-export default function ReportReelModal({ visible, reelId, onClose, onReported }: ReportReelModalProps) {
+const NOUN: Record<ReportTargetKind, string> = { reel: "reel", user: "account", comment: "comment", chat: "conversation" };
+
+export default function ReportReelModal({ visible, reelId, kind = "reel", onClose, onReported }: ReportReelModalProps) {
   const insets = useSafeAreaInsets();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState("");
@@ -55,7 +60,7 @@ export default function ReportReelModal({ visible, reelId, onClose, onReported }
     setSending(true);
     setError("");
     try {
-      const result = await reportReel(reelId, reason, details);
+      const result = await reportTarget(kind, reelId, reason, details);
       onReported?.(reelId, !!result?.alreadyReported);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -71,13 +76,13 @@ export default function ReportReelModal({ visible, reelId, onClose, onReported }
         <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.handle} />
           <View style={styles.header}>
-            <Text style={styles.title}>Report reel</Text>
+            <Text style={styles.title}>Report {NOUN[kind]}</Text>
             <TouchableOpacity onPress={onClose} accessibilityLabel="Close" hitSlop={10}>
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
           <Text style={styles.subtitle}>
-            Why are you reporting this reel? The creator won&apos;t see who reported it.
+            Why are you reporting this {NOUN[kind]}? They won&apos;t see who reported it.
           </Text>
 
           <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">

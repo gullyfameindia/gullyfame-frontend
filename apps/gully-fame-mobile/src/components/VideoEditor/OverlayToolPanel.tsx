@@ -155,7 +155,7 @@ export default function OverlayToolPanel({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>OVERLAY</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -206,7 +206,7 @@ export default function OverlayToolPanel({
           </View>
 
           <View style={styles.opacityControl}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Decrease opacity"
               style={styles.opacityButton}
               onPress={() => setOpacity(Math.max(0, opacity - 10))}
             >
@@ -219,7 +219,7 @@ export default function OverlayToolPanel({
               />
             </View>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Increase opacity"
               style={styles.opacityButton}
               onPress={() => setOpacity(Math.min(100, opacity + 10))}
             >
@@ -283,7 +283,7 @@ export default function OverlayToolPanel({
             Duration: {duration.toFixed(1)}s
           </Text>
           <View style={styles.durationControl}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Shorten duration"
               style={styles.durationButton}
               onPress={() => handleDurationChange(-0.5)}
             >
@@ -297,7 +297,7 @@ export default function OverlayToolPanel({
               </Text>
             </View>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Lengthen duration"
               style={styles.durationButton}
               onPress={() => handleDurationChange(0.5)}
             >

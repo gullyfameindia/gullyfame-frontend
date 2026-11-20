@@ -203,7 +203,7 @@ export default function SoundFXToolPanel({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>SOUND FX</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -219,7 +219,7 @@ export default function SoundFXToolPanel({
           onChangeText={setSearchQuery}
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery("")}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10} onPress={() => setSearchQuery("")}>
             <Ionicons name="close-circle" size={20} color="#888" />
           </TouchableOpacity>
         )}
@@ -292,7 +292,7 @@ export default function SoundFXToolPanel({
                 </View>
 
                 <View style={styles.soundActions}>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={previewingId === sfx._id ? "Stop preview" : "Preview sound"}
                     style={styles.actionButton}
                     onPress={() => handlePreview(sfx)}
                   >
@@ -305,7 +305,7 @@ export default function SoundFXToolPanel({
                     />
                   </TouchableOpacity>
 
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add sound effect"
                     style={styles.addButton}
                     onPress={() => handleAddSoundFX(sfx)}
                   >
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyText: {
-    color: "#666",
+    color: "#999",
     fontSize: 16,
     marginTop: 12,
   },
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   soundDuration: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
   },
   soundActions: {

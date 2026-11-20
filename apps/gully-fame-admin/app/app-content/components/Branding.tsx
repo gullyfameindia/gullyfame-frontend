@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/components/Feedback';
 import { useState, useEffect } from 'react';
 import { ImageIcon, Layout, Upload, Save } from 'lucide-react';
 import { uploadLogo, uploadSplash, getLogo, getSplash } from '@/lib/brandingApi';
@@ -66,7 +67,7 @@ export default function Branding() {
       const result = await uploadLogo(logoFile);
       
       if (result.success) {
-        alert('Logo updated successfully!');
+        notify.success('Logo updated successfully!');
         
         const previewUrl = URL.createObjectURL(logoFile);
         setLogo(previewUrl);
@@ -82,7 +83,7 @@ export default function Branding() {
           }
         }
       } else {
-        alert(`Failed to update logo: ${result.message || result.error || 'Unknown error'}`);
+        notify.error(`Failed to update logo: ${result.message || result.error || 'Unknown error'}`);
         setLogoFile(null);
         const refreshResult = await getLogo();
         if (refreshResult.success && refreshResult.data?.logoUrl) {
@@ -91,7 +92,7 @@ export default function Branding() {
       }
     } catch (error) {
       console.error('Error uploading logo:', error);
-      alert('Failed to update logo. Please try again.');
+      notify.error('Failed to update logo. Please try again.');
     } finally {
       setIsLogoUploading(false);
     }
@@ -110,7 +111,7 @@ export default function Branding() {
       const result = await uploadSplash(filesToUpload);
       
       if (result.success) {
-        alert('Splash screen images updated successfully!');
+        notify.success('Splash screen images updated successfully!');
         
         setSplashImages((prev) =>
           prev.map((img) => {
@@ -142,7 +143,7 @@ export default function Branding() {
           }
         }
       } else {
-        alert(`Failed to update splash images: ${result.message || result.error || 'Unknown error'}`);
+        notify.error(`Failed to update splash images: ${result.message || result.error || 'Unknown error'}`);
         const refreshResult = await getSplash();
         if (refreshResult.success && refreshResult.data?.images) {
           const images = refreshResult.data.images;
@@ -157,7 +158,7 @@ export default function Branding() {
       }
     } catch (error) {
       console.error('Error uploading splash images:', error);
-      alert('Failed to update splash images. Please try again.');
+      notify.error('Failed to update splash images. Please try again.');
     } finally {
       setIsSplashUploading(false);
     }

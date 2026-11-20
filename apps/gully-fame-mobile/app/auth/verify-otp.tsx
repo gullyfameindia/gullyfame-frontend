@@ -104,7 +104,7 @@ export default function VerifyOtp() {
         setErrorMessage(result.message);
         return;
       }
-      const profile = await saveUserSession(result.data.token, result.data.user);
+      const profile = await saveUserSession(result.data.token, result.data.user, result.data.refreshToken);
       await AsyncStorage.setItem("accountCreatedVia", "normal");
       setRole(profile.role);
       registerPushTokenWithBackend();
@@ -126,7 +126,7 @@ export default function VerifyOtp() {
     <KeyboardAvoidingScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {}
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
           <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
             <Path
               d="M16 7H3.83L9.42 1.41L8 0L0 8L8 16L9.41 14.59L3.83 9H16V7Z"
@@ -192,7 +192,7 @@ export default function VerifyOtp() {
           disabled={isResending || cooldown > 0}
         >
           {isResending ? (
-            <ActivityIndicator color="#F59E0B" />
+            <ActivityIndicator color="#EC9A15" />
           ) : (
             <Text style={styles.resendText}>{cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Resend OTP"}</Text>
           )}
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   resendText: {
-    color: "#F59E0B",
+    color: "#EC9A15",
     fontWeight: "600",
     fontSize: 15,
   },

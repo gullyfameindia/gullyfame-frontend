@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
 import { showGuestModeUnavailable } from "@utils/guestMode";
 import { GoogleIcon, InstagramIcon, AppleIcon } from "@/icons";
 import { authService, AUTH_RULES } from "@api/services/authService";
@@ -139,36 +140,38 @@ export default function LoginViaOTP() {
             )}
           </TouchableOpacity>
 
-          {}
-          <View style={styles.continueWithContainer}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.continueWithText}>OR Continue With</Text>
-            <View style={styles.separatorLine} />
-          </View>
+          {SOCIAL_LOGIN_ENABLED && (
+            <>
+              <View style={styles.continueWithContainer}>
+                <View style={styles.separatorLine} />
+                <Text style={styles.continueWithText}>OR Continue With</Text>
+                <View style={styles.separatorLine} />
+              </View>
 
-          {}
-          <View style={styles.socialIconsContainer}>
-            <TouchableOpacity
-              style={styles.socialIconButton}
-              activeOpacity={0.7}
-            >
-              <GoogleIcon size={40} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.socialIconButton}
-              activeOpacity={0.7}
-            >
-              <InstagramIcon size={40} />
-            </TouchableOpacity>
-            {Platform.OS === "ios" && (
-              <TouchableOpacity
-                style={styles.socialIconButton}
-                activeOpacity={0.7}
-              >
-                <AppleIcon size={40} />
-              </TouchableOpacity>
-            )}
-          </View>
+              <View style={styles.socialIconsContainer}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Google"
+                  style={styles.socialIconButton}
+                  activeOpacity={0.7}
+                >
+                  <GoogleIcon size={40} />
+                </TouchableOpacity>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Instagram"
+                  style={styles.socialIconButton}
+                  activeOpacity={0.7}
+                >
+                  <InstagramIcon size={40} />
+                </TouchableOpacity>
+                {Platform.OS === "ios" && (
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Apple"
+                    style={styles.socialIconButton}
+                    activeOpacity={0.7}
+                  >
+                    <AppleIcon size={40} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </>
+          )}
 
           {}
           <View style={styles.createAccountContainer}>

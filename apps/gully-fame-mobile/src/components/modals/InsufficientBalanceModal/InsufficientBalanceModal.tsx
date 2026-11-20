@@ -37,7 +37,7 @@ export default function InsufficientBalanceModal({
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* Close Button */}
-          <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onDismiss} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#fff" />
           </TouchableOpacity>
 
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   infoSubtext: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
   },
   buttonContainer: {

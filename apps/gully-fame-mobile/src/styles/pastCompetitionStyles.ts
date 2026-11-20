@@ -236,7 +236,7 @@ export const pastCompetitionStyles = StyleSheet.create({
     },
     endedText: {
         fontSize: 13,
-        color: "#666",
+        color: "#999",
     },
     section: {
         paddingHorizontal: 16,

@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
 import { showGuestModeUnavailable } from "@utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -189,7 +190,7 @@ export default function CreateAccount() {
         router.replace(`/auth/signin?email=${encodeURIComponent(mail)}` as any);
         return;
       }
-      await saveUserSession(login.data.token, login.data.user);
+      await saveUserSession(login.data.token, login.data.user, login.data.refreshToken);
       await AsyncStorage.setItem("accountCreatedVia", "normal");
       registerPushTokenWithBackend();
       setSuccessMessage("Account created successfully!");
@@ -229,7 +230,13 @@ export default function CreateAccount() {
         return;
       }
       const googleUser = response.data.user;
+      const idToken: string | null = response.data.idToken ?? null;
+      if (!idToken) {
+        setErrorMessage("Google sign-in did not return an ID token. Please use email sign-up.");
+        return;
+      }
       const result = await authService.socialLogin({
+        idToken,
         googleId: googleUser.id,
         email: googleUser.email,
         firstName: googleUser.givenName || "",
@@ -241,7 +248,7 @@ export default function CreateAccount() {
         setErrorMessage(result.message);
         return;
       }
-      await saveUserSession(result.data.token, result.data.user);
+      await saveUserSession(result.data.token, result.data.user, result.data.refreshToken);
       await AsyncStorage.setItem("accountCreatedVia", "google");
       setSuccessMessage("Google authentication successful!");
       router.replace("/auth/location");
@@ -351,7 +358,7 @@ export default function CreateAccount() {
                 testID="signup-password"
               />
               {password.length > 0 && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? "Hide password" : "Show password"}
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
                   testID="signup-toggle-password"
@@ -417,7 +424,7 @@ export default function CreateAccount() {
                 testID="signup-confirm-password"
               />
               {confirmPassword.length > 0 && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
                   style={styles.eyeIcon}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   testID="signup-toggle-confirm-password"
@@ -522,54 +529,56 @@ export default function CreateAccount() {
             )}
           </TouchableOpacity>
 
-          {}
-          <View style={styles.continueWithContainer}>
-            <View style={styles.separatorLine} />
-            <Text style={styles.continueWithText}>OR Continue With</Text>
-            <View style={styles.separatorLine} />
-          </View>
+          {SOCIAL_LOGIN_ENABLED && (
+            <>
+              <View style={styles.continueWithContainer}>
+                <View style={styles.separatorLine} />
+                <Text style={styles.continueWithText}>OR Continue With</Text>
+                <View style={styles.separatorLine} />
+              </View>
 
-          {}
-          <View style={styles.socialIconsContainer}>
-            <TouchableOpacity
-              style={styles.socialIconButton}
-              activeOpacity={0.7}
-              onPress={() => handleGoogleLogin("google")}
-              testID="signup-google"
-              disabled={isSocialLoading}
-            >
-              {isGoogleLoading ? (
-                <ActivityIndicator size="small" color="#EC9A15" />
-              ) : (
-                <GoogleIcon size={40} />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.socialIconButton}
-              activeOpacity={0.7}
-              onPress={() => handleGoogleLogin("instagram")}
-              disabled={isSocialLoading}
-            >
-              <InstagramIcon size={40} />
-            </TouchableOpacity>
-            {Platform.OS === "ios" && (
-              <TouchableOpacity
-                style={[
-                  styles.socialIconButton,
-                  isSocialLoading && styles.socialIconButtonDisabled,
-                ]}
-                activeOpacity={0.7}
-                onPress={handleAppleLogin}
-                disabled={isSocialLoading}
-              >
-                {isSocialLoading ? (
-                  <ActivityIndicator color="#666" size="small" />
-                ) : (
-                  <AppleIcon size={40} />
+              <View style={styles.socialIconsContainer}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Google"
+                  style={styles.socialIconButton}
+                  activeOpacity={0.7}
+                  onPress={() => handleGoogleLogin("google")}
+                  testID="signup-google"
+                  disabled={isSocialLoading}
+                >
+                  {isGoogleLoading ? (
+                    <ActivityIndicator size="small" color="#EC9A15" />
+                  ) : (
+                    <GoogleIcon size={40} />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Instagram"
+                  style={styles.socialIconButton}
+                  activeOpacity={0.7}
+                  onPress={() => handleGoogleLogin("instagram")}
+                  disabled={isSocialLoading}
+                >
+                  <InstagramIcon size={40} />
+                </TouchableOpacity>
+                {Platform.OS === "ios" && (
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Apple"
+                    style={[
+                      styles.socialIconButton,
+                      isSocialLoading && styles.socialIconButtonDisabled,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={handleAppleLogin}
+                    disabled={isSocialLoading}
+                  >
+                    {isSocialLoading ? (
+                      <ActivityIndicator color="#666" size="small" />
+                    ) : (
+                      <AppleIcon size={40} />
+                    )}
+                  </TouchableOpacity>
                 )}
-              </TouchableOpacity>
-            )}
-          </View>
+              </View>
+            </>
+          )}
 
           <TouchableOpacity
             onPress={() => router.push("./signin")}

@@ -1,5 +1,6 @@
 "use client";
 
+import { notify } from '@/components/Feedback';
 import { useState, useEffect } from "react";
 import { Layout, Upload, Save } from "lucide-react";
 import { uploadSplash, getSplash } from "@/lib/brandingApi";
@@ -193,7 +194,7 @@ export default function SplashScreen() {
               setIsUploading(false);
 
               if (result.success) {
-                alert("Splash screen images updated successfully!");
+                notify.success("Splash screen images updated successfully!");
 
                 await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -229,7 +230,7 @@ export default function SplashScreen() {
                   setSplashImages(baseImages);
                 }
               } else {
-                alert(
+                notify.error(
                   `Failed to update splash screen: ${
                     result.message || result.error || "Unknown error"
                   }`

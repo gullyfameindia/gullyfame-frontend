@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { apiPost, removeAuthToken } from "@api/client";
+import { apiPost, removeAuthToken, getRefreshToken } from "@api/client";
 import { socketChatService } from "@api/services/socketChatService";
 import { store, resetStore } from "@/store";
 import { SESSION_CACHE_KEYS } from "./userSession";
@@ -14,12 +14,16 @@ import { resetBlockedUsersCache } from "./moderation";
  * still happens after 3 s. `hasSeenOnboarding` is kept so returning users land
  * on sign-in.
  */
-export const performLogout = async (): Promise<void> => {
+export const performLogout = async ({ skipServer = false }: { skipServer?: boolean } = {}): Promise<void> => {
   try {
-    await Promise.race([
-      apiPost("auth/logout", {}).catch(() => undefined),
-      new Promise((resolve) => setTimeout(resolve, 3000)),
-    ]);
+    // skipServer: the account was just deleted, its tokens are already dead on the server.
+    if (!skipServer) {
+      const refreshToken = await getRefreshToken();
+      await Promise.race([
+        apiPost("auth/logout", refreshToken ? { refreshToken } : {}).catch(() => undefined),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
+    }
     socketChatService.disconnect();
     await removeAuthToken();
     clearOwnProfileSnapshot();

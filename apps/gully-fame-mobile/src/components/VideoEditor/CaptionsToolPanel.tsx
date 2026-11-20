@@ -274,7 +274,7 @@ export default function CaptionsToolPanel({
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>CAPTIONS</Text>
-        <TouchableOpacity onPress={onClose}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -333,7 +333,7 @@ export default function CaptionsToolPanel({
                 <Text style={styles.sectionLabel}>
                   Captions ({captions.length})
                 </Text>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Add caption"
                   style={styles.addButton}
                   onPress={addManualCaption}
                 >
@@ -361,7 +361,7 @@ export default function CaptionsToolPanel({
                       {caption.startTime.toFixed(1)}s - {caption.endTime.toFixed(1)}s
                     </Text>
                   </View>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Delete caption"
                     style={styles.deleteButton}
                     onPress={() => deleteCaption(caption.id)}
                   >
@@ -382,7 +382,7 @@ export default function CaptionsToolPanel({
                   onChangeText={setEditingText}
                   onBlur={() => updateCaptionText(selectedCaption.id, editingText)}
                   placeholder="Caption text"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#999"
                   multiline
                 />
 
@@ -390,7 +390,7 @@ export default function CaptionsToolPanel({
                   <View style={styles.timingControl}>
                     <Text style={styles.timingLabel}>Start</Text>
                     <View style={styles.timingButtons}>
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Start earlier"
                         onPress={() =>
                           updateCaptionTiming(selectedCaption.id, "startTime", -0.1)
                         }
@@ -400,7 +400,7 @@ export default function CaptionsToolPanel({
                       <Text style={styles.timingValue}>
                         {selectedCaption.startTime.toFixed(1)}s
                       </Text>
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Start later"
                         onPress={() =>
                           updateCaptionTiming(selectedCaption.id, "startTime", 0.1)
                         }
@@ -413,7 +413,7 @@ export default function CaptionsToolPanel({
                   <View style={styles.timingControl}>
                     <Text style={styles.timingLabel}>End</Text>
                     <View style={styles.timingButtons}>
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button" accessibilityLabel="End earlier"
                         onPress={() =>
                           updateCaptionTiming(selectedCaption.id, "endTime", -0.1)
                         }
@@ -423,7 +423,7 @@ export default function CaptionsToolPanel({
                       <Text style={styles.timingValue}>
                         {selectedCaption.endTime.toFixed(1)}s
                       </Text>
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button" accessibilityLabel="End later"
                         onPress={() =>
                           updateCaptionTiming(selectedCaption.id, "endTime", 0.1)
                         }

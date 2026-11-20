@@ -12,7 +12,15 @@ import { apiGet, apiPost, ApiError, toResult } from "../client";
  *  reports the order status (the backend webhook also credits PAID orders).
  */
 
-export type TransactionType = "RECHARGE" | "TIP_SENT" | "TIP_RECEIVED" | "MISSION_REWARD" | "COMPETITION_WIN" | "REFERRAL_REWARD";
+export type TransactionType =
+  | "RECHARGE"
+  | "TIP_SENT"
+  | "TIP_RECEIVED"
+  | "MISSION_REWARD"
+  | "COMPETITION_WIN"
+  | "REFERRAL_REWARD"
+  | "WITHDRAWAL"
+  | "WITHDRAWAL_REFUND";
 
 export interface WalletTransaction {
   _id: string;
@@ -82,14 +90,16 @@ export const TRANSACTION_LABELS: Record<TransactionType, string> = {
   MISSION_REWARD: "Daily mission reward",
   COMPETITION_WIN: "Competition prize",
   REFERRAL_REWARD: "Referral reward",
+  WITHDRAWAL: "Withdrawal",
+  WITHDRAWAL_REFUND: "Withdrawal returned",
 };
 
 /** Credits add to the balance, debits subtract. */
-export const isCredit = (type: TransactionType) => type !== "TIP_SENT";
+export const isCredit = (type: TransactionType) => type !== "TIP_SENT" && type !== "WITHDRAWAL";
 
 export interface DisplayTransaction {
-  /** earned = tips received / mission rewards / competition prizes, recharge = coins bought, spent = tips sent. */
-  kind: "earned" | "recharge" | "spent";
+  /** earned = tips received / rewards / prizes, recharge = coins bought, spent = tips sent, withdrawal = cash-outs and returns. */
+  kind: "earned" | "recharge" | "spent" | "withdrawal";
   id: string;
   title: string;
   description: string;
@@ -107,6 +117,8 @@ const TRANSACTION_ICONS: Record<TransactionType, string> = {
   MISSION_REWARD: "trophy-outline",
   COMPETITION_WIN: "medal-outline",
   REFERRAL_REWARD: "people-outline",
+  WITHDRAWAL: "cash-outline",
+  WITHDRAWAL_REFUND: "return-down-back-outline",
 };
 
 /** Maps a backend transaction to what the wallet screens render. */
@@ -118,7 +130,14 @@ export function toDisplayTransaction(tx: WalletTransaction): DisplayTransaction 
     description: tx.note || `Balance after: ${tx.balanceAfter.toLocaleString()} coins`,
     amount: Math.abs(tx.amount),
     type: isCredit(tx.type) ? "credit" : "debit",
-    kind: tx.type === "RECHARGE" ? "recharge" : tx.type === "TIP_SENT" ? "spent" : "earned",
+    kind:
+      tx.type === "RECHARGE"
+        ? "recharge"
+        : tx.type === "TIP_SENT"
+          ? "spent"
+          : tx.type === "WITHDRAWAL" || tx.type === "WITHDRAWAL_REFUND"
+            ? "withdrawal"
+            : "earned",
     date: when.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
     time: when.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
     icon: TRANSACTION_ICONS[tx.type] || "swap-horizontal-outline",
@@ -158,7 +177,7 @@ export async function getWalletSummary(pageSize = 100): Promise<WalletSummary> {
     transactions.filter((tx) => types.includes(tx.type)).reduce((total, tx) => total + Math.abs(tx.amount), 0);
   return {
     balance: first.balance,
-    earned: sum(["TIP_RECEIVED", "MISSION_REWARD", "COMPETITION_WIN"]),
+    earned: sum(["TIP_RECEIVED", "MISSION_REWARD", "COMPETITION_WIN", "REFERRAL_REWARD"]),
     recharged: sum(["RECHARGE"]),
     spent: sum(["TIP_SENT"]),
     transactions,

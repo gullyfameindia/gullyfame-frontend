@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/components/Feedback';
 import { useState, useEffect } from 'react';
 import { ImageIcon, Upload, Save } from 'lucide-react';
 import { uploadLogo, getLogo } from '@/lib/brandingApi';
@@ -97,7 +98,7 @@ export default function AppLogo() {
                   setIsUploading(false);
                   
                   if (result.success) {
-                    alert('Logo updated successfully!');
+                    notify.success('Logo updated successfully!');
                     
                     if (logoFile && logo) {
                       setLogoFile(null);
@@ -118,7 +119,7 @@ export default function AppLogo() {
                       }
                     }
                   } else {
-                    alert(`Failed to update logo: ${result.message || result.error || 'Unknown error'}`);
+                    notify.error(`Failed to update logo: ${result.message || result.error || 'Unknown error'}`);
                   }
                 }
               }}

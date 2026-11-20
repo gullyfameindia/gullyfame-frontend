@@ -1,59 +1,88 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import { Alert, Linking } from "react-native";
+import { apiDelete, apiGet, apiPost } from "@/api/client";
 
 /**
- * User-generated-content safety: block and report.
+ * User-generated-content safety: block and report, backed by the server (F3 / backend B4).
  *
- * The backend has no block/report endpoints yet, so:
- *  - Blocking is stored on this device and applied when feeds, comments and chats are shown. It
- *    hides the other user's content from the blocker; it cannot stop them contacting the blocker
- *    server-side (that needs a backend endpoint).
- *  - Reporting opens a pre-filled email to support containing only the content type and id.
- * Both are wired so they can be swapped for real endpoints without touching the screens.
+ *  - Blocking: POST/DELETE user/:id/block, GET user/blocked. The server enforces it both ways
+ *    (feeds, search, comments, profiles, chat, follows). The list is also cached here so screens
+ *    can filter instantly.
+ *  - Reporting: reportContent(kind, id) opens the report sheet (ReportHost, mounted in the main
+ *    layout), which sends POST user/:id/report, reels/comments/:id/report or chat/report.
+ *  - Blocks saved only on this phone by older app versions are uploaded once.
  */
 
 // Same official support address as the Help & Support screen.
 export const SUPPORT_EMAIL = "admin@gullyfame.com";
 
-const BLOCKED_KEY = "@gullyfame_blocked_users";
+/** Where older app versions kept blocks on the phone; uploaded to the server once, then removed. */
+const LEGACY_BLOCKED_KEY = "@gullyfame_blocked_users";
 
 export interface BlockedUser {
   id: string;
-  /** Public display name, only used to label the entry in the "Blocked users" list. */
+  /** Public display name, used to label the entry in the "Blocked users" list. */
   name: string;
 }
 
-let cache: BlockedUser[] | null = null;
-const listeners = new Set<() => void>();
+interface ServerBlockedUser {
+  id: string;
+  name?: string;
+  username?: string;
+}
 
+let cache: BlockedUser[] | null = null;
+let loading: Promise<BlockedUser[]> | null = null;
+const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((listener) => listener());
+
+async function uploadLegacyBlocks(): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(LEGACY_BLOCKED_KEY);
+    if (!raw) return;
+    const parsed: unknown = JSON.parse(raw);
+    const ids = Array.isArray(parsed)
+      ? parsed.map((e: any) => (e && typeof e.id === "string" ? e.id : "")).filter(Boolean)
+      : [];
+    for (const id of ids) {
+      await apiPost(`user/${id}/block`, {}).catch(() => undefined);
+    }
+    await AsyncStorage.removeItem(LEGACY_BLOCKED_KEY);
+  } catch {
+    // Try again next launch.
+  }
+}
+
+async function fetchAll(): Promise<BlockedUser[]> {
+  await uploadLegacyBlocks();
+  const out: BlockedUser[] = [];
+  for (let page = 1; page <= 10; page++) {
+    const data = await apiGet<{ users: ServerBlockedUser[]; totalPages: number }>("user/blocked", {
+      params: { page, limit: 100 },
+    });
+    for (const u of data?.users ?? []) {
+      out.push({ id: String(u.id), name: u.name || u.username || "User" });
+    }
+    if (!data || page >= (data.totalPages || 1)) break;
+  }
+  return out;
+}
 
 async function load(): Promise<BlockedUser[]> {
   if (cache) return cache;
-  try {
-    const raw = await AsyncStorage.getItem(BLOCKED_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    cache = Array.isArray(parsed)
-      ? parsed.filter(
-          (entry): entry is BlockedUser =>
-            !!entry && typeof entry.id === "string" && entry.id.length > 0 && typeof entry.name === "string"
-        )
-      : [];
-  } catch {
-    cache = [];
+  if (!loading) {
+    loading = fetchAll()
+      .then((list) => {
+        cache = list;
+        notify();
+        return list;
+      })
+      .catch(() => cache ?? [])
+      .finally(() => {
+        loading = null;
+      });
   }
-  return cache;
-}
-
-async function save(next: BlockedUser[]): Promise<void> {
-  cache = next;
-  notify();
-  try {
-    await AsyncStorage.setItem(BLOCKED_KEY, JSON.stringify(next));
-  } catch {
-    // The in-memory list still applies for this session.
-  }
+  return loading;
 }
 
 export async function getBlockedUsers(): Promise<BlockedUser[]> {
@@ -64,25 +93,30 @@ export async function getBlockedUserIds(): Promise<Set<string>> {
   return new Set((await load()).map((entry) => entry.id));
 }
 
+/** Throws (ApiError) if the server refuses, e.g. offline. */
 export async function blockUser(id: string, name = "User"): Promise<void> {
   if (!id) return;
-  const current = await load();
-  if (current.some((entry) => entry.id === id)) return;
-  await save([...current, { id, name: name.trim().slice(0, 60) || "User" }]);
+  await apiPost(`user/${id}/block`, {});
+  const current = cache ?? [];
+  if (!current.some((entry) => entry.id === id)) {
+    cache = [...current, { id, name: name.trim().slice(0, 60) || "User" }];
+    notify();
+  }
 }
 
 export async function unblockUser(id: string): Promise<void> {
-  const current = await load();
-  await save(current.filter((entry) => entry.id !== id));
+  await apiDelete(`user/${id}/block`);
+  cache = (cache ?? []).filter((entry) => entry.id !== id);
+  notify();
 }
 
-/** Forget the in-memory list (called on logout, together with removing the stored key). */
+/** Forget the cached list (called on logout). */
 export function resetBlockedUsersCache(): void {
   cache = null;
   notify();
 }
 
-export const BLOCKED_USERS_STORAGE_KEY = BLOCKED_KEY;
+export const BLOCKED_USERS_STORAGE_KEY = LEGACY_BLOCKED_KEY;
 
 /** Live list of blocked users; re-renders when someone is blocked or unblocked. */
 export function useBlockedUsers(): BlockedUser[] {
@@ -106,28 +140,27 @@ export function useBlockedUsers(): BlockedUser[] {
   return users;
 }
 
-export type ReportKind = "reel" | "comment" | "user" | "chat";
+/* --------------------------------------------------------------- reporting */
 
-const KIND_LABEL: Record<ReportKind, string> = {
-  reel: "reel",
-  comment: "comment",
-  user: "user",
-  chat: "chat / user",
-};
+export type ReportKind = "reel" | "comment" | "user" | "chat";
+export interface ReportRequest {
+  kind: ReportKind;
+  id: string;
+}
+
+let reportListener: ((request: ReportRequest) => void) | null = null;
+
+/** Used by ReportHost (mounted once in the main layout). */
+export function setReportListener(listener: ((request: ReportRequest) => void) | null): void {
+  reportListener = listener;
+}
 
 /**
- * Opens a pre-filled report email. Only the content type and id are included (no account details);
- * the person reporting adds the reason themselves. Returns false if no mail app could be opened.
+ * Opens the report sheet for a user, comment, chat or reel. Returns false if the sheet is not
+ * available (should not happen inside the signed-in app).
  */
 export async function reportContent(kind: ReportKind, id: string): Promise<boolean> {
-  const subject = `Report: ${KIND_LABEL[kind]} ${id}`;
-  const body = `Content type: ${KIND_LABEL[kind]}\nContent ID: ${id}\n\nWhat is wrong with this ${KIND_LABEL[kind]}?\n`;
-  const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  try {
-    await Linking.openURL(url);
-    return true;
-  } catch {
-    Alert.alert("Couldn't open email", `Please write to ${SUPPORT_EMAIL} and include this ID: ${id}`);
-    return false;
-  }
+  if (!id || !reportListener) return false;
+  reportListener({ kind, id });
+  return true;
 }

@@ -181,7 +181,7 @@ const TimelineContainer: React.FC<TimelineContainerProps> = ({
             {/* Overlay track: overlays, stickers and text blocks */}
             <View style={[styles.row, { height: OVERLAY_ROW }]}>
               {overlays.map((o) => (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Overlay. Long press to delete"
                   key={o.id}
                   style={[
                     styles.overlayBlock,

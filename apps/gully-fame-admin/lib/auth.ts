@@ -1,37 +1,28 @@
 'use client';
 
+import { getStoredAdmin, isAuthenticated } from './session';
+import { logoutAdmin } from './authApi';
+
 export type UserRole = 'admin' | 'sponsor';
 
+/**
+ * The signed-in account's role, as last reported by the server (GET admin/session, refreshed
+ * by AuthGuard on every page load). Only decides what the UI shows; the server enforces it.
+ */
 export function getUserRole(): UserRole | null {
-  if (typeof window === 'undefined') return null;
-  const role = localStorage.getItem('userRole');
-  if (!role) return null;
-  
-  const normalizedRole = role.toLowerCase() as UserRole;
-  return normalizedRole === 'admin' || normalizedRole === 'sponsor' ? normalizedRole : null;
+  const role = String(getStoredAdmin()?.role || '').toLowerCase();
+  return role === 'admin' || role === 'sponsor' ? role : null;
 }
 
 export function isLoggedIn(): boolean {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('isLoggedIn') === 'true';
+  return isAuthenticated();
 }
 
-export function logout() {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('userRole');
-  localStorage.removeItem('userEmail');
-  localStorage.removeItem('isLoggedIn');
-  
-  window.dispatchEvent(new Event('storage'));
-  window.location.href = '/login';
+export function logout(): void {
+  void logoutAdmin();
 }
 
 export function requireAuth(role?: UserRole): boolean {
   if (!isLoggedIn()) return false;
-  if (role) {
-    const userRole = getUserRole();
-    return userRole === role;
-  }
-  return true;
+  return role ? getUserRole() === role : true;
 }
-

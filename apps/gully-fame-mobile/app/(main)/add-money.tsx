@@ -117,7 +117,7 @@ function AddMoneyScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
           onPress={() => router.back()}
           style={styles.backButton}
         >
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   originalPrice: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
     textDecorationLine: "line-through",
   },
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   paymentNote: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
     marginTop: 12,
     fontStyle: "italic",

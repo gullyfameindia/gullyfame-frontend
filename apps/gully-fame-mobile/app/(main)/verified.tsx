@@ -127,7 +127,7 @@ export default function VerifiedScreen() {
 
       {}
       <View style={styles.header}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
           onPress={() => router.back()}
           style={styles.backButton}
         >

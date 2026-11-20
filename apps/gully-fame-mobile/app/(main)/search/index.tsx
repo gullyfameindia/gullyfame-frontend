@@ -472,7 +472,7 @@ export default function SearchScreen() {
                   </View>
                 )}
                 renderItem={({ item }) => (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open reel"
                     style={styles.fullReelCard}
                     onPress={() => {
                       router.push({ pathname: "/(main)/reel", params: { startReelId: item._id } } as any);
@@ -580,7 +580,7 @@ export default function SearchScreen() {
               keyExtractor={(item) => item._id}
               contentContainerStyle={{ paddingBottom: bottomNavHeight }}
               renderItem={({ item }) => (
-                <TouchableOpacity 
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open reel" 
                   style={styles.topReelCard}
                   onPress={() => {
                     router.push({ pathname: "/(main)/reel", params: { startReelId: item._id } } as any);

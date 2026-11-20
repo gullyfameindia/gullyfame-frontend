@@ -2,9 +2,11 @@ import type { LegalSection } from "./types";
 
 // Source: PRIVACY POLICY- GullyFame India V03.09.2026.docx.pdf. Text copied word for word from the PDF; only whitespace and bullet glyphs are normalised.
 // Generated once from the PDF. Edit the PDF, then regenerate; do not hand-edit wording.
+// Blanks in the PDF (dates, section 19 contact) were filled with the company details on 20 Nov 2026.
 
 export const PRIVACY_POLICY_TITLE: string[] = [
-  "PRIVACY POLICY - GULLYFAME INDIA Effective Date: 2026 Last Updated: 2026 Version: 1.0",
+  "PRIVACY POLICY - GULLYFAME INDIA",
+  "Effective Date: 3 September 2026 Last Updated: 3 September 2026 Version: 1.0",
 ];
 
 export const PRIVACY_POLICY: LegalSection[] = [
@@ -189,8 +191,13 @@ export const PRIVACY_POLICY: LegalSection[] = [
     number: "19",
     heading: "GRIEVANCE OFFICER AND CONTACT",
     body: [
-      { t: "p", x: "For privacy‑related queries, complaints, or requests, contact: Data Protection Officer / Privacy Officer Name: Email: Address:" },
-      { t: "p", x: "GullyFame India will acknowledge and address grievances within timelines prescribed by applicable law and the applicable Grievance Redressal Policy. The final published policy should state the correct statutory timelines applicable to the relevant grievance category." },
+      { t: "p", x: "For privacy‑related queries, complaints, or requests, contact:" },
+      { t: "p", x: "Data Protection Officer / Privacy Officer / Grievance Officer" },
+      { t: "p", x: "Name: Dhruv Kathuria" },
+      { t: "p", x: "Email: admin@gullyfame.com" },
+      { t: "p", x: "Phone: +91 98212 34605" },
+      { t: "p", x: "Address: Gully Fame India Private Limited, House 55B, Ground Floor, Najafgarh Road, (West Delhi) Delhi - 110015" },
+      { t: "p", x: "GullyFame India will acknowledge and address grievances within timelines prescribed by applicable law and the applicable Grievance Redressal Policy." },
     ],
   },
   {

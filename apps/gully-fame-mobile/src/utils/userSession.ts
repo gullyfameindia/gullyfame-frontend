@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getAuthToken, setAuthToken } from "@api/client";
+import { getAuthToken, setAuthToken, setRefreshToken } from "@api/client";
 import { getProfile, BackendUser } from "@api/services/userService";
 import { clearOwnProfileSnapshot } from "./ownProfileCache";
 
@@ -62,9 +62,14 @@ export async function cacheUserProfile(user: BackendUser): Promise<void> {
  * Stores the token and caches the profile. When `user` is missing (OTP login
  * only returns token + userId), the profile is fetched with the new token.
  */
-export async function saveUserSession(token: string, user?: BackendUser | null): Promise<BackendUser> {
+export async function saveUserSession(
+  token: string,
+  user?: BackendUser | null,
+  refreshToken?: string | null
+): Promise<BackendUser> {
   clearOwnProfileSnapshot();
   await setAuthToken(token);
+  await setRefreshToken(refreshToken);
   const profile = user && user._id ? user : await getProfile();
   await cacheUserProfile(profile);
   return profile;

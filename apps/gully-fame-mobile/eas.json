@@ -27,7 +27,8 @@
           "EXPO_PUBLIC_ENV": "preview",
           "SENTRY_DISABLE_AUTO_UPLOAD": "true",
           "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
-          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com",
+          "EXPO_PUBLIC_SENTRY_DSN": "https://855adf88668243d7a37e3852a4eb4211@o4512464094167040.ingest.us.sentry.io/4512464105832448"
         }
       },
       "ios": {
@@ -35,7 +36,8 @@
         "env": {
           "EXPO_PUBLIC_ENV": "preview",
           "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
-          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com",
+          "EXPO_PUBLIC_SENTRY_DSN": "https://855adf88668243d7a37e3852a4eb4211@o4512464094167040.ingest.us.sentry.io/4512464105832448"
         }
       }
     },
@@ -45,14 +47,18 @@
         "env": {
           "EXPO_PUBLIC_ENV": "production",
           "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
-          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com",
+          "EXPO_PUBLIC_SENTRY_DSN": "https://855adf88668243d7a37e3852a4eb4211@o4512464094167040.ingest.us.sentry.io/4512464105832448",
+          "SENTRY_DISABLE_AUTO_UPLOAD": "true"
         }
       },
       "ios": {
         "env": {
           "EXPO_PUBLIC_ENV": "production",
           "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
-          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com",
+          "EXPO_PUBLIC_SENTRY_DSN": "https://855adf88668243d7a37e3852a4eb4211@o4512464094167040.ingest.us.sentry.io/4512464105832448",
+          "SENTRY_DISABLE_AUTO_UPLOAD": "true"
         }
       },
       "autoIncrement": true

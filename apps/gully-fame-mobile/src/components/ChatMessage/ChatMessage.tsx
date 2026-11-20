@@ -40,7 +40,7 @@ function ChatMessage({
         ]}
       >
         {isMultiSelectMode && (
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="checkbox" accessibilityLabel="Select message" accessibilityState={{ checked: !!isSelected }}
             style={styles.checkbox}
             onPress={() => onPress(message._id)}
           >

@@ -28,6 +28,7 @@ import { showToast } from "@/store/slices/postingSlice";
 import { startPosting } from "@/services/postingService";
 import { PHOTO_POST_SECONDS } from "@modules/video-editor/camera-module/utils/photoToVideo";
 import { MusicLibraryModal } from "@/components/MusicLibraryModal";
+import { clearCameraSession } from "@/utils/cameraSession";
 
 const { height } = Dimensions.get("window");
 
@@ -278,6 +279,7 @@ export default function PostReelScreen() {
     // Competition entries are published with competitionId (the job joins the competition first).
     const started = startPosting(buildJob("publish", fileUri));
     if (started) {
+      clearCameraSession();
       dispatch(resetEditor());
       router.dismissTo("/(main)/home" as any);
     }
@@ -292,6 +294,7 @@ export default function PostReelScreen() {
       return;
     }
     if (startPosting(buildJob("draft", fileUri))) {
+      clearCameraSession();
       dispatch(resetEditor());
       router.dismissTo("/(main)/home" as any);
     }
@@ -303,11 +306,11 @@ export default function PostReelScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
           <BackIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Share Reel</Text>
-        <TouchableOpacity onPress={openMoreOptions} style={styles.moreButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="More options" onPress={openMoreOptions} style={styles.moreButton}>
           <ThreeDotsIcon />
         </TouchableOpacity>
       </View>
@@ -339,7 +342,7 @@ export default function PostReelScreen() {
             style={styles.captionInput}
             placeholder="Write a caption..."
             testID="upload-caption"
-            placeholderTextColor="#666"
+            placeholderTextColor="#999"
             value={caption}
             onChangeText={setCaption}
             multiline
@@ -358,7 +361,7 @@ export default function PostReelScreen() {
               style={styles.hashtagInput}
               placeholder="Type hashtags (e.g., #gullyfame or gullyfame)"
               testID="upload-hashtag-input"
-              placeholderTextColor="#666"
+              placeholderTextColor="#999"
               value={hashtagInput}
               onChangeText={handleHashtagInputChange}
               onSubmitEditing={handleAddHashtag}
@@ -510,13 +513,13 @@ export default function PostReelScreen() {
         animationType="none"
         onRequestClose={closeMoreOptions}
       >
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeMoreOptions}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} style={styles.modalOverlay} activeOpacity={1} onPress={closeMoreOptions}>
           <Animated.View
             style={[styles.moreOptionsModal, { transform: [{ translateY: slideAnim }] }]}
           >
-            <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+            <TouchableOpacity accessible={false} activeOpacity={1} onPress={(e) => e.stopPropagation()}>
               <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={closeMoreOptions}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={closeMoreOptions}>
                   <BackIcon color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.modalTitle}>More options</Text>
@@ -694,7 +697,7 @@ export default function PostReelScreen() {
             <TextInput
               style={styles.searchInput}
               placeholder="Search people..."
-              placeholderTextColor="#666"
+              placeholderTextColor="#999"
             />
             {[
               {
@@ -745,7 +748,7 @@ export default function PostReelScreen() {
             <TextInput
               style={styles.searchInput}
               placeholder="Search location..."
-              placeholderTextColor="#666"
+              placeholderTextColor="#999"
             />
             {["Mumbai, India", "Delhi, India", "Bangalore, India"].map((loc) => (
               <TouchableOpacity
@@ -842,7 +845,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   charCount: {
-    color: "#666",
+    color: "#999",
     fontSize: 12,
     textAlign: "right",
     marginTop: 8,
@@ -951,7 +954,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   chevron: {
-    color: "#666",
+    color: "#999",
     fontSize: 24,
   },
   privacyValue: {

@@ -27,6 +27,9 @@ export interface SearchCompetition {
   /** "image" on typed search, "image_url" on type=all. */
   image?: string;
   image_url?: string;
+  /** Typed competition search only. */
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface SearchAllResult {
@@ -48,8 +51,11 @@ export const searchAll = (q: string) => apiGet<SearchAllResult>("search", { para
 export const searchUsersPage = (q: string, page = 1, limit = DEFAULT_LIMIT) =>
   apiGet<SearchPage<SearchUser>>("search", { params: { q, type: "users", page, limit } });
 
-export const searchCompetitionsPage = (q: string, page = 1, limit = DEFAULT_LIMIT) =>
-  apiGet<SearchPage<SearchCompetition>>("search", { params: { q, type: "competitions", page, limit } });
+/** `category` (a Category id or name) limits results to that category. */
+export const searchCompetitionsPage = (q: string, page = 1, limit = DEFAULT_LIMIT, category?: string) =>
+  apiGet<SearchPage<SearchCompetition>>("search", {
+    params: { q, type: "competitions", page, limit, ...(category ? { category } : {}) },
+  });
 
 export const searchReelsPage = (q: string, page = 1, limit = DEFAULT_LIMIT) =>
   apiGet<SearchPage<FeedReel>>("search", { params: { q, type: "reels", page, limit } });

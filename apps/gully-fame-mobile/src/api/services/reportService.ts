@@ -36,6 +36,39 @@ export const reportReel = (reelId: string, reason: ReportReason, details?: strin
     ...(details && details.trim() ? { details: details.trim().slice(0, REPORT_DETAILS_MAX_LENGTH) } : {}),
   });
 
-export const reportService = { reportReel, REPORT_REASONS };
+/** POST user/:userId/report { reason, details? } */
+export const reportUser = (userId: string, reason: ReportReason, details?: string) =>
+  apiPost<{ reportId: string }>(`user/${userId}/report`, { reason, ...(details?.trim() ? { details: details.trim() } : {}) });
+
+/** POST reels/comments/:commentId/report { reason, details? } */
+export const reportComment = (commentId: string, reason: ReportReason, details?: string) =>
+  apiPost<{ reportId: string }>(`reels/comments/${commentId}/report`, {
+    reason,
+    ...(details?.trim() ? { details: details.trim() } : {}),
+  });
+
+/** POST chat/report { chatterId, reason, details? } - the last messages they sent are attached. */
+export const reportChat = (chatterId: string, reason: ReportReason, details?: string) =>
+  apiPost<{ reportId: string }>("chat/report", {
+    chatterId,
+    reason,
+    ...(details?.trim() ? { details: details.trim() } : {}),
+  });
+
+export type ReportTargetKind = "reel" | "user" | "comment" | "chat";
+
+/** Sends a report for any kind of target. */
+export const reportTarget = async (kind: ReportTargetKind, id: string, reason: ReportReason, details?: string) => {
+  if (kind === "reel") {
+    const r = await reportReel(id, reason, details);
+    return { alreadyReported: !!r?.alreadyReported };
+  }
+  if (kind === "user") await reportUser(id, reason, details);
+  else if (kind === "comment") await reportComment(id, reason, details);
+  else await reportChat(id, reason, details);
+  return { alreadyReported: false };
+};
+
+export const reportService = { reportReel, reportUser, reportComment, reportChat, reportTarget, REPORT_REASONS };
 
 export default reportService;

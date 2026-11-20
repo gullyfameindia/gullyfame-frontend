@@ -28,8 +28,9 @@ import {
  *   code 3 -> invalid token (HTTP 401)
  *   code 4 -> forbidden (HTTP 403)
  *   code 5 -> not found (HTTP 404)
- * Tokens are long-lived JWTs with no expiry and no refresh endpoint, so a 401
- * always means "log in again".
+ * Sessions: a short-lived access token plus a rotating refresh token. On a 401 the client
+ * swaps the refresh token once (POST auth/refresh) and retries the request; only if that fails
+ * is the user sent back to sign in.
  */
 
 // Both come from src/config/env.ts (validated, HTTPS only). BASE_URL ends with exactly one "/",
@@ -38,6 +39,7 @@ export const BASE_URL = API_BASE_URL;
 export const SOCKET_URL = CONFIG_SOCKET_URL;
 
 const TOKEN_STORAGE_KEY = "authToken";
+const REFRESH_STORAGE_KEY = "refreshToken";
 const REQUEST_TIMEOUT_MS = 30000;
 
 export interface ApiEnvelope<T = any> {
@@ -318,9 +320,58 @@ export const removeAuthToken = async (): Promise<void> => {
   cachedToken = null;
   try {
     await SecureStore.deleteItemAsync(TOKEN_STORAGE_KEY);
+    await SecureStore.deleteItemAsync(REFRESH_STORAGE_KEY);
   } catch {
     // Nothing stored.
   }
+};
+
+export const getRefreshToken = async (): Promise<string | null> => {
+  try {
+    const token = await SecureStore.getItemAsync(REFRESH_STORAGE_KEY);
+    return isUsableToken(token) ? token.trim() : null;
+  } catch {
+    return null;
+  }
+};
+
+export const setRefreshToken = async (token: string | null | undefined): Promise<void> => {
+  try {
+    if (isUsableToken(token)) await SecureStore.setItemAsync(REFRESH_STORAGE_KEY, token.trim());
+    else await SecureStore.deleteItemAsync(REFRESH_STORAGE_KEY);
+  } catch {
+    // Without it the user simply signs in again when the access token expires.
+  }
+};
+
+// One refresh at a time: parallel 401s all wait for the same POST auth/refresh.
+let refreshing: Promise<boolean> | null = null;
+
+/** Swaps the stored refresh token for a new access + refresh token. True on success. */
+export const refreshSession = (): Promise<boolean> => {
+  if (!refreshing) {
+    refreshing = (async () => {
+      const refreshToken = await getRefreshToken();
+      if (!refreshToken) return false;
+      try {
+        const res = await axios.post(
+          `${BASE_URL}auth/refresh`,
+          { refreshToken },
+          { timeout: REQUEST_TIMEOUT_MS, headers: { Accept: "application/json" } }
+        );
+        const data = res.data?.data;
+        if (res.data?.code !== 1 || !isUsableToken(data?.token)) return false;
+        await setAuthToken(data.token);
+        await setRefreshToken(data.refreshToken);
+        return true;
+      } catch {
+        return false;
+      }
+    })().finally(() => {
+      refreshing = null;
+    });
+  }
+  return refreshing;
 };
 
 // ==================== SESSION-ENDED HANDLER ====================
@@ -366,7 +417,7 @@ declare module "axios" {
   }
 }
 
-type RetryableConfig = InternalAxiosRequestConfig & { _retryCount?: number };
+type RetryableConfig = InternalAxiosRequestConfig & { _retryCount?: number; _refreshed?: boolean };
 
 /**
  * Auth rule from the API collection: public/* and auth/* endpoints are called WITHOUT a token
@@ -520,6 +571,13 @@ apiClient.interceptors.response.use(
       (status === 401 || key === "invalid_token" || key === "ac_deactivated");
     if (isSessionError) {
       const deactivated = key === "ac_deactivated";
+      // Expired access token: renew it once with the refresh token and replay the request.
+      if (!deactivated && config && !config._refreshed && (await refreshSession())) {
+        config._refreshed = true;
+        const fresh = await getAuthToken();
+        if (fresh) config.headers.Authorization = `Bearer ${fresh}`;
+        return apiClient(config);
+      }
       await fireUnauthorized(deactivated ? "ac_deactivated" : "invalid_token");
       throw new ApiError(friendlyMessage(deactivated ? "ac_deactivated" : "invalid_token"), {
         status,

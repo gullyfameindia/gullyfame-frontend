@@ -1,5 +1,6 @@
 'use client';
 
+import { notify, confirmDialog } from '@/components/Feedback';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -69,7 +70,7 @@ export default function UsersPage() {
   }, [fetchUsers]);
 
   const handleStatusUpdate = async (userId: string, currentStatus: string) => {
-    if (!confirm(`Change status for this user?`)) return;
+    if (!(await confirmDialog(`Change status for this user?`))) return;
     
     await run(`status:${userId}`, async () => {
       try {
@@ -77,14 +78,14 @@ export default function UsersPage() {
         const result = await updateUserStatus(userId, newStatus);
         
         if (result.success) {
-          alert(`User status updated to ${newStatus}`);
+          notify.success(`User status updated to ${newStatus}`);
           fetchUsers();
         } else {
-          alert(result.message || 'Failed to update status');
+          notify.error(result.message || 'Failed to update status');
         }
       } catch (err: any) {
         console.error('Error updating status:', err);
-        alert('Failed to update user status');
+        notify.error('Failed to update user status');
       }
     });
   };
@@ -92,24 +93,24 @@ export default function UsersPage() {
   const handlePasswordReset = async (userId: string, userName: string) => {
     const newPassword = prompt(`Enter new password for ${userName}:`);
     if (!newPassword || newPassword.length < 6) {
-      alert('Password must be at least 6 characters');
+      notify.error('Password must be at least 6 characters');
       return;
     }
     
-    if (!confirm(`Reset password for ${userName}?`)) return;
+    if (!(await confirmDialog(`Reset password for ${userName}?`))) return;
     
     await run(`reset:${userId}`, async () => {
       try {
         const result = await resetUserPassword(userId, newPassword);
         
         if (result.success) {
-          alert('Password reset successfully!');
+          notify.success('Password reset successfully!');
         } else {
-          alert(result.message || 'Failed to reset password');
+          notify.error(result.message || 'Failed to reset password');
         }
       } catch (err: any) {
         console.error('Error resetting password:', err);
-        alert('Failed to reset password');
+        notify.error('Failed to reset password');
       }
     });
   };

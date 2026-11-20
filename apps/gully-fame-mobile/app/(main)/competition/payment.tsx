@@ -101,7 +101,7 @@ export default function CompetitionPaymentScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.headerBackButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerBackButton}>
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
@@ -188,7 +188,7 @@ export default function CompetitionPaymentScreen() {
           disabled={isProcessing}
         >
           <LinearGradient
-            colors={isProcessing ? ['#666', '#555'] : ['#FF6B35', '#FF8C00']}
+            colors={isProcessing ? ['#666', '#555'] : ['#FF6B35', '#EC9A15']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.payGradient}
@@ -219,17 +219,17 @@ export default function CompetitionPaymentScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalIconContainer}>
-              <Circle cx="30" cy="30" r="28" fill="#FF8C00" opacity="0.2" />
+              <Circle cx="30" cy="30" r="28" fill="#EC9A15" opacity="0.2" />
               <Svg width={60} height={60} viewBox="0 0 24 24" fill="none" style={styles.modalIcon}>
                 <Path
                   d="M12 2a7 7 0 0 1 7 7v2a7 7 0 0 1-14 0V9a7 7 0 0 1 7-7z"
-                  stroke="#FF8C00"
+                  stroke="#EC9A15"
                   strokeWidth={2}
                   strokeLinecap="round"
                 />
                 <Path
                   d="M9.172 14.828A4.001 4.001 0 0 1 8 17v1m8-3a4.001 4.001 0 0 0 1.172 2.828"
-                  stroke="#FF8C00"
+                  stroke="#EC9A15"
                   strokeWidth={2}
                   strokeLinecap="round"
                 />
@@ -240,7 +240,7 @@ export default function CompetitionPaymentScreen() {
               Your entry has been submitted successfully! We&apos;re reviewing your submission and will notify you once it&apos;s approved.
             </Text>
             <View style={styles.modalBadge}>
-              <Circle cx="6" cy="6" r="5" fill="#FF8C00" />
+              <Circle cx="6" cy="6" r="5" fill="#EC9A15" />
               <Text style={styles.modalBadgeText}>Waiting for Approval</Text>
             </View>
           </View>
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   methodLabelActive: {
-    color: "#FF8C00",
+    color: "#EC9A15",
   },
   methodHelper: {
     color: "#8A8A8A",
@@ -355,14 +355,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   radioOuterActive: {
-    borderColor: "#FF8C00",
+    borderColor: "#EC9A15",
     backgroundColor: "rgba(255,108,54,0.1)",
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#FF8C00",
+    backgroundColor: "#EC9A15",
   },
   walletCard: {
     marginHorizontal: 20,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,108,54,0.15)",
   },
   walletButtonText: {
-    color: "#FF8C00",
+    color: "#EC9A15",
   },
   breakdownCard: {
     marginHorizontal: 20,
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,140,0,0.3)",
   },
   modalBadgeText: {
-    color: "#FF8C00",
+    color: "#EC9A15",
     fontSize: 14,
   },
 });

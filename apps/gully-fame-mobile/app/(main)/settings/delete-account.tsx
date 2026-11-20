@@ -2,47 +2,50 @@ import { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking, Alert } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SUPPORT_EMAIL } from "@/utils/moderation";
+import { apiDelete, getErrorMessage } from "@/api/client";
+import { performLogout } from "@/utils/logout";
+import { toastError, toastSuccess } from "@/components/ui/Toast";
 
 // Public page describing the same process; this is the URL entered in the Google Play listing.
 const WEB_DELETION_URL = "https://gullyfameindia.com/delete-account";
 
 /**
- * In-app account deletion request.
- *
- * The backend has no "delete account" endpoint yet, so the request is sent to support by email
- * (pre-filled with the account id, no other personal data). When an endpoint exists, replace
- * `requestDeletion` with that call; the screen and the Play listing link do not need to change.
+ * In-app account deletion: DELETE /user/account { confirm: "DELETE" }.
+ * The server closes the account at once, erases personal data, deletes the user's reels and
+ * signs out every device; the app then clears its local session.
  */
 export default function DeleteAccountScreen() {
   const [busy, setBusy] = useState(false);
 
-  const requestDeletion = async () => {
+  const deleteAccount = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      const userId = (await AsyncStorage.getItem("userId")) || "";
-      const subject = "Account deletion request";
-      const body =
-        `I would like to delete my Gully Fame account and the data associated with it.\n\n` +
-        `Account ID: ${userId || "(not available)"}\n` +
-        `Registered mobile number or email: \n`;
-      await Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-    } catch {
-      Alert.alert("Couldn't open email", `Please write to ${SUPPORT_EMAIL} with the subject "Account deletion request".`);
-    } finally {
+      await apiDelete("user/account", { data: { confirm: "DELETE" } });
+      toastSuccess("Your account has been deleted");
+      await performLogout({ skipServer: true });
+    } catch (error) {
+      toastError(getErrorMessage(error, "Couldn't delete your account. Please try again."));
       setBusy(false);
     }
   };
 
+  // Two steps, because this cannot be undone.
   const confirm = () =>
     Alert.alert(
-      "Request account deletion?",
-      "This opens an email to our team. We confirm it is you, then delete your account and its personal data.",
+      "Delete your account?",
+      "Your profile, reels, comments, followers and personal details will be deleted. You will be signed out on every device.",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Continue", style: "destructive", onPress: requestDeletion },
+        {
+          text: "Continue",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert("This cannot be undone", "Delete your Gully Fame account permanently?", [
+              { text: "Keep my account", style: "cancel" },
+              { text: "Delete permanently", style: "destructive", onPress: deleteAccount },
+            ]),
+        },
       ]
     );
 
@@ -61,7 +64,8 @@ export default function DeleteAccountScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>What happens</Text>
           <Text style={styles.bodyText}>
-            Deleting your account removes your profile and the personal data linked to it. This cannot be undone.
+            Deleting your account removes your profile, reels, comments, followers and the personal data linked to
+            it, and signs you out everywhere. This cannot be undone.
           </Text>
           <Text style={styles.bodyText}>
             Deletion may not immediately remove information we must keep by law or for security, fraud prevention or
@@ -79,7 +83,7 @@ export default function DeleteAccountScreen() {
           disabled={busy}
           accessibilityRole="button"
         >
-          <Text style={styles.dangerText}>Request account deletion</Text>
+          <Text style={styles.dangerText}>{busy ? "Deleting..." : "Delete my account"}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => Linking.openURL(WEB_DELETION_URL).catch(() => {})} style={styles.linkButton}>

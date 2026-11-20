@@ -688,7 +688,7 @@ export default function AccountCenterScreen() {
 
       {}
       <View style={styles.header}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
           onPress={() => router.back()}
           style={styles.backButton}
         >
@@ -808,7 +808,7 @@ export default function AccountCenterScreen() {
               <Text style={styles.sectionTitle}>Personal Details</Text>
             </View>
             {!isEditing && (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Save profile"
                 style={styles.updateButtonIcon}
                 onPress={handleUpdateProfile}
                 activeOpacity={0.7}

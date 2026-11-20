@@ -1,5 +1,6 @@
 'use client';
 
+import { notify, confirmDialog } from '@/components/Feedback';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -50,7 +51,7 @@ export default function CompetitionDetailPage() {
   }, [fetchCompetition]);
 
   const handleApprove = async (id: string) => {
-    if (!confirm('Are you sure you want to approve this competition?')) return;
+    if (!(await confirmDialog('Are you sure you want to approve this competition?'))) return;
     
     if (actionLock.current) return;
     actionLock.current = true;
@@ -58,13 +59,13 @@ export default function CompetitionDetailPage() {
       setLoadingAction(true);
       const result = await approveCompetition(id);
       if (result.success) {
-        alert('Competition approved successfully!');
+        notify.success('Competition approved successfully!');
         fetchCompetition(); 
       } else {
-        alert(result.message || 'Failed to approve competition');
+        notify.error(result.message || 'Failed to approve competition');
       }
     } catch (err: any) {
-      alert('Error approving competition: ' + err.message);
+      notify.error('Error approving competition: ' + err.message);
     } finally {
       actionLock.current = false;
       setLoadingAction(false);
@@ -72,7 +73,7 @@ export default function CompetitionDetailPage() {
   };
 
   const handleReject = async (id: string) => {
-    if (!confirm('Are you sure you want to reject this competition?')) return;
+    if (!(await confirmDialog('Are you sure you want to reject this competition?'))) return;
     
     if (actionLock.current) return;
     actionLock.current = true;
@@ -80,13 +81,13 @@ export default function CompetitionDetailPage() {
       setLoadingAction(true);
       const result = await rejectCompetition(id);
       if (result.success) {
-        alert('Competition rejected successfully!');
+        notify.success('Competition rejected successfully!');
         fetchCompetition(); 
       } else {
-        alert(result.message || 'Failed to reject competition');
+        notify.error(result.message || 'Failed to reject competition');
       }
     } catch (err: any) {
-      alert('Error rejecting competition: ' + err.message);
+      notify.error('Error rejecting competition: ' + err.message);
     } finally {
       actionLock.current = false;
       setLoadingAction(false);
@@ -97,7 +98,7 @@ export default function CompetitionDetailPage() {
     if (!competition) return;
     
     
-    if (confirm('Declare winners and distribute coins? This action cannot be undone.')) {
+    if ((await confirmDialog('Declare winners and distribute coins? This action cannot be undone.'))) {
       // Irreversible coin distribution: block a second click before React re-renders.
       if (actionLock.current) return;
       actionLock.current = true;
@@ -114,13 +115,13 @@ export default function CompetitionDetailPage() {
         
         const result = await declareWinners(competition.id, winnersData);
         if (result.success) {
-          alert('Winners declared successfully! Coins will be distributed automatically.');
+          notify.success('Winners declared successfully! Coins will be distributed automatically.');
           fetchCompetition(); 
         } else {
-          alert(result.message || 'Failed to declare winners');
+          notify.error(result.message || 'Failed to declare winners');
         }
       } catch (err: any) {
-        alert('Error declaring winners: ' + err.message);
+        notify.error('Error declaring winners: ' + err.message);
       } finally {
         actionLock.current = false;
         setLoadingAction(false);
