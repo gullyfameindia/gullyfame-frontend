@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from "react";
 import {
   View,
@@ -17,23 +15,43 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from "expo-linear-gradient";
+import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { getReferral, applyReferralCode, ReferralSummary } from "@/api/services/userService";
 import { getErrorMessage } from "@/api/client";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
 
-const socialPlatforms = [
-  { id: 1, name: "WhatsApp", icon: "whatsapp", provider: FontAwesome5, color: "#25D366" },
-  { id: 2, name: "Instagram", icon: "instagram", provider: FontAwesome5, color: "#E4405F" },
-  { id: 3, name: "Snapchat", icon: "snapchat-ghost", provider: FontAwesome5, color: "#FFEC06" },
-  { id: 4, name: "Twitter", icon: "twitter", provider: FontAwesome5, color: "#1DA1F2" },
-  { id: 5, name: "Facebook", icon: "facebook", provider: FontAwesome5, color: "#1877F2" },
+// Same brown + orange palette as the rest of the app.
+const C = {
+  bg: "#3C2610",
+  card: "#1A1A1A",
+  inner: "#252525",
+  border: "#2A2A2A",
+  accent: "#EC9A15",
+  accentLight: "#FFB84D",
+  accentSoft: "rgba(236, 154, 21, 0.15)",
+  text: "#FFFFFF",
+  muted: "#CAD7D8",
+  faint: "#8A8F90",
+  success: "#25D366",
+};
+
+const SHARE_URL = "https://gullyfame.com/download";
+
+type SharePlatform = "WhatsApp" | "Telegram" | "Message" | "Messenger" | "More";
+
+const SHARE_OPTIONS: { name: SharePlatform; icon: string; lib: "fa" | "io"; color: string }[] = [
+  { name: "WhatsApp", icon: "whatsapp", lib: "fa", color: "#25D366" },
+  { name: "Telegram", icon: "telegram-plane", lib: "fa", color: "#229ED9" },
+  { name: "Message", icon: "chatbubble", lib: "io", color: "#34C759" },
+  { name: "Messenger", icon: "facebook-messenger", lib: "fa", color: "#0084FF" },
+  { name: "More", icon: "ellipsis-horizontal", lib: "io", color: C.muted },
 ];
 
 export default function InviteFriendScreen() {
   const insets = useSafeAreaInsets();
-  
+
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [codeLoading, setCodeLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -77,8 +95,8 @@ export default function InviteFriendScreen() {
     }
   };
 
-  const shareUrl = "https://gullyfame.com/download";
-  const shareMessage = `Join me on Gully Fame!${userReferralCode ? ` My referral code: ${userReferralCode}` : ""}\n\nDownload now: ${shareUrl}`;
+  const shareMessage = `Join me on GullyFame!${userReferralCode ? ` My referral code: ${userReferralCode}` : ""}\n\nDownload now: ${SHARE_URL}`;
+  const encodedMessage = encodeURIComponent(shareMessage);
 
   const copyToClipboard = async () => {
     if (!userReferralCode) return;
@@ -87,55 +105,33 @@ export default function InviteFriendScreen() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Opens an app if it is installed, otherwise tells the user to install it.
+  const openAppOrAlert = async (url: string, appName: string) => {
+    if (await Linking.canOpenURL(url)) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert(`${appName} not installed`, `Please install ${appName} to share.`);
+    }
+  };
+
   // Sharing works without a code: the message then carries only the download link.
-  const handleShare = async (platform: string) => {
+  const handleShare = async (platform: SharePlatform) => {
     try {
       switch (platform) {
-        case "WhatsApp": {
-          const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(shareMessage)}`;
-          const canOpenWhatsApp = await Linking.canOpenURL(whatsappUrl);
-          if (canOpenWhatsApp) {
-            await Linking.openURL(whatsappUrl);
-          } else {
-            Alert.alert("WhatsApp not installed", "Please install WhatsApp to share.");
-          }
+        case "WhatsApp":
+          await openAppOrAlert(`whatsapp://send?text=${encodedMessage}`, "WhatsApp");
           break;
-        }
-        case "Instagram":
-          await Share.share({ message: shareMessage, title: "Invite to Gully Fame" });
+        case "Telegram":
+          await openAppOrAlert(`tg://msg?text=${encodedMessage}`, "Telegram");
           break;
-        case "Snapchat": {
-          const snapchatUrl = `snapchat://share?text=${encodeURIComponent(shareMessage)}`;
-          const canOpenSnap = await Linking.canOpenURL(snapchatUrl);
-          if (canOpenSnap) {
-            await Linking.openURL(snapchatUrl);
-          } else {
-            Alert.alert("Snapchat not installed", "Please install Snapchat to share.");
-          }
+        case "Message":
+          await Linking.openURL(`sms:?body=${encodedMessage}`);
           break;
-        }
-        case "Twitter": {
-          const twitterUrl = `twitter://post?message=${encodeURIComponent(shareMessage)}`;
-          const canOpenTwitter = await Linking.canOpenURL(twitterUrl);
-          if (canOpenTwitter) {
-            await Linking.openURL(twitterUrl);
-          } else {
-            await Linking.openURL(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}`);
-          }
+        case "Messenger":
+          await openAppOrAlert(`fb-messenger://share?link=${encodeURIComponent(SHARE_URL)}`, "Messenger");
           break;
-        }
-        case "Facebook": {
-          const facebookUrl = `fb://share?text=${encodeURIComponent(shareMessage)}`;
-          const canOpenFB = await Linking.canOpenURL(facebookUrl);
-          if (canOpenFB) {
-            await Linking.openURL(facebookUrl);
-          } else {
-            await Linking.openURL(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
-          }
-          break;
-        }
         default:
-          await Share.share({ message: shareMessage, title: "Invite to Gully Fame" });
+          await Share.share({ message: shareMessage, title: "Invite to GullyFame" });
       }
     } catch {
       Alert.alert("Error", "Unable to share. Please try again.");
@@ -144,73 +140,142 @@ export default function InviteFriendScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
 
-      {}
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton} testID="invite-back">
-          <Ionicons name="chevron-back" size={28} color="#fff" />
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerSide} testID="invite-back">
+          <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Invite & Earn</Text>
-        <View style={styles.backButton} />
+        <View style={styles.headerSide} />
       </View>
 
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        {}
-        <View style={styles.referralCard}>
-          <Text style={styles.referralTitle}>Your Referral Code</Text>
-          {summary ? (
-            <Text style={styles.rewardText} testID="invite-reward-text">
-              Invite a friend: you get {summary.referrerCoins} GFI coins and your friend gets {summary.newUserCoins} once
-              they verify their phone, complete their profile (name, username and photo) and their account is 3 days old.
-            </Text>
-          ) : null}
-          {codeLoading ? (
-            <View style={styles.codeBox}>
-              <ActivityIndicator size="small" color="#EC9A15" />
-            </View>
-          ) : userReferralCode ? (
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>{userReferralCode}</Text>
-              <TouchableOpacity
-                style={[styles.copyButton, copied && styles.copiedButton]}
-                onPress={copyToClipboard}
-                activeOpacity={0.7}
-              >
-                <Ionicons name={copied ? "checkmark-circle" : "copy-outline"} size={20} color="#fff" />
-                <Text style={styles.copyText}>{copied ? "Copied!" : "Copy"}</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.comingSoonBox} testID="invite-referral-coming-soon">
-              <Ionicons name="time-outline" size={22} color="#EC9A15" />
-              <Text style={styles.comingSoonTitle}>Couldn't load your referral code</Text>
-              <Text style={styles.comingSoonText}>
-                Check your connection and open this page again. You can still share the download link below.
+        <Text style={styles.subtitle}>Invite your friends and earn coins when they join and verify.</Text>
+
+        {/* Hero */}
+        <LinearGradient
+          colors={[C.accent, "#B86E0A"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroCard}
+        >
+          <View style={styles.heroText}>
+            <Text style={styles.heroTitle}>Invite friends, earn coins!</Text>
+            {summary ? (
+              <Text style={styles.heroBody} testID="invite-reward-text">
+                You get {summary.referrerCoins} GFI coins and your friend gets {summary.newUserCoins} once they verify
+                their phone, complete their profile and their account is 3 days old.
               </Text>
+            ) : null}
+          </View>
+          <View style={styles.heroIcon}>
+            <Ionicons name="gift" size={34} color={C.text} />
+          </View>
+        </LinearGradient>
+
+        {/* Progress */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Your referral progress</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>Invites</Text>
+              <View style={styles.statValueRow}>
+                <Ionicons name="people-outline" size={18} color={C.accent} />
+                <Text style={styles.statValue} testID="invite-stats">{summary ? summary.invited : "–"}</Text>
+              </View>
             </View>
-          )}
-          {userReferralCode ? (
-            <Text style={styles.referralSubText}>Share this code with your friends.</Text>
-          ) : null}
-          {summary && summary.invited > 0 ? (
-            <Text style={styles.statsText} testID="invite-stats">
-              Invited {summary.invited} · Rewarded {summary.rewarded} · Coins earned {summary.coinsEarned}
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>Coins earned</Text>
+              <View style={styles.statValueRow}>
+                <FontAwesome5 name="coins" size={16} color={C.accent} />
+                <Text style={styles.statValue}>{summary ? summary.coinsEarned.toLocaleString("en-IN") : "–"}</Text>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.historyLink} onPress={() => router.push("/(main)/history" as any)} accessibilityRole="button">
+            <Text style={styles.historyLinkText}>View detailed history</Text>
+            <Ionicons name="chevron-forward" size={16} color={C.accent} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Referral code */}
+        <Text style={styles.sectionLabel}>Your referral code</Text>
+        {codeLoading ? (
+          <View style={styles.codeLoading}>
+            <ActivityIndicator size="small" color={C.accent} />
+          </View>
+        ) : userReferralCode ? (
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText} testID="invite-code">{userReferralCode}</Text>
+            <TouchableOpacity style={[styles.copyButton, copied && styles.copiedButton]} onPress={copyToClipboard} activeOpacity={0.7}>
+              <Ionicons name={copied ? "checkmark" : "copy-outline"} size={16} color={C.text} />
+              <Text style={styles.copyText}>{copied ? "Copied" : "Copy"}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.errorBox} testID="invite-referral-coming-soon">
+            <Ionicons name="cloud-offline-outline" size={22} color={C.accent} />
+            <Text style={styles.errorTitle}>Couldn't load your referral code</Text>
+            <Text style={styles.errorText}>
+              Check your connection and open this page again. You can still share the download link below.
             </Text>
-          ) : null}
+          </View>
+        )}
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>Or share your unique link</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity onPress={() => handleShare("More")} activeOpacity={0.8} accessibilityRole="button">
+          <LinearGradient
+            colors={[C.accent, C.accentLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.inviteButton}
+          >
+            <Text style={styles.inviteButtonText}>Invite Contacts</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Share targets */}
+        <View style={styles.shareRow}>
+          {SHARE_OPTIONS.map((option) => (
+            <TouchableOpacity
+              key={option.name}
+              style={styles.shareItem}
+              onPress={() => handleShare(option.name)}
+              activeOpacity={0.7}
+              testID={`invite-share-${option.name.toLowerCase()}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Share via ${option.name}`}
+            >
+              <View style={[styles.shareCircle, { backgroundColor: option.name === "More" ? C.inner : option.color }]}>
+                {option.lib === "fa" ? (
+                  <FontAwesome5 name={option.icon as any} size={22} color={C.text} />
+                ) : (
+                  <Ionicons name={option.icon as any} size={24} color={C.text} />
+                )}
+              </View>
+              <Text style={styles.shareLabel}>{option.name}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Using a friend's code: new accounts only (the server decides with canApplyCode). */}
         {summary?.canApplyCode ? (
-          <View style={styles.referralCard} testID="invite-apply-code">
-            <Text style={styles.referralTitle}>Got a code from a friend?</Text>
+          <View style={styles.card} testID="invite-apply-code">
+            <Text style={styles.cardTitle}>Got a code from a friend?</Text>
             <TextInput
               style={styles.friendCodeInput}
               placeholder="Enter referral code"
-              placeholderTextColor="#777"
+              placeholderTextColor={C.faint}
               value={friendCode}
               onChangeText={(t) => setFriendCode(t.toUpperCase())}
               autoCapitalize="characters"
@@ -223,7 +288,7 @@ export default function InviteFriendScreen() {
               disabled={!friendCode.trim() || applying}
               activeOpacity={0.8}
             >
-              {applying ? <ActivityIndicator color="#fff" /> : <Text style={styles.copyText}>Apply code</Text>}
+              {applying ? <ActivityIndicator color={C.text} /> : <Text style={styles.applyText}>Apply code</Text>}
             </TouchableOpacity>
           </View>
         ) : summary?.usedCode ? (
@@ -235,28 +300,22 @@ export default function InviteFriendScreen() {
           </Text>
         ) : null}
 
-        {}
-        <Text style={styles.sectionTitle}>Share via</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.platformsContainer}>
-          {socialPlatforms.map((platform) => {
-            const IconProvider = platform.provider;
-            return (
-              <TouchableOpacity
-                key={platform.id}
-                style={styles.platformCard}
-                onPress={() => handleShare(platform.name)}
-                testID={`invite-share-${platform.name.toLowerCase()}`}
-                activeOpacity={0.7}
-              >
-                <View style={styles.iconContainer}>
-                  <IconProvider name={platform.icon} size={36} color={platform.color} />
-                </View>
-                <Text style={styles.platformName}>{platform.name}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
+        {/* How it works */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>How it works</Text>
+          {[
+            { n: "1", text: "Share your link" },
+            { n: "2", text: "They sign up" },
+            { n: "3", text: "You both earn" },
+          ].map((step) => (
+            <View key={step.n} style={styles.stepRow}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>{step.n}</Text>
+              </View>
+              <Text style={styles.stepText}>{step.text}</Text>
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -265,127 +324,258 @@ export default function InviteFriendScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#3C2610",
+    backgroundColor: C.bg,
     paddingTop: Platform.OS === "android" ? 20 : 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 20,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: Platform.OS === "ios" ? 60 : 12,
+    paddingBottom: 8,
   },
-  backButton: {
+  headerSide: {
     width: 44,
     height: 44,
     justifyContent: "center",
     alignItems: "center",
   },
   headerTitle: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    color: C.text,
+    fontSize: 20,
+    fontFamily: "PlayfairDisplay_700Bold",
   },
   scrollContent: {
-    padding: 20,
+    paddingHorizontal: 16,
     paddingBottom: 30,
   },
-  referralCard: {
-    backgroundColor: "#252525",
+  subtitle: {
+    color: C.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    fontFamily: "Rubik_400Regular",
+    marginBottom: 18,
+    paddingHorizontal: 12,
+  },
+
+  // Hero
+  heroCard: {
     borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "rgba(236, 154, 21, 0.4)",
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 14,
+  },
+  heroText: {
+    flex: 1,
+  },
+  heroTitle: {
+    color: C.text,
+    fontSize: 20,
+    fontFamily: "PlayfairDisplay_700Bold",
+    marginBottom: 6,
+  },
+  heroBody: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Rubik_400Regular",
+  },
+  heroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
     alignItems: "center",
   },
-  comingSoonBox: {
-    alignSelf: "stretch",
+
+  // Cards
+  card: {
+    backgroundColor: C.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 16,
+    marginBottom: 16,
+  },
+  cardTitle: {
+    color: C.text,
+    fontSize: 17,
+    fontFamily: "Rubik_600SemiBold",
+    marginBottom: 12,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: C.inner,
+    borderRadius: 14,
+    padding: 12,
+  },
+  statLabel: {
+    color: C.faint,
+    fontSize: 12,
+    fontFamily: "Rubik_400Regular",
+    marginBottom: 6,
+  },
+  statValueRow: {
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A1A1A",
+    gap: 8,
+  },
+  statValue: {
+    color: C.text,
+    fontSize: 20,
+    fontFamily: "Rubik_700Bold",
+  },
+  historyLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 14,
+  },
+  historyLinkText: {
+    color: C.accent,
+    fontSize: 14,
+    fontFamily: "Rubik_600SemiBold",
+  },
+
+  // Code
+  sectionLabel: {
+    color: C.muted,
+    fontSize: 13,
+    fontFamily: "Rubik_500Medium",
+    marginBottom: 8,
+  },
+  codeLoading: {
+    height: 64,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  codeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: C.card,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: C.accent,
+    paddingLeft: 18,
+    paddingRight: 8,
+    paddingVertical: 8,
+  },
+  codeText: {
+    color: C.text,
+    fontSize: 22,
+    fontFamily: "Rubik_700Bold",
+    letterSpacing: 2,
+  },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: C.accentSoft,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 12,
+  },
+  copiedButton: {
+    backgroundColor: "rgba(37, 211, 102, 0.2)",
+  },
+  copyText: {
+    color: C.accent,
+    fontSize: 14,
+    fontFamily: "Rubik_600SemiBold",
+  },
+  errorBox: {
+    alignItems: "center",
+    backgroundColor: C.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.border,
     paddingVertical: 16,
     paddingHorizontal: 16,
     gap: 6,
   },
-  comingSoonTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
+  errorTitle: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Rubik_600SemiBold",
     textAlign: "center",
   },
-  comingSoonText: {
-    color: "#aaa",
+  errorText: {
+    color: C.muted,
     fontSize: 13,
-    textAlign: "center",
     lineHeight: 18,
-  },
-  referralTitle: {
-    alignSelf: "stretch",
     textAlign: "center",
-    color: "#ccc",
+    fontFamily: "Rubik_400Regular",
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.border,
+  },
+  dividerText: {
+    color: C.faint,
+    fontSize: 12,
+    fontFamily: "Rubik_400Regular",
+  },
+  inviteButton: {
+    borderRadius: 16,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  inviteButtonText: {
+    color: C.text,
     fontSize: 16,
-    marginBottom: 12,
+    fontFamily: "Rubik_700Bold",
   },
-  codeBox: {
+
+  // Share row
+  shareRow: {
     flexDirection: "row",
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#EC9A15",
-    borderStyle: "dashed",
-    paddingLeft: 20,
-    alignItems: "center",
     justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 12,
+    marginTop: 18,
+    marginBottom: 20,
   },
-  codeText: {
-    color: "#EC9A15",
-    fontSize: 22,
-    fontWeight: "bold",
-    letterSpacing: 2,
-  },
-  copyButton: {
-    backgroundColor: "#EC9A15",
-    flexDirection: "row",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
+  shareItem: {
     alignItems: "center",
-    gap: 6,
+    width: 64,
   },
-  copiedButton: {
-    backgroundColor: "#25D366",
+  shareCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
   },
-  copyText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
+  shareLabel: {
+    color: C.muted,
+    fontSize: 11,
+    fontFamily: "Rubik_500Medium",
   },
-  rewardText: {
-    color: "#EC9A15",
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 14,
-  },
-  statsText: {
-    color: "#ccc",
-    fontSize: 13,
-    textAlign: "center",
-    marginTop: 10,
-  },
+
+  // Apply code
   friendCodeInput: {
-    alignSelf: "stretch",
-    backgroundColor: "#1A1A1A",
+    backgroundColor: C.inner,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#444",
-    color: "#fff",
+    borderColor: C.border,
+    color: C.text,
     fontSize: 18,
     letterSpacing: 2,
     textAlign: "center",
@@ -393,93 +583,51 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   applyButton: {
-    alignSelf: "stretch",
-    backgroundColor: "#EC9A15",
+    backgroundColor: C.accent,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
   },
+  applyText: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Rubik_700Bold",
+  },
   usedCodeText: {
-    color: "#aaa",
+    color: C.muted,
     fontSize: 13,
+    lineHeight: 18,
     textAlign: "center",
-    marginBottom: 20,
-    paddingHorizontal: 8,
-  },
-  referralSubText: {
-    color: "#999",
-    fontSize: 13,
-    textAlign: "center",
-    marginTop: 8,
-  },
-  sectionTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  platformsContainer: {
-    flexDirection: "row",
-    paddingVertical: 10,
-    gap: 12,
-    marginBottom: 20,
-  },
-  platformCard: {
-    backgroundColor: "#252525",
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    minWidth: 90,
-    borderWidth: 1,
-    borderColor: "rgba(236, 154, 21, 0.15)",
-  },
-  iconContainer: {
-    marginBottom: 8,
-  },
-  platformName: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  infoCard: {
-    backgroundColor: "#252525",
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(236, 154, 21, 0.2)",
-    marginTop: 10,
-  },
-  infoTitle: {
-    color: "#EC9A15",
-    fontSize: 20,
-    fontWeight: "700",
     marginBottom: 16,
+    paddingHorizontal: 8,
+    fontFamily: "Rubik_400Regular",
   },
+
+  // How it works
   stepRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
     gap: 12,
+    marginBottom: 12,
   },
   stepNumber: {
     width: 28,
     height: 28,
-    backgroundColor: "rgba(236, 154, 21, 0.2)",
     borderRadius: 14,
+    backgroundColor: C.accentSoft,
+    borderWidth: 1,
+    borderColor: C.accent,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#EC9A15",
   },
   stepNumberText: {
-    color: "#EC9A15",
-    fontWeight: "bold",
-    fontSize: 14,
+    color: C.accent,
+    fontSize: 13,
+    fontFamily: "Rubik_700Bold",
   },
   stepText: {
-    color: "#ccc",
-    fontSize: 15,
-    flex: 1,
+    color: C.muted,
+    fontSize: 14,
+    fontFamily: "Rubik_400Regular",
   },
 });

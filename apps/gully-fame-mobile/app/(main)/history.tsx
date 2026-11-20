@@ -1,5 +1,3 @@
-
-
 import { useState, useCallback, useRef } from "react";
 import {
   View,
@@ -12,11 +10,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { getWallet, toDisplayTransaction, DisplayTransaction } from "@/api/services/walletService";
 import { getErrorMessage } from "@/api/client";
 import { toastError } from "@/components/ui/Toast";
-import { WITHDRAW_ROUTE } from "@/config/features";
+import { COIN_PURCHASE_ENABLED } from "@/config/features";
+import WithdrawPopup from "@/components/wallet/WithdrawPopup";
 import { openAddCoins } from "@/utils/coinPurchase";
 import { Skeleton, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
@@ -24,7 +24,21 @@ type Transaction = DisplayTransaction;
 
 const PAGE_SIZE = 20;
 
-
+// Same brown + orange palette as the rest of the app.
+const C = {
+  bg: "#3C2610",
+  card: "#1A1A1A",
+  cardInner: "#252525",
+  border: "#2A2A2A",
+  accent: "#EC9A15",
+  accentLight: "#FFB84D",
+  accentSoft: "rgba(236, 154, 21, 0.15)",
+  text: "#FFFFFF",
+  muted: "#CAD7D8",
+  faint: "#8A8F90",
+  credit: "#25D366",
+  debit: "#FF4444",
+};
 
 export default function HistoryScreen() {
   const [filter, setFilter] = useState<"all" | "earned" | "spent">("all");
@@ -35,6 +49,7 @@ export default function HistoryScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [withdrawVisible, setWithdrawVisible] = useState(false);
 
   const fetchWalletData = useCallback(async () => {
     setLoading(true);
@@ -86,14 +101,20 @@ export default function HistoryScreen() {
     return item.kind === filter;
   });
 
+  const filterTabs: { key: "all" | "earned" | "spent"; label: string }[] = [
+    { key: "all", label: "All" },
+    { key: "earned", label: "Earned" },
+    { key: "spent", label: "Spent" },
+  ];
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={28} color="#fff" />
+          <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Wallet & History</Text>
         <View style={styles.backButton} />
@@ -101,15 +122,15 @@ export default function HistoryScreen() {
 
       {loading ? (
         <SkeletonRoot style={{ flex: 1, padding: 16, gap: 16 }}>
-          <Skeleton height={120} radius={16} />
+          <Skeleton height={140} radius={16} />
           <SkeletonList rows={6} trailing />
         </SkeletonRoot>
       ) : loadError ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
-          <Ionicons name="cloud-offline-outline" size={48} color="#666" />
-          <Text style={{ color: "#ccc", marginTop: 12, textAlign: "center" }}>{loadError}</Text>
+        <View style={styles.errorState}>
+          <Ionicons name="cloud-offline-outline" size={48} color={C.faint} />
+          <Text style={styles.errorText}>{loadError}</Text>
           <TouchableOpacity onPress={fetchWalletData} style={{ marginTop: 16 }}>
-            <Text style={{ color: "#EC9A15", fontSize: 16 }}>Retry</Text>
+            <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -126,118 +147,137 @@ export default function HistoryScreen() {
           removeClippedSubviews
           ListHeaderComponent={
             <>
-        
-        {/* Wallet Card */}
-        <View style={styles.walletCard}>
-          <Text style={styles.walletLabel}>Total Available Balance</Text>
-          <View style={styles.balanceRow}>
-            <FontAwesome5 name="coins" size={28} color="#EC9A15" style={styles.coinIcon} />
-            <Text style={styles.balanceAmount}>{totalBalance.toLocaleString()}</Text>
-          </View>
-          
-          <View style={styles.walletActions}>
-            <TouchableOpacity 
-              style={styles.addMoneyButton} 
-              activeOpacity={0.8}
-              onPress={() => openAddCoins()}
-            >
-              <Ionicons name="add-circle" size={20} color="#fff" />
-              <Text style={styles.addMoneyButtonText}>Add Money</Text>
-            </TouchableOpacity>
+              <Text style={styles.subtitle}>
+                Track your coins, withdraw your earnings and view your activity.
+              </Text>
 
-            <TouchableOpacity 
-              style={styles.withdrawButton} 
-              activeOpacity={0.8}
-              onPress={() => router.push(WITHDRAW_ROUTE as any)}
-            >
-              <MaterialIcons name="account-balance" size={20} color="#fff" />
-              <Text style={styles.withdrawButtonText}>Withdraw</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.earnMoreButton} 
-              onPress={() => router.push("/(main)/invite-friend" as any)} 
-              activeOpacity={0.8}
-            >
-              <Ionicons name="gift" size={20} color="#EC9A15" />
-              <Text style={styles.earnMoreText}>Earn More</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              {/* Wallet balance */}
+              <Text style={styles.sectionTitle}>Wallet Balance</Text>
+              <LinearGradient
+                colors={[C.accent, "#B86E0A"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.balanceCard}
+              >
+                <Text style={styles.balanceLabel}>Available balance</Text>
+                <View style={styles.balanceRow}>
+                  <FontAwesome5 name="coins" size={22} color={C.text} />
+                  <Text style={styles.balanceAmount}>{Math.floor(totalBalance).toLocaleString()}</Text>
+                  <Text style={styles.balanceUnit}>coins</Text>
+                </View>
 
-        {/* Filter Tabs */}
-        <View style={styles.filterContainer}>
-          <TouchableOpacity 
-            style={[styles.filterTab, filter === "all" && styles.activeFilterTab]} 
-            onPress={() => setFilter("all")}
-          >
-            <Text style={[styles.filterText, filter === "all" && styles.activeFilterText]}>All</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.filterTab, filter === "earned" && styles.activeFilterTab]} 
-            onPress={() => setFilter("earned")}
-          >
-            <Text style={[styles.filterText, filter === "earned" && styles.activeFilterText]}>Earned</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.filterTab, filter === "spent" && styles.activeFilterTab]} 
-            onPress={() => setFilter("spent")}
-          >
-            <Text style={[styles.filterText, filter === "spent" && styles.activeFilterText]}>Spent</Text>
-          </TouchableOpacity>
-        </View>
+                <View style={styles.balanceActions}>
+                  {COIN_PURCHASE_ENABLED && (
+                  <TouchableOpacity
+                    style={styles.addMoneyButton}
+                    activeOpacity={0.8}
+                    onPress={() => openAddCoins()}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add money"
+                  >
+                    <Ionicons name="add" size={18} color={C.text} />
+                    <Text style={styles.addMoneyText}>Add Money</Text>
+                  </TouchableOpacity>
+                  )}
 
+                  <TouchableOpacity
+                    style={styles.withdrawButton}
+                    activeOpacity={0.8}
+                    onPress={() => setWithdrawVisible(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Withdraw"
+                  >
+                    <Text style={styles.withdrawText}>Withdraw</Text>
+                    <Ionicons name="arrow-forward" size={16} color={C.text} />
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
 
-              <View style={styles.transactionsContainer}>
-                <Text style={styles.sectionTitle}>Recent Transactions</Text>
+              <TouchableOpacity
+                style={styles.earnLink}
+                onPress={() => router.push("/(main)/invite-friend" as any)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="gift-outline" size={16} color={C.accent} />
+                <Text style={styles.earnLinkText}>Earn more coins</Text>
+              </TouchableOpacity>
+
+              {/* History: this card continues through the rows and closes in the footer */}
+              <View style={styles.historyTop}>
+                <View style={styles.historyHeaderRow}>
+                  <Text style={styles.historyTitle}>History</Text>
+                  <Text style={styles.historyCount}>
+                    {filteredTransactions.length} {filteredTransactions.length === 1 ? "item" : "items"}
+                  </Text>
+                </View>
+                <View style={styles.filterContainer}>
+                  {filterTabs.map((tab) => {
+                    const active = filter === tab.key;
+                    return (
+                      <TouchableOpacity
+                        key={tab.key}
+                        style={[styles.filterTab, active && styles.activeFilterTab]}
+                        onPress={() => setFilter(tab.key)}
+                        accessibilityRole="button"
+                      >
+                        <Text style={[styles.filterText, active && styles.activeFilterText]}>{tab.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
             </>
           }
           renderItem={({ item: tx }) => (
-              <View style={styles.transactionCard}>
-                <View style={styles.txIconContainer}>
-                  <Ionicons name={tx.icon as any} size={24} color="#EC9A15" />
-                </View>
-                
-                <View style={styles.txDetails}>
-                  <Text style={styles.txTitle}>{tx.title}</Text>
-                  <Text style={styles.txDesc} numberOfLines={1}>{tx.description}</Text>
-                  <Text style={styles.txDate}>{tx.date} • {tx.time}</Text>
-                </View>
-                
-                <View style={styles.txAmountContainer}>
-                  <Text style={[styles.txAmount, { color: tx.type === 'credit' ? '#25D366' : '#FF4444' }]}>
-                    {tx.type === 'credit' ? '+' : '-'}{tx.amount.toLocaleString()}
-                  </Text>
-                  <Text style={styles.txCoinText}>Coins</Text>
-                </View>
+            <View style={styles.txRow}>
+              <View style={styles.txIconContainer}>
+                <Ionicons name={tx.icon as any} size={20} color={C.accent} />
               </View>
+
+              <View style={styles.txDetails}>
+                <Text style={styles.txTitle}>{tx.title}</Text>
+                <Text style={styles.txDesc} numberOfLines={1}>{tx.description}</Text>
+                <Text style={styles.txDate}>{tx.date} • {tx.time}</Text>
+              </View>
+
+              <View style={styles.txAmountContainer}>
+                <Text style={[styles.txAmount, { color: tx.type === "credit" ? C.credit : C.debit }]}>
+                  {tx.type === "credit" ? "+" : "-"}{tx.amount.toLocaleString()}
+                </Text>
+                <Text style={styles.txCoinText}>Coins</Text>
+              </View>
+            </View>
           )}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Ionicons name="receipt-outline" size={50} color="#666" />
+              <Ionicons name="receipt-outline" size={44} color={C.faint} />
               <Text style={styles.emptyStateText}>
-                {filter === "all" 
-                  ? "No transactions yet" 
+                {filter === "all"
+                  ? "No transactions yet"
                   : `No ${filter === "earned" ? "earned" : "spent"} transactions`}
               </Text>
             </View>
           }
           ListFooterComponent={
-            hasMore ? (
-            <TouchableOpacity onPress={loadMore} disabled={loadingMore} style={{ alignItems: "center", paddingVertical: 16 }}>
-              {loadingMore ? (
-                <ActivityIndicator color="#EC9A15" />
-              ) : (
-                <Text style={{ color: "#EC9A15", fontSize: 15 }}>Load more</Text>
-              )}
-            </TouchableOpacity>
-              ) : null
+            <View style={styles.historyBottom}>
+              {hasMore ? (
+                <TouchableOpacity onPress={loadMore} disabled={loadingMore} style={styles.loadMore}>
+                  {loadingMore ? (
+                    <ActivityIndicator color={C.accent} />
+                  ) : (
+                    <Text style={styles.loadMoreText}>Load more</Text>
+                  )}
+                </TouchableOpacity>
+              ) : null}
+            </View>
           }
         />
       )}
+      <WithdrawPopup
+        visible={withdrawVisible}
+        onClose={() => setWithdrawVisible(false)}
+        onWithdrawn={fetchWalletData}
+      />
     </View>
   );
 }
@@ -245,16 +285,16 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#3C2610",
+    backgroundColor: C.bg,
     paddingTop: Platform.OS === "android" ? 20 : 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 20,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: Platform.OS === "ios" ? 60 : 12,
+    paddingBottom: 8,
   },
   backButton: {
     width: 44,
@@ -263,209 +303,306 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    color: C.text,
+    fontSize: 20,
+    fontFamily: "PlayfairDisplay_700Bold",
   },
   scrollContent: {
-    padding: 20,
+    paddingHorizontal: 16,
     paddingBottom: 40,
   },
-  walletCard: {
-    backgroundColor: "#252525",
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(236, 154, 21, 0.4)",
-    marginBottom: 24,
-    alignItems: "center",
-    shadowColor: "#EC9A15",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  walletLabel: {
-    color: "#ccc",
+  subtitle: {
+    color: C.muted,
     fontSize: 14,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    lineHeight: 20,
+    textAlign: "center",
+    fontFamily: "Rubik_400Regular",
+    marginBottom: 20,
+    paddingHorizontal: 12,
+  },
+  sectionTitle: {
+    color: C.text,
+    fontSize: 19,
+    fontFamily: "PlayfairDisplay_700Bold",
     marginBottom: 10,
+    marginTop: 8,
+  },
+  card: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 14,
+    marginBottom: 20,
+  },
+
+  // Balance
+  balanceCard: {
+    borderRadius: 18,
+    padding: 18,
+  },
+  balanceLabel: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 14,
+    fontFamily: "Rubik_400Regular",
   },
   balanceRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
-  },
-  coinIcon: {
-    marginRight: 10,
+    alignItems: "baseline",
+    gap: 10,
+    marginTop: 6,
+    marginBottom: 16,
   },
   balanceAmount: {
-    color: "#EC9A15",
-    fontSize: 42,
-    fontWeight: "bold",
-    letterSpacing: 1,
+    color: C.text,
+    fontSize: 36,
+    fontFamily: "Rubik_700Bold",
   },
-  walletActions: {
+  balanceUnit: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 15,
+    fontFamily: "Rubik_500Medium",
+  },
+  balanceActions: {
     flexDirection: "row",
-    width: "100%",
     gap: 12,
-    flexWrap: "wrap",
-    justifyContent: "center",
   },
   addMoneyButton: {
     flex: 1,
-    minWidth: 100,
-    backgroundColor: "#FF6B35",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     paddingVertical: 12,
     borderRadius: 12,
-    gap: 8,
-    shadowColor: "#FF6B35",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    backgroundColor: C.bg,
   },
-  addMoneyButtonText: {
-    color: "#fff",
+  addMoneyText: {
+    color: C.text,
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "Rubik_600SemiBold",
   },
   withdrawButton: {
     flex: 1,
-    minWidth: 100,
-    backgroundColor: "#EC9A15",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     paddingVertical: 12,
     borderRadius: 12,
-    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.18)",
   },
-  withdrawButtonText: {
-    color: "#fff",
+  withdrawText: {
+    color: C.text,
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "Rubik_600SemiBold",
   },
-  earnMoreButton: {
-    flex: 1,
-    minWidth: 100,
-    backgroundColor: "transparent",
+  earnLink: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
     paddingVertical: 12,
-    borderRadius: 12,
+  },
+  earnLinkText: {
+    color: C.accent,
+    fontSize: 14,
+    fontFamily: "Rubik_500Medium",
+  },
+
+  // Payment methods
+  emptyMethods: {
+    alignItems: "center",
+    paddingVertical: 16,
+    gap: 10,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.accentSoft,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyMethodsText: {
+    color: C.faint,
+    fontSize: 14,
+    fontFamily: "Rubik_400Regular",
+  },
+  addMethodButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#EC9A15",
-    gap: 8,
+    borderColor: C.accent,
+    backgroundColor: C.accentSoft,
   },
-  earnMoreText: {
-    color: "#EC9A15",
+  addMethodText: {
+    color: C.accent,
     fontSize: 15,
-    fontWeight: "700",
+    fontFamily: "Rubik_600SemiBold",
+  },
+
+  // History card (top piece, rows, bottom piece)
+  historyTop: {
+    backgroundColor: C.card,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 12,
+    marginTop: 8,
+  },
+  historyHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  historyTitle: {
+    color: C.text,
+    fontSize: 19,
+    fontFamily: "PlayfairDisplay_700Bold",
+  },
+  historyCount: {
+    color: C.faint,
+    fontSize: 13,
+    fontFamily: "Rubik_400Regular",
   },
   filterContainer: {
     flexDirection: "row",
-    backgroundColor: "#1A1A1A",
+    backgroundColor: C.cardInner,
     borderRadius: 12,
     padding: 4,
-    marginBottom: 20,
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 9,
     alignItems: "center",
     borderRadius: 8,
   },
   activeFilterTab: {
-    backgroundColor: "#252525",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: C.accentSoft,
   },
   filterText: {
-    color: "#888",
+    color: C.faint,
     fontSize: 14,
-    fontWeight: "600",
+    fontFamily: "Rubik_600SemiBold",
   },
   activeFilterText: {
-    color: "#fff",
+    color: C.accent,
   },
-  transactionsContainer: {
-    marginTop: 10,
-  },
-  sectionTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 16,
-  },
-  transactionCard: {
+  txRow: {
     flexDirection: "row",
-    backgroundColor: "#252525",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(236, 154, 21, 0.1)",
+    backgroundColor: C.card,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.border,
   },
   txIconContainer: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "rgba(236, 154, 21, 0.15)",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: C.accentSoft,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 14,
+    marginRight: 12,
   },
   txDetails: {
     flex: 1,
     marginRight: 10,
   },
   txTitle: {
-    color: "#fff",
+    color: C.text,
     fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontFamily: "Rubik_600SemiBold",
   },
   txDesc: {
-    color: "#aaa",
+    color: C.muted,
     fontSize: 12,
-    marginBottom: 6,
+    fontFamily: "Rubik_400Regular",
+    marginTop: 2,
   },
   txDate: {
-    color: "#999",
+    color: C.faint,
     fontSize: 11,
+    fontFamily: "Rubik_400Regular",
+    marginTop: 4,
   },
   txAmountContainer: {
     alignItems: "flex-end",
   },
   txAmount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 2,
+    fontSize: 16,
+    fontFamily: "Rubik_700Bold",
   },
   txCoinText: {
-    color: "#888",
+    color: C.faint,
     fontSize: 11,
+    fontFamily: "Rubik_400Regular",
+    marginTop: 2,
   },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 40,
+    paddingVertical: 36,
+    backgroundColor: C.card,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: C.border,
   },
   emptyStateText: {
-    color: "#999",
+    color: C.faint,
     fontSize: 15,
     marginTop: 12,
+    fontFamily: "Rubik_400Regular",
+  },
+  historyBottom: {
+    backgroundColor: C.card,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: C.border,
+    marginBottom: 20,
+    minHeight: 8,
+  },
+  loadMore: {
+    alignItems: "center",
+    paddingVertical: 16,
+  },
+  loadMoreText: {
+    color: C.accent,
+    fontSize: 15,
+    fontFamily: "Rubik_600SemiBold",
+  },
+
+  // Error state
+  errorState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  errorText: {
+    color: C.muted,
+    marginTop: 12,
+    textAlign: "center",
+    fontFamily: "Rubik_400Regular",
+  },
+  retryText: {
+    color: C.accent,
+    fontSize: 16,
+    fontFamily: "Rubik_600SemiBold",
   },
 });

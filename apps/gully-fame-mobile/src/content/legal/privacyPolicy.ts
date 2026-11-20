@@ -192,12 +192,12 @@ export const PRIVACY_POLICY: LegalSection[] = [
     heading: "GRIEVANCE OFFICER AND CONTACT",
     body: [
       { t: "p", x: "For privacy‑related queries, complaints, or requests, contact:" },
-      { t: "p", x: "Data Protection Officer / Privacy Officer / Grievance Officer" },
+      { t: "p", x: "Grievance Officer" },
       { t: "p", x: "Name: Dhruv Kathuria" },
       { t: "p", x: "Email: admin@gullyfame.com" },
       { t: "p", x: "Phone: +91 98212 34605" },
-      { t: "p", x: "Address: Gully Fame India Private Limited, House 55B, Ground Floor, Najafgarh Road, (West Delhi) Delhi - 110015" },
-      { t: "p", x: "GullyFame India will acknowledge and address grievances within timelines prescribed by applicable law and the applicable Grievance Redressal Policy." },
+      { t: "p", x: "Address: GULLYFAME INDIA PRIVATE LIMITED, Ground Floor, 55 B, House 55B, Satguru Ram Singh Marg, Travel Masti, Najafgarh Road Industrial Area, New Delhi, West Delhi, Delhi, 110015" },
+      { t: "p", x: "GullyFame India will acknowledge each grievance within 24 hours of receiving it and resolve it within 15 days, as required under the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021." },
     ],
   },
   {

@@ -17,6 +17,7 @@ export interface KycRecord {
   docType: KycDocType;
   frontImage: string;
   backImage: string;
+  selfieImage?: string;
   status: KycStatusValue;
   reason: string;
   submittedAt: string;
@@ -41,6 +42,7 @@ export async function submitKyc(input: {
   docType: KycDocType;
   frontImageUri: string;
   backImageUri?: string | null;
+  selfieImageUri?: string | null;
   onProgress?: (percentage: number) => void;
 }): Promise<KycRecord> {
   const form = new FormData();
@@ -55,6 +57,14 @@ export async function submitKyc(input: {
       uri: input.backImageUri,
       name: fileNameFromUri(input.backImageUri, "jpg"),
       type: guessMimeType(input.backImageUri, "image/jpeg"),
+    } as any);
+  }
+
+  if (input.selfieImageUri) {
+    form.append("selfieImage", {
+      uri: input.selfieImageUri,
+      name: fileNameFromUri(input.selfieImageUri, "jpg"),
+      type: guessMimeType(input.selfieImageUri, "image/jpeg"),
     } as any);
   }
 

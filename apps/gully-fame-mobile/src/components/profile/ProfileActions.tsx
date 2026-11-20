@@ -61,27 +61,16 @@ export const OwnProfileActions = memo(function OwnProfileActions({
   /** Opens the profile editor. Defaults to the Account Center screen. */
   onEditProfile?: () => void;
 }) {
-  const [contactVisible, setContactVisible] = useState(false);
-
   const share = useCallback(() => {
     if (!userId) return;
     Share.share({ message: getProfileShareMessage(userId, displayName) }).catch(() => {});
   }, [userId, displayName]);
 
   return (
-    <>
-      <View style={styles.row}>
-        <Button testID="profile-edit" label="Edit profile" onPress={onEditProfile ?? (() => router.push("/(main)/account-center" as any))} />
-        <Button testID="profile-share" label="Share profile" onPress={share} disabled={!userId} />
-        <Button testID="profile-contact" label="Contact" onPress={() => setContactVisible(true)} />
-      </View>
-      <ContactSheet
-        visible={contactVisible}
-        onClose={() => setContactVisible(false)}
-        contact={contact}
-        isOwn
-      />
-    </>
+    <View style={styles.row}>
+      <Button testID="profile-edit" label="Edit profile" onPress={onEditProfile ?? (() => router.push("/(main)/account-center" as any))} />
+      <Button testID="profile-share" label="Share profile" onPress={share} disabled={!userId} />
+    </View>
   );
 });
 

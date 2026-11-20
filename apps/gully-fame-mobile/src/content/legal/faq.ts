@@ -26,7 +26,7 @@ export const FAQS: LegalSection[] = [
     number: "3",
     heading: "What is required to register on GullyFame India?",
     body: [
-      { t: "p", x: "To register, you must provide a valid mobile number or email address, create a secure password, and complete any required verification steps (such as OTP‑based authentication). You warrant that all information provided is true, accurate, current, and complete. Fictitious, automated, or fraudulent registrations will result in immediate suspension or permanent deactivation of the account.." },
+      { t: "p", x: "To register, you must provide a valid mobile number or email address, create a secure password, and complete any required verification steps (such as OTP‑based authentication). You warrant that all information provided is true, accurate, current, and complete. Fictitious, automated, or fraudulent registrations will result in immediate suspension or permanent deactivation of the account." },
     ],
   },
   {
@@ -119,7 +119,7 @@ export const FAQS: LegalSection[] = [
     number: "13",
     heading: "What is the Grievance‑Redressal Mechanism and response timeline?",
     body: [
-      { t: "p", x: "In compliance with the IT Act and the Intermediary Guidelines, 2021, the Company has appointed a Grievance Officer whose contact details are available on the App and the website. Users may lodge complaints regarding content, privacy, or any other grievance, and the Grievance Officer shall acknowledge the complaint within 24 hours and seek to resolve it within 72 hours." },
+      { t: "p", x: "In compliance with the IT Act and the Intermediary Guidelines, 2021, the Company has appointed a Grievance Officer whose contact details are available on the App and the website. Users may lodge complaints regarding content, privacy, or any other grievance, and the Grievance Officer shall acknowledge the complaint within 24 hours and resolve it within 15 days." },
     ],
   },
   {

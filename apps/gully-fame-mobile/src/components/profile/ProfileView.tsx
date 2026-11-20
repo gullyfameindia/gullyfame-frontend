@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Directions, Gesture, GestureDetector } from "react-native-gesture-handler";
 import { ProfileMediaItem, ProfileMediaTile } from "./ProfileMediaTile";
@@ -47,6 +48,8 @@ export interface ProfileTab {
   emptyText?: string;
   /** Own posts only: long press quick actions and the "Create your first post" button. */
   ownContent?: boolean;
+  /** Shows a lock next to the label (private tabs). Only used with textTabs. */
+  locked?: boolean;
 }
 
 interface Props {
@@ -59,13 +62,22 @@ interface Props {
   unavailable?: boolean;
   /** Owner id passed to the reel viewer so it opens this profile's reels. */
   ownerId: string;
+  /** Tabs show their text label (with a lock where set) instead of the icon. */
+  textTabs?: boolean;
 }
 
 type Row = { type: "top" } | { type: "tabs" } | { type: "row"; key: string; items: ProfileMediaItem[] } | { type: "state" };
 
 const Skeleton = ({ style }: { style: any }) => <View style={[styles.skeleton, style]} />;
 
-export default function ProfileView({ top, tabs, canCreatePost, unavailable, ownerId }: Props) {
+export default function ProfileView({
+  top,
+  tabs,
+  canCreatePost,
+  unavailable,
+  ownerId,
+  textTabs = false,
+}: Props) {
   const insets = useSafeAreaInsets();
   const { width, height: windowHeight } = useWindowDimensions();
   const tileSize = Math.floor((width - GAP * 2) / 3);
@@ -177,19 +189,33 @@ export default function ProfileView({ top, tabs, canCreatePost, unavailable, own
       // Top padding keeps the icons below the status bar once the tab bar is pinned.
       style={[styles.tabs, { paddingTop: tabsStuck ? insets.top : 0 }]}
     >
-      {tabs.map(({ key, label, Icon }) => {
+      {tabs.map(({ key, label, Icon, locked }) => {
         const active = key === tabKey;
+        const color = active ? "#fff" : "rgba(255,255,255,0.45)";
         return (
           <TouchableOpacity
             key={key}
-            style={styles.tab}
+            style={[styles.tab, textTabs && styles.tabTextLayout]}
             onPress={() => switchTab(key)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             accessibilityLabel={label}
           >
-            <Icon size={23} color={active ? "#fff" : "rgba(255,255,255,0.45)"} />
-            <View style={[styles.indicator, active && styles.indicatorActive]} />
+            {textTabs ? (
+              <View style={styles.textTabRow}>
+                <Text style={[styles.textTab, active && styles.textTabActive, { color }]}>{label}</Text>
+                {locked ? <Ionicons name="lock-closed" size={13} color={color} /> : null}
+              </View>
+            ) : (
+              <Icon size={23} color={color} />
+            )}
+            <View
+              style={[
+                styles.indicator,
+                textTabs && styles.indicatorTextLayout,
+                active && styles.indicatorActive,
+              ]}
+            />
           </TouchableOpacity>
         );
       })}
@@ -272,6 +298,7 @@ export default function ProfileView({ top, tabs, canCreatePost, unavailable, own
             height={tileHeight}
             onPress={openItem}
             onLongPress={tab?.ownContent ? ownActions : undefined}
+            reference={textTabs}
           />
         ))}
       </View>
@@ -330,6 +357,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(255,255,255,0.15)",
   },
   tab: { flex: 1, alignItems: "center", paddingTop: 12 },
+  textTabRow: { flexDirection: "row", alignItems: "center", gap: 5, paddingBottom: 2 },
+  textTab: { fontSize: 17, fontWeight: "600" },
+  textTabActive: { fontWeight: "700" },
+  tabTextLayout: { paddingTop: 14 },
+  indicatorTextLayout: { width: "100%", height: 3, marginTop: 12 },
   indicator: { marginTop: 10, height: 2.5, width: "60%", borderRadius: 2, backgroundColor: "transparent" },
   indicatorActive: { backgroundColor: ACCENT },
   gridRow: { flexDirection: "row", gap: GAP, marginTop: GAP },

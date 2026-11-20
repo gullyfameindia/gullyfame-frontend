@@ -1,23 +1,33 @@
 // File Route: apps/gully-fame-mobile/components/ProfileBurgerMenuModal.tsx
 
 import { router } from "expo-router";
-import { openOwnProfile } from "@/utils/openProfile";
-import { styles } from "./styles";
-import {
-  Modal,
-  TouchableOpacity,
-  View,
-  Text,
-  Image,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
-import { Svg, Path, Circle, Polyline, Line, Text as SvgText } from "react-native-svg";
+import { Modal, TouchableOpacity, View, Text, Image, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { ProfileData } from "@/components/profile/shared/profileHooks";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { getMyKyc } from "@/api/services/kycService";
 import { getWalletSummary } from "@/api/services/walletService";
-import { apiGet } from "@/api/client";
+import { getMyCompetitions } from "@/api/services/competitionService";
+import { toastError } from "@/components/ui/Toast";
+import ComingSoonPopup from "@/components/ui/ComingSoonPopup";
+import { apiGet, getErrorMessage } from "@/api/client";
+
+// Same brown + orange palette as the rest of the app.
+const C = {
+  bg: "#3C2610",
+  card: "#1A1A1A",
+  inner: "#252525",
+  border: "#2A2A2A",
+  accent: "#EC9A15",
+  accentSoft: "rgba(236, 154, 21, 0.15)",
+  danger: "#FF6B6B",
+  dangerSoft: "rgba(255, 107, 107, 0.12)",
+  success: "#22C55E",
+  text: "#FFFFFF",
+  muted: "#CAD7D8",
+  faint: "#8A8F90",
+};
 
 interface ProfileBurgerMenuModalProps {
   isVisible: boolean;
@@ -34,11 +44,36 @@ interface UserStats {
   totalTips: number;
 }
 
-function ProfileBurgerMenuModal({
-  isVisible,
-  onClose = () => {},
-  profileData,
-}: ProfileBurgerMenuModalProps) {
+type IconName = keyof typeof Ionicons.glyphMap;
+
+type MenuItem = {
+  id: string;
+  label: string;
+  icon: IconName;
+  path: string;
+  danger?: boolean;
+};
+
+const PROFILE_ITEMS: MenuItem[] = [
+  { id: "account-center", label: "Account Center", icon: "person-circle-outline", path: "/(main)/account-center" },
+  { id: "history", label: "History", icon: "time-outline", path: "/(main)/history" },
+  { id: "saved-posts-reels", label: "Save Posts", icon: "bookmark-outline", path: "/(main)/saved" },
+  { id: "invite-your-friend", label: "Invite Your Friend", icon: "person-add-outline", path: "/(main)/invite-friend" },
+  { id: "downloads", label: "Downloads", icon: "download-outline", path: "/(main)/downloads" },
+];
+
+const SETTINGS_ITEMS: MenuItem[] = [
+  { id: "help-and-support", label: "Help & Support", icon: "help-circle-outline", path: "/(main)/settings/help-support" },
+  { id: "faqs", label: "FAQs", icon: "chatbubble-ellipses-outline", path: "/(main)/faq" },
+  { id: "privacy-policy", label: "Privacy Policy", icon: "lock-closed-outline", path: "/(main)/privacy-policy" },
+  { id: "terms-of-service", label: "Terms of Service", icon: "document-text-outline", path: "/(main)/terms-of-service" },
+  { id: "blocked-users", label: "Blocked Users", icon: "ban-outline", path: "/(main)/settings/blocked-users" },
+  { id: "kyc-status", label: "KYC Status", icon: "shield-checkmark-outline", path: "/(main)/settings/kyc-status" },
+  { id: "about", label: "About", icon: "information-circle-outline", path: "/(main)/settings/about" },
+  { id: "delete-account", label: "Delete Account", icon: "trash-outline", path: "/(main)/settings/delete-account", danger: true },
+];
+
+function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: ProfileBurgerMenuModalProps) {
   const [userStats, setUserStats] = useState<UserStats>({
     competitionCount: 0,
     coinsEarned: 0,
@@ -47,9 +82,27 @@ function ProfileBurgerMenuModal({
     totalEarnings: 0,
     totalTips: 0,
   });
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
+  const [noCompetitionVisible, setNoCompetitionVisible] = useState(false);
 
-  // ✅ Fetch real-time user statistics from backend
+  // Leaderboard is not ready yet: close the menu and show the coming-soon popup.
+  // Opens the leaderboard of your current competition: a live one first, otherwise the latest you joined.
+  const openLeaderboardRank = async (close: () => void) => {
+    try {
+      const { competitions } = await getMyCompetitions(1, 20);
+      const target = competitions.find((c) => c.status === "LIVE") ?? competitions[0];
+      close();
+      setTimeout(() => {
+        if (target) router.push(`/(main)/leaderboard/${target._id}` as any);
+        else setNoCompetitionVisible(true);
+      }, 120);
+    } catch (e) {
+      toastError(getErrorMessage(e));
+    }
+  };
+
+  // Fetch real-time user statistics from backend
   const fetchUserStats = async () => {
     setLoading(true);
     try {
@@ -81,242 +134,378 @@ function ProfileBurgerMenuModal({
     }
   }, [isVisible]);
 
-  // ✅ FIXED: Pass metadata query state parameter to capture deep-back history intent
+  // Pass a query flag so the target screen knows it was opened from the menu.
   const handleNavigation = (path: string) => {
     onClose();
-    
-    // Smooth transition buffer queue
+    // Short delay so the drawer closes before the new screen opens.
     setTimeout(() => {
       router.push({
         pathname: path,
-        params: { fromBurgerMenu: "true" }
+        params: { fromBurgerMenu: "true" },
       } as any);
     }, 120);
   };
 
-  return (
-    <Modal
-      visible={isVisible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
+  const kycLabel = userStats.kycStatus.charAt(0).toUpperCase() + userStats.kycStatus.slice(1);
+  const kycColor = userStats.kycStatus === "approved" ? C.success : C.accent;
+
+  const displayName =
+    profileData.firstName && profileData.lastName
+      ? `${profileData.firstName} ${profileData.lastName}`
+      : profileData.firstName || profileData.lastName || "User";
+
+  const renderItem = (item: MenuItem, extra?: React.ReactNode) => (
+    <TouchableOpacity
+      key={item.id}
+      testID={`burger-menu-${item.id}`}
+      style={styles.item}
+      onPress={() => handleNavigation(item.path)}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
     >
-      <TouchableOpacity
-        style={styles.menuOverlay}
-        activeOpacity={1}
-        onPress={onClose}
-      >
-        <View style={styles.menuContainer}>
-          {/* Profile Section */}
-          <View style={styles.menuProfileSection}>
-            {profileData.profileImage ? (
-              <Image
-                source={{ uri: profileData.profileImage }}
-                style={styles.menuProfileImage}
-              />
-            ) : (
-              <Image
-                source={require("@assets/images/default-avatar.png")}
-                style={styles.menuProfileImage}
-              />
-            )}
-            <View style={styles.menuProfileNameRow}>
-              <Text style={styles.menuProfileName}>
-                {profileData.firstName && profileData.lastName
-                  ? `${profileData.firstName} ${profileData.lastName}`
-                  : profileData.firstName || profileData.lastName || "User"}
-              </Text>
-              {profileData.isVerified && (
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" style={styles.menuVerifiedBadge}>
-                  <Path d="M21.5609 10.7386L20.2009 9.15859C19.9409 8.85859 19.7309 8.29859 19.7309 7.89859V6.19859C19.7309 5.13859 18.8609 4.26859 17.8009 4.26859H16.1009C15.7109 4.26859 15.1409 4.05859 14.8409 3.79859L13.2609 2.43859C12.5709 1.84859 11.4409 1.84859 10.7409 2.43859L9.17086 3.80859C8.87086 4.05859 8.30086 4.26859 7.91086 4.26859H6.18086C5.12086 4.26859 4.25086 5.13859 4.25086 6.19859V7.90859C4.25086 8.29859 4.04086 8.85859 3.79086 9.15859L2.44086 10.7486C1.86086 11.4386 1.86086 12.5586 2.44086 13.2486L3.79086 14.8386C4.04086 15.1386 4.25086 15.6986 4.25086 16.0886V17.7986C4.25086 18.8586 5.12086 19.7286 6.18086 19.7286H7.91086C8.30086 19.7286 8.87086 19.9386 9.17086 20.1986L10.7509 21.5586C11.4409 22.1486 12.5709 22.1486 13.2709 21.5586L14.8509 20.1986C15.1509 19.9386 15.7109 19.7286 16.1109 19.7286H17.8109C18.8709 19.7286 19.7409 18.8586 19.7409 17.7986V16.0986C19.7409 15.7086 19.9509 15.1386 20.2109 14.8386L21.5709 13.2586C22.1509 12.5686 22.1509 11.4286 21.5609 10.7386ZM16.1609 10.1086L11.3309 14.9386C11.1909 15.0786 11.0009 15.1586 10.8009 15.1586C10.6009 15.1586 10.4109 15.0786 10.2709 14.9386L7.85086 12.5186C7.56086 12.2286 7.56086 11.7486 7.85086 11.4586C8.14086 11.1686 8.62086 11.1686 8.91086 11.4586L10.8009 13.3486L15.1009 9.04859C15.3909 8.75859 15.8709 8.75859 16.1609 9.04859C16.4509 9.33859 16.4509 9.81859 16.1609 10.1086Z" fill="#ec9a15" />
-                </Svg>
-              )}
+      <View style={[styles.itemIcon, item.danger && styles.itemIconDanger]}>
+        <Ionicons name={item.icon} size={18} color={item.danger ? C.danger : C.accent} />
+      </View>
+      <Text style={[styles.itemText, item.danger && styles.itemTextDanger]}>{item.label}</Text>
+      {extra}
+      <Ionicons name="chevron-forward" size={16} color={C.faint} />
+    </TouchableOpacity>
+  );
+
+  return (
+    <>
+      <Modal visible={isVisible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+        <View style={styles.backdrop}>
+          {/* Drawer */}
+          <View style={[styles.drawer, { paddingTop: insets.top + 8, paddingBottom: insets.bottom }]}>
+            <View style={styles.drawerTop}>
+              <Text style={styles.drawerTitle}>Settings and activity</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn} accessibilityRole="button" accessibilityLabel="Close menu">
+                <Ionicons name="close" size={20} color={C.text} />
+              </TouchableOpacity>
             </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.drawerContent}>
+              {/* Profile header */}
+              <View style={styles.profile}>
+                <View style={styles.avatarRing}>
+                  <Image
+                    source={
+                      profileData.profileImage
+                        ? { uri: profileData.profileImage }
+                        : require("@assets/images/default-avatar.png")
+                    }
+                    style={styles.avatar}
+                  />
+                </View>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
+                  {profileData.isVerified && (
+                    <Ionicons name="checkmark-circle" size={18} color={C.accent} />
+                  )}
+                </View>
+              </View>
+
+              {/* Stat tiles */}
+              <View style={styles.statRow}>
+                <TouchableOpacity style={styles.statTile} onPress={() => handleNavigation("/(main)/coins")} activeOpacity={0.7}>
+                  {loading ? (
+                    <ActivityIndicator size="small" color={C.accent} />
+                  ) : (
+                    <Text style={styles.statValue}>{userStats.coinsEarned.toLocaleString("en-IN")}</Text>
+                  )}
+                  <Text style={styles.statLabel}>Coins</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.statTile}
+                  onPress={() => openLeaderboardRank(onClose)}
+                  activeOpacity={0.7}
+                  testID="burger-menu-leaderboard-rank"
+                >
+                  {loading ? (
+                    <ActivityIndicator size="small" color={C.accent} />
+                  ) : (
+                    <Text style={styles.statValue}>{userStats.competitionCount > 0 ? userStats.competitionCount : "--"}</Text>
+                  )}
+                  <Text style={styles.statLabel}>Competitions</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.statTile} onPress={() => handleNavigation("/(main)/settings/kyc-status")} activeOpacity={0.7}>
+                  {loading ? (
+                    <ActivityIndicator size="small" color={C.accent} />
+                  ) : (
+                    <Text
+                      style={[styles.statValue, { color: kycColor, fontSize: 13, textAlign: "center" }]}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.7}
+                    >
+                      {kycLabel}
+                    </Text>
+                  )}
+                  <Text style={styles.statLabel}>KYC</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Profile */}
+              <Text style={styles.sectionTitle}>Profile</Text>
+              <View style={styles.group}>{PROFILE_ITEMS.map((item) => renderItem(item))}</View>
+
+              {/* Rewards */}
+              <Text style={styles.sectionTitle}>Rewards</Text>
+              <View style={styles.group}>
+                <TouchableOpacity
+                  testID="burger-menu-leaderboard-item"
+                  style={styles.item}
+                  onPress={() => openLeaderboardRank(onClose)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Leaderboard rank"
+                >
+                  <View style={styles.itemIcon}>
+                    <Ionicons name="trophy-outline" size={18} color={C.accent} />
+                  </View>
+                  <Text style={styles.itemText}>Leaderboard Rank</Text>
+                  <Ionicons name="chevron-forward" size={16} color={C.faint} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="burger-menu-coins-earned"
+                  style={styles.item}
+                  onPress={() => handleNavigation("/(main)/coins")}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Coins earned"
+                >
+                  <View style={styles.itemIcon}>
+                    <Ionicons name="cash-outline" size={18} color={C.accent} />
+                  </View>
+                  <Text style={styles.itemText}>Coins Earned</Text>
+                  <Text style={styles.itemHint}>{`${userStats.coinsEarned.toLocaleString("en-IN")}`}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={C.faint} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Settings & help */}
+              <Text style={styles.sectionTitle}>Settings & Help</Text>
+              <View style={styles.group}>{SETTINGS_ITEMS.map((item) => renderItem(item))}</View>
+
+              {/* Logout */}
+              <TouchableOpacity
+                testID="burger-menu-logout"
+                style={styles.logout}
+                onPress={async () => {
+                  onClose();
+                  const { performLogout } = await import("@utils/logout");
+                  await performLogout();
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+              >
+                <Ionicons name="log-out-outline" size={18} color={C.danger} />
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 40 }} />
+            </ScrollView>
           </View>
 
-          <View style={styles.menuDividerGold} />
-
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.menuScrollView}>
-            {/* Profile Management Section */}
-            <Text style={styles.menuSectionTitle}>Profile Management</Text>
-
-            <TouchableOpacity testID="burger-menu-account-center" style={styles.menuItem} onPress={() => handleNavigation(`/(main)/account-center`)}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M12 11v8M12 19l-3-3m3 3l3-3" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Account Center</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-history" style={styles.menuItem} onPress={() => handleNavigation("/(main)/history")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>History</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-leaderboard-rank" style={styles.menuItem} onPress={() => {
-              onClose();
-              setTimeout(() => openOwnProfile(), 120);
-            }}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <View style={styles.menuItemWithBadge}>
-                <Text style={styles.menuItemText}>Leaderboard Rank</Text>
-                {loading ? (
-                  <ActivityIndicator size="small" color="#EC9A15" />
-                ) : (
-                  <Text style={styles.rankBadgeText}>{userStats.competitionCount > 0 ? `${userStats.competitionCount} comps` : "--"}</Text>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-coins-earned" style={styles.menuItem} onPress={() => handleNavigation("/(main)/history")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
-                <Path d="M12 6v6l4 2" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
-              </Svg>
-              <View style={styles.menuItemWithBadge}>
-                <Text style={styles.menuItemText}>Coins Earned</Text>
-                {loading ? (
-                  <ActivityIndicator size="small" color="#EC9A15" />
-                ) : (
-                  <Text style={styles.rankBadgeText}>
-                    {`${userStats.coinsEarned.toLocaleString()} coins`}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-saved-posts-reels" style={styles.menuItem} onPress={() => handleNavigation("/(main)/saved")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Saved Posts / Reels</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-invite-your-friend" style={styles.menuItem} onPress={() => handleNavigation("/(main)/invite-friend")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Circle cx="9" cy="7" r="4" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Invite Your Friend</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-downloads" style={styles.menuItem} onPress={() => handleNavigation("/(main)/downloads")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Polyline points="7 10 12 15 17 10" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Line x1="12" y1="15" x2="12" y2="3" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Downloads</Text>
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
-            {/* Settings & Help Section */}
-            <Text style={styles.menuSectionTitle}>Settings & Help</Text>
-
-            <TouchableOpacity testID="burger-menu-help-and-support" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/help-support")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
-                <Path d="M12 16v-4M12 8h.01" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Help & Support</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-faqs" style={styles.menuItem} onPress={() => handleNavigation("/(main)/faq")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
-                <SvgText x="12" y="16" textAnchor="middle" stroke="#EC9A15" fill="#EC9A15" fontSize="12" fontWeight="bold">?</SvgText>
-                <Path d="M12 16v-4M12 8h.01" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>FAQs</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-privacy-policy" style={styles.menuItem} onPress={() => handleNavigation("/(main)/privacy-policy")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Privacy Policy</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-terms-of-service" style={styles.menuItem} onPress={() => handleNavigation("/(main)/terms-of-service")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Terms of Service</Text>
-            </TouchableOpacity>
-            
-
-            <TouchableOpacity testID="burger-menu-blocked-users" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/blocked-users")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
-                <Path d="M4.9 4.9l14.2 14.2" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Blocked Users</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-delete-account" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/delete-account")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>Delete Account</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-kyc-status" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/kyc-status")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M9 12l2 2 4-4" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                <Path d="M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <View style={styles.menuItemWithBadge}>
-                <Text style={styles.menuItemText}>KYC Status</Text>
-                {loading ? (
-                  <ActivityIndicator size="small" color="#EC9A15" />
-                ) : (
-                  <Text style={[styles.rankBadgeText, { color: userStats.kycStatus === "approved" ? "#22c55e" : "#EC9A15" }]}>
-                    {userStats.kycStatus.charAt(0).toUpperCase() + userStats.kycStatus.slice(1)}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity testID="burger-menu-about" style={styles.menuItem} onPress={() => handleNavigation("/(main)/settings/about")}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2} />
-                <Path d="M12 16v-4M12 8h.01" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" />
-              </Svg>
-              <Text style={styles.menuItemText}>About</Text>
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
-            <TouchableOpacity
-              testID="burger-menu-logout"
-              style={[styles.menuItem, styles.logoutItem]}
-              onPress={async () => {
-                onClose();
-                const { performLogout } = await import("@utils/logout");
-                await performLogout();
-              }}
-            >
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#FF6B6B" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-              <Text style={[styles.menuItemText, styles.logoutText]}>Logout</Text>
-            </TouchableOpacity>
-
-            <View style={{ height: 100 }} />
-          </ScrollView>
+          {/* Tap outside the drawer to close */}
+          <TouchableOpacity style={styles.scrim} activeOpacity={1} onPress={onClose} accessibilityLabel="Close menu" />
         </View>
-      </TouchableOpacity>
-    </Modal>
+      </Modal>
+
+      <ComingSoonPopup
+        visible={noCompetitionVisible}
+        title="No ranking yet"
+        message="Join a competition to see where you rank on its leaderboard."
+        icon="trophy-outline"
+        onClose={() => setNoCompetitionVisible(false)}
+      />
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  drawer: {
+    width: "84%",
+    maxWidth: 360,
+    height: "100%",
+    backgroundColor: C.bg,
+    borderTopRightRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 6, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 18,
+    elevation: 16,
+  },
+  drawerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 6,
+  },
+  drawerTitle: {
+    color: C.text,
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_700Bold",
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: C.inner,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  drawerContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  scrim: {
+    flex: 1,
+  },
+
+  // Profile
+  profile: {
+    alignItems: "center",
+    paddingVertical: 14,
+  },
+  avatarRing: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    borderWidth: 2,
+    borderColor: C.accent,
+    padding: 3,
+    marginBottom: 10,
+  },
+  avatar: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    maxWidth: "100%",
+  },
+  name: {
+    color: C.text,
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_700Bold",
+    flexShrink: 1,
+  },
+
+  // Stat tiles
+  statRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 6,
+  },
+  statTile: {
+    flex: 1,
+    backgroundColor: C.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    minHeight: 68,
+    justifyContent: "center",
+  },
+  statValue: {
+    color: C.text,
+    fontSize: 16,
+    fontFamily: "Rubik_700Bold",
+  },
+  statLabel: {
+    color: C.faint,
+    fontSize: 11,
+    marginTop: 4,
+    fontFamily: "Rubik_500Medium",
+  },
+
+  // Sections and items
+  sectionTitle: {
+    color: C.accent,
+    fontSize: 12,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    fontFamily: "Rubik_600SemiBold",
+    marginTop: 18,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  group: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    overflow: "hidden",
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.border,
+    gap: 12,
+  },
+  itemIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: C.accentSoft,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemIconDanger: {
+    backgroundColor: C.dangerSoft,
+  },
+  itemText: {
+    flex: 1,
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Rubik_500Medium",
+  },
+  itemTextDanger: {
+    color: C.danger,
+  },
+  itemHint: {
+    color: C.accent,
+    fontSize: 13,
+    fontFamily: "Rubik_600SemiBold",
+  },
+
+  // Logout
+  logout: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 22,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.danger,
+    paddingVertical: 14,
+    backgroundColor: C.dangerSoft,
+  },
+  logoutText: {
+    color: C.danger,
+    fontSize: 15,
+    fontFamily: "Rubik_600SemiBold",
+  },
+});
 
 export default ProfileBurgerMenuModal;

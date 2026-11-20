@@ -34,9 +34,11 @@ interface Props {
   height: number;
   onPress: (item: ProfileMediaItem) => void;
   onLongPress?: (item: ProfileMediaItem) => void;
+  /** Own-profile grid: no top-right badge, larger view count. */
+  reference?: boolean;
 }
 
-function ProfileMediaTileBase({ item, size, height, onPress, onLongPress }: Props) {
+function ProfileMediaTileBase({ item, size, height, onPress, onLongPress, reference }: Props) {
   const isPhoto = isPhotoItem(item);
   const videoUrl = isPhoto ? null : resolveMediaUrl(item.uri);
   const serverThumb = resolveMediaUrl(item.thumbnail);
@@ -105,7 +107,7 @@ function ProfileMediaTileBase({ item, size, height, onPress, onLongPress }: Prop
         <View style={styles.badge}>
           <MultiItemBadgeIcon size={15} />
         </View>
-      ) : !isPhoto ? (
+      ) : !isPhoto && !reference ? (
         <View style={styles.badge}>
           <PlayIcon size={14} color="#fff" />
         </View>
@@ -114,8 +116,8 @@ function ProfileMediaTileBase({ item, size, height, onPress, onLongPress }: Prop
       {views !== undefined ? (
         <LinearGradient colors={["transparent", "rgba(0,0,0,0.55)"]} style={styles.scrim}>
           <View style={styles.viewsRow}>
-            <EyeIcon size={13} color="#fff" />
-            <Text style={styles.viewsText} numberOfLines={1}>
+            <EyeIcon size={reference ? 17 : 13} color="#fff" />
+            <Text style={[styles.viewsText, reference && styles.viewsTextReference]} numberOfLines={1}>
               {formatCount(views)}
             </Text>
           </View>
@@ -128,7 +130,12 @@ function ProfileMediaTileBase({ item, size, height, onPress, onLongPress }: Prop
 export const ProfileMediaTile = memo(
   ProfileMediaTileBase,
   (a, b) =>
-    a.item === b.item && a.size === b.size && a.height === b.height && a.onPress === b.onPress && a.onLongPress === b.onLongPress
+    a.item === b.item &&
+    a.size === b.size &&
+    a.height === b.height &&
+    a.onPress === b.onPress &&
+    a.onLongPress === b.onLongPress &&
+    a.reference === b.reference
 );
 
 const styles = StyleSheet.create({
@@ -174,5 +181,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     flexShrink: 1,
+  },
+  viewsTextReference: {
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

@@ -19,8 +19,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { toBackendGender, genderLabel } from "@/api/services/userService";
 import { AUTH_RULES } from "@/api/services/authService";
-import { showToast, toastSuccess } from "@/components/ui/Toast";
-import { SelfieCaptureModal } from "@/components/kyc/SelfieCaptureModal";
+import { toastSuccess } from "@/components/ui/Toast";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
@@ -29,9 +28,13 @@ import * as ImagePicker from "expo-image-picker";
 import { authService } from "@api/services/authService";
 import { BackIcon, CameraIcon, EditIcon, LockIcon } from "@/icons";
 import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import DateOfBirthCalendar from "@/components/ui/DateOfBirthCalendar";
+import ChangeMobilePopup from "@/components/account/ChangeMobilePopup";
 
 
 export default function AccountCenterScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const fromVerified = params.fromVerified === "true";
   const fromKycFlow = params.fromKycFlow === "true";
@@ -47,7 +50,6 @@ export default function AccountCenterScreen() {
   const [role, setRole] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
-  const [selfieVisible, setSelfieVisible] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [slideAnim] = React.useState(() => new Animated.Value(0));
 
@@ -57,7 +59,13 @@ export default function AccountCenterScreen() {
   const [originalRole, setOriginalRole] = useState<string>("");
   const [originalEmail, setOriginalEmail] = useState<string>("");
   const [originalMobile, setOriginalMobile] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
+  const [fullNameInput, setFullNameInput] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<null | "gender" | "role">(null);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [mobilePopupVisible, setMobilePopupVisible] = useState(false);
+  // Public/private choice per field (email, mobile, gender, dob). Kept on this device only.
+  const [fieldPublic, setFieldPublic] = useState<Record<string, boolean>>({}); 
 
   // The screen re-reads the saved profile when it regains focus, but never while the user
   // is editing: a reload used to reset every typed value (for example the bio) on each keystroke.
@@ -73,9 +81,21 @@ export default function AccountCenterScreen() {
   useEffect(() => {
     profileImageRef.current = profileImage;
   }, [profileImage]);
+  // Full name box follows the saved first/last name whenever the user isn't typing in it.
+  useEffect(() => {
+    if (!isEditingRef.current) setFullNameInput(`${firstName} ${lastName}`.trim());
+  }, [firstName, lastName]);
 
   useEffect(() => {
     loadUserData();
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.getItem("accountFieldVisibility")
+      .then((raw) => {
+        if (raw) setFieldPublic(JSON.parse(raw));
+      })
+      .catch(() => {});
   }, []);
 
   // handlePickImage is re-created every render; the focus effect reads the latest one through a ref.
@@ -649,8 +669,9 @@ export default function AccountCenterScreen() {
 
   // Opens the front-camera selfie capture. The photo is not uploaded: the backend
   // has no selfie field on the KYC endpoint (see BACKEND GAPS).
+  // The selfie is taken and uploaded as part of KYC verification.
   const handleVerificationSelfie = () => {
-    setSelfieVisible(true);
+    router.push("/(main)/settings/kyc-status" as any);
   };
 
   const fullName = `${firstName} ${lastName}`.trim() || "User";
@@ -682,536 +703,317 @@ export default function AccountCenterScreen() {
     );
   }
 
+  const privacyFor = (key: string) => ({
+    isPublic: !!fieldPublic[key],
+    onToggle: () => {
+      const next = { ...fieldPublic, [key]: !fieldPublic[key] };
+      setFieldPublic(next);
+      AsyncStorage.setItem("accountFieldVisibility", JSON.stringify(next)).catch(() => {});
+    },
+  });
+
+  // Splits the single name box into first name (first word) and last name (the rest).
+  const handleFullNameChange = (text: string) => {
+    setFullNameInput(text);
+    const parts = text.trim().split(/\s+/).filter(Boolean);
+    setFirstName(parts[0] ?? "");
+    setLastName(parts.slice(1).join(" "));
+  };
+
+  const startEditing = () => {
+    if (!isEditing) handleUpdateProfile();
+  };
+
+  const roleLabel = role ? (role === "participant" ? "Participant" : "Fan") : "";
+  const threeWordsLabel = threeWords.filter((w) => w.trim()).join(" | ");
+
   return (
     <KeyboardAvoidingScreen style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
 
-      {}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
           onPress={() => router.back()}
-          style={styles.backButton}
+          style={styles.headerSide}
         >
           <BackIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Account Center</Text>
-        <View style={styles.backButton} />
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={isEditing ? "Cancel editing" : "Edit profile"}
+          hitSlop={10}
+          onPress={isEditing ? handleCancelEdit : handleUpdateProfile}
+          style={[styles.headerSide, styles.headerSideRight]}
+          disabled={isSaving}
+        >
+          <Text style={styles.headerAction}>{isEditing ? "Cancel" : "Edit"}</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          isEditing && { paddingBottom: 110 + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {}
-        <LinearGradient
-          colors={[
-            "rgba(236, 154, 21, 0.15)",
-            "rgba(236, 154, 21, 0.05)",
-            "transparent",
-          ]}
-          style={styles.profileHeaderGradient}
-        >
-          <View style={styles.profileHeader}>
-            <TouchableOpacity
-              onPress={handlePickImage}
-              style={styles.profileImageContainer}
-              activeOpacity={0.8}
-              disabled={isProcessingImage}
-            >
-              <View style={styles.profileImageWrapper}>
-                {profileImage ? (
-                  <Image
-                    source={{ uri: profileImage }}
-                    style={styles.profileImage}
-                    resizeMode="cover"
-                    onError={(error) => {
-                      setProfileImage(null);
-                    }}
-                    onLoadStart={() => {
-                      
-                    }}
-                    onLoadEnd={() => {
-                      
-                    }}
-                  />
-                ) : (
-                  <LinearGradient
-                    colors={["#EC9A15", "#FFB84D"]}
-                    style={styles.profileImagePlaceholder}
-                  >
-                    <Text style={styles.profileImageInitials}>
-                      {firstName.charAt(0).toUpperCase()}
-                      {lastName.charAt(0).toUpperCase()}
-                    </Text>
-                  </LinearGradient>
-                )}
-                <View style={styles.profileImageOverlay}>
-                  <View style={styles.editImageBadge}>
-                    <EditIcon color="#fff" />
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{fullName}</Text>
-              <View style={styles.profileEmailContainer}>
-                <Svg
-                  width={16}
-                  height={16}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  style={styles.emailIcon}
-                >
-                  <Path
-                    d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-                    stroke="#CAD7D8"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <Path
-                    d="M22 6l-10 7L2 6"
-                    stroke="#CAD7D8"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-                <Text style={styles.profileEmail}>{email || "No email"}</Text>
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
+        <Text style={styles.subtitle}>
+          Manage your personal information and keep your account secure.
+        </Text>
 
-        {}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <View style={styles.sectionTitleIcon}>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-                    stroke="#EC9A15"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <Path
-                    d="M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"
-                    stroke="#EC9A15"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </View>
-              <Text style={styles.sectionTitle}>Personal Details</Text>
-            </View>
-            {!isEditing && (
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel="Save profile"
-                style={styles.updateButtonIcon}
-                onPress={handleUpdateProfile}
-                activeOpacity={0.7}
-              >
-                <LinearGradient
-                  colors={["#EC9A15", "#FFB84D"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.updateButtonIconGradient}
-                >
-                  <EditIcon color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
+        {/* Profile summary */}
+        <Text style={styles.sectionTitle}>Profile Summary</Text>
+        <View style={[styles.card, styles.summaryCard]}>
+          <TouchableOpacity
+            onPress={handlePickImage}
+            activeOpacity={0.8}
+            disabled={isProcessingImage}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+          >
+            {profileImage ? (
+              <Image
+                source={{ uri: profileImage }}
+                style={styles.avatar}
+                resizeMode="cover"
+                onError={() => setProfileImage(null)}
+              />
+            ) : (
+              <LinearGradient colors={[C.accent, C.accentLight]} style={styles.avatar}>
+                <Text style={styles.avatarInitials}>
+                  {firstName.charAt(0).toUpperCase()}
+                  {lastName.charAt(0).toUpperCase()}
+                </Text>
+              </LinearGradient>
             )}
-          </View>
-
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardHeaderText}>
-                {isEditing
-                  ? "Edit your information"
-                  : "Your account information"}
-              </Text>
+            <View style={styles.avatarBadge}>
+              <EditIcon color="#fff" />
             </View>
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>First Name</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  placeholder="Enter first name"
-                  placeholderTextColor="#999"
-                />
-              ) : (
-                <Text style={styles.fieldValue}>{firstName || "Not set"}</Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Last Name</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  placeholder="Enter last name"
-                  placeholderTextColor="#999"
-                />
-              ) : (
-                <Text style={styles.fieldValue}>{lastName || "Not set"}</Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Email</Text>
-              {isEditing ? (
-                <View style={styles.inputWithVerify}>
-                  <TextInput
-                    style={styles.input}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder="Enter email"
-                    placeholderTextColor="#999"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                  />
-                </View>
-              ) : (
-                <Text style={styles.fieldValue}>{email || "Not set"}</Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Mobile Number</Text>
-              {isEditing ? (
-                <Text style={styles.fieldValue}>
-                  {mobile || "Not set"}
-                  {"\n"}Changing your mobile number isn&apos;t available yet.
-                </Text>
-              ) : (
-                <Text style={styles.fieldValue}>{mobile || "Not set"}</Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Date of Birth</Text>
-              {isEditing ? (
-                <TextInput
-                  style={styles.input}
-                  value={dateOfBirth}
-                  onChangeText={setDateOfBirth}
-                  placeholder="DD/MM/YYYY"
-                  placeholderTextColor="#999"
-                />
-              ) : (
-                <Text style={styles.fieldValue}>
-                  {dateOfBirth || "Not set"}
-                </Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Gender</Text>
-              {isEditing ? (
-                <View style={styles.genderContainer}>
-                  {["Male", "Female", "Non-binary", "Prefer not to say"].map(
-                    (g) => (
-                      <TouchableOpacity
-                        key={g}
-                        style={[
-                          styles.genderChip,
-                          gender === g && styles.genderChipActive,
-                        ]}
-                        onPress={() => setGender(g)}
-                      >
-                        <Text
-                          style={[
-                            styles.genderChipText,
-                            gender === g && styles.genderChipTextActive,
-                          ]}
-                        >
-                          {g}
-                        </Text>
-                      </TouchableOpacity>
-                    ),
-                  )}
-                </View>
-              ) : (
-                <Text style={styles.fieldValue}>{gender || "Not set"}</Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Role</Text>
-              {isEditing ? (
-                <View>
-                  <View style={styles.genderContainer}>
-                    {["participant", "fan"].map((r) => (
-                      <TouchableOpacity
-                        key={r}
-                        style={[
-                          styles.genderChip,
-                          role === r && styles.genderChipActive,
-                        ]}
-                        onPress={() => setRole(r)}
-                      >
-                        <Text
-                          style={[
-                            styles.genderChipText,
-                            role === r && styles.genderChipTextActive,
-                          ]}
-                        >
-                          {r === "participant" ? "Participant" : "Fan"}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              ) : (
-                <Text style={styles.fieldValue}>
-                  {role
-                    ? role === "participant"
-                      ? "Participant"
-                      : "Fan"
-                    : "Not set"}
-                </Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>Bio</Text>
-              {isEditing ? (
-                <TextInput
-                  style={[styles.input, styles.bioInput]}
-                  value={bio}
-                  onChangeText={setBio}
-                  placeholder="Enter your bio"
-                  placeholderTextColor="#999"
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-              ) : (
-                <Text style={styles.fieldValue}>{bio || "Not set"}</Text>
-              )}
-            </View>
-
-            {}
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>
-                Describe yourself in three words
-              </Text>
-              {isEditing ? (
-                <View style={styles.threeWordsInputContainer}>
-                  <TextInput
-                    style={styles.threeWordsInput}
-                    placeholder="1st word"
-                    placeholderTextColor="#999"
-                    value={threeWords[0]}
-                    onChangeText={(text) => {
-                      const newWords = [...threeWords];
-                      newWords[0] = text;
-                      setThreeWords(newWords);
-                    }}
-                  />
-                  <Text style={styles.threeWordsSeparator}>|</Text>
-                  <TextInput
-                    style={styles.threeWordsInput}
-                    placeholder="2nd word"
-                    placeholderTextColor="#999"
-                    value={threeWords[1]}
-                    onChangeText={(text) => {
-                      const newWords = [...threeWords];
-                      newWords[1] = text;
-                      setThreeWords(newWords);
-                    }}
-                  />
-                  <Text style={styles.threeWordsSeparator}>|</Text>
-                  <TextInput
-                    style={styles.threeWordsInput}
-                    placeholder="3rd word"
-                    placeholderTextColor="#999"
-                    value={threeWords[2]}
-                    onChangeText={(text) => {
-                      const newWords = [...threeWords];
-                      newWords[2] = text;
-                      setThreeWords(newWords);
-                    }}
-                  />
-                </View>
-              ) : (
-                <Text style={styles.fieldValue}>
-                  {threeWords.filter((w) => w.trim()).length > 0
-                    ? threeWords.filter((w) => w.trim()).join(" | ")
-                    : "Not set"}
-                </Text>
-              )}
-            </View>
-
-            {}
-            {isEditing && (
-              <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={handleCancelEdit}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.saveButton,
-                    (!hasChanges || isSaving) && styles.saveButtonDisabled,
-                  ]}
-                  onPress={handleSave}
-                  disabled={!hasChanges || isSaving}
-                  activeOpacity={0.7}
-                >
-                  <LinearGradient
-                    colors={
-                      !hasChanges || isSaving
-                        ? ["#666", "#666"]
-                        : ["#EC9A15", "#FFB84D"]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.saveButtonGradient}
-                  >
-                    {isSaving ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.saveButtonText}>Save Changes</Text>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
+          </TouchableOpacity>
+          <View style={styles.summaryText}>
+            <Text style={styles.summaryName} numberOfLines={1}>{fullName}</Text>
+            <Text style={styles.summarySub} numberOfLines={1}>{email || "No email"}</Text>
+            {!!roleLabel && (
+              <View style={styles.rolePill}>
+                <Text style={styles.rolePillText}>{roleLabel}</Text>
               </View>
             )}
           </View>
         </View>
 
-        {}
-        <View style={styles.section}>
-          <View style={styles.sectionTitleContainer}>
-            <View style={styles.sectionTitleIcon}>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z"
-                  stroke="#EC9A15"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <Path
-                  d="M7 11V7a5 5 0 0 1 10 0v4"
-                  stroke="#EC9A15"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-            </View>
-            <Text style={styles.sectionTitle}>Password and Security</Text>
-          </View>
+        {/* Personal details */}
+        <Text style={styles.sectionTitle}>Personal Details</Text>
+        <View style={[styles.card, styles.groupCard]}>
+          <Text style={styles.groupLabel}>Basic Info</Text>
 
-          <View style={[styles.card, styles.securityCard]}>
-            {}
-            <TouchableOpacity
-              style={styles.securityOption}
-              onPress={handleChangePassword}
-              activeOpacity={0.7}
-            >
-              <View style={styles.securityOptionLeft}>
-                <LinearGradient
-                  colors={[
-                    "rgba(236, 154, 21, 0.2)",
-                    "rgba(236, 154, 21, 0.1)",
-                  ]}
-                  style={styles.securityIconContainer}
-                >
-                  <LockIcon />
-                </LinearGradient>
-                <View style={styles.securityOptionText}>
-                  <Text style={styles.securityOptionTitle}>
-                    Change Password
-                  </Text>
-                  <Text style={styles.securityOptionSubtitle}>
-                    Update your password for better security
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.arrowContainer}>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M9 18l6-6-6-6"
-                    stroke="#EC9A15"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </View>
-            </TouchableOpacity>
+          <FieldRow label="Full name" value={fullNameInput} editing={isEditing} onPress={startEditing}>
+            <TextInput
+              style={styles.input}
+              value={fullNameInput}
+              onChangeText={handleFullNameChange}
+              placeholder="Enter full name"
+              placeholderTextColor={C.placeholder}
+            />
+          </FieldRow>
 
-            {}
-            <View style={styles.divider} />
+          <FieldRow
+            label="Date of birth"
+            privacy={privacyFor("dob")}
+            value={dateOfBirth}
+            editing={isEditing}
+            onPress={startEditing}
+          >
+            <DropdownTrigger
+              value={dateOfBirth}
+              placeholder="Select date of birth"
+              onPress={() => setCalendarVisible(true)}
+            />
+          </FieldRow>
 
-            {}
-            <TouchableOpacity
-              style={styles.securityOption}
-              onPress={handleVerificationSelfie}
-              activeOpacity={0.7}
-            >
-              <View style={styles.securityOptionLeft}>
-                <LinearGradient
-                  colors={[
-                    "rgba(236, 154, 21, 0.2)",
-                    "rgba(236, 154, 21, 0.1)",
-                  ]}
-                  style={styles.securityIconContainer}
-                >
-                  <CameraIcon />
-                </LinearGradient>
-                <View style={styles.securityOptionText}>
-                  <Text style={styles.securityOptionTitle}>
-                    Verification Selfie
-                  </Text>
-                  <Text style={styles.securityOptionSubtitle}>
-                    Verify your identity with a selfie
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.arrowContainer}>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M9 18l6-6-6-6"
-                    stroke="#EC9A15"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <FieldRow label="Gender" privacy={privacyFor("gender")} value={gender} editing={isEditing} onPress={startEditing}>
+            <DropdownTrigger value={gender} placeholder="Select gender" onPress={() => setOpenDropdown("gender")} />
+          </FieldRow>
+
+          <FieldRow label="Role" value={roleLabel} editing={isEditing} onPress={startEditing} last>
+            <DropdownTrigger value={roleLabel} placeholder="Select role" onPress={() => setOpenDropdown("role")} />
+          </FieldRow>
         </View>
+
+        <View style={[styles.card, styles.groupCard]}>
+          <Text style={styles.groupLabel}>Contact Info</Text>
+
+          <FieldRow label="Email" privacy={privacyFor("email")} value={email} editing={isEditing} onPress={startEditing}>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter email"
+              placeholderTextColor={C.placeholder}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </FieldRow>
+
+          <FieldRow
+            label="Phone number"
+            privacy={privacyFor("mobile")}
+            value={mobile}
+            editing={false}
+            onPress={() => setMobilePopupVisible(true)}
+            caption="We use this to help secure your account. Tap to change it."
+            last
+          />
+        </View>
+
+        <View style={[styles.card, styles.groupCard]}>
+          <Text style={styles.groupLabel}>About You</Text>
+
+          <FieldRow label="Bio" value={bio} editing={isEditing} onPress={startEditing} stacked>
+            <TextInput
+              style={[styles.input, styles.bioInput]}
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Enter your bio"
+              placeholderTextColor={C.placeholder}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </FieldRow>
+
+          <FieldRow
+            label="Three words"
+            value={threeWordsLabel}
+            editing={isEditing}
+            onPress={startEditing}
+            last
+          >
+            <View style={styles.threeWordsRow}>
+              {[0, 1, 2].map((i) => (
+                <TextInput
+                  key={i}
+                  style={[styles.input, styles.threeWordsInput]}
+                  placeholder={["1st word", "2nd word", "3rd word"][i]}
+                  placeholderTextColor={C.placeholder}
+                  value={threeWords[i]}
+                  onChangeText={(text) => {
+                    const newWords = [...threeWords];
+                    newWords[i] = text;
+                    setThreeWords(newWords);
+                  }}
+                />
+              ))}
+            </View>
+          </FieldRow>
+        </View>
+
+        {/* Password and security */}
+        <Text style={styles.sectionTitle}>Password & Security</Text>
+        <ActionCard
+          icon={<LockIcon />}
+          title="Change password"
+          subtitle="Update your password for better security"
+          onPress={handleChangePassword}
+        />
+        <ActionCard
+          icon={<CameraIcon />}
+          title="Verification selfie"
+          subtitle="Verify your identity with a selfie"
+          onPress={handleVerificationSelfie}
+        />
       </ScrollView>
 
-      <SelfieCaptureModal
-        visible={selfieVisible}
-        onClose={() => setSelfieVisible(false)}
-        onCaptured={() =>
-          showToast("Selfie captured. Uploading selfies isn't available yet.", "info")
-        }
+      {/* Sticky save bar */}
+      {isEditing && (
+        <View style={[styles.saveBar, { paddingBottom: 12 + insets.bottom }]}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Save changes"
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={!hasChanges || isSaving}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={!hasChanges || isSaving ? [C.disabled, C.disabled] : [C.accent, C.accentLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.saveButtonGradient}
+            >
+              {isSaving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={[styles.saveButtonText, !hasChanges && styles.saveButtonTextDisabled]}>
+                  Save Changes
+                </Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
+      <ChangeMobilePopup
+        visible={mobilePopupVisible}
+        currentMobile={mobile}
+        onClose={() => setMobilePopupVisible(false)}
+        onChanged={(newMobile) => {
+          setMobilePopupVisible(false);
+          setMobile(newMobile);
+          setOriginalMobile(newMobile);
+          setOriginalData((prev: any) => ({ ...prev, mobile: newMobile }));
+          AsyncStorage.setItem("userMobile", newMobile).catch(() => {});
+          toastSuccess("Your mobile number has been updated");
+        }}
       />
+
+      <DateOfBirthCalendar
+        visible={calendarVisible}
+        value={dateOfBirth}
+        onClose={() => setCalendarVisible(false)}
+        onSelect={(v) => {
+          setDateOfBirth(v);
+          setCalendarVisible(false);
+        }}
+      />
+
+      {/* Dropdown sheet for gender / role */}
+      <Modal
+        transparent={true}
+        visible={openDropdown !== null}
+        animationType="fade"
+        onRequestClose={() => setOpenDropdown(null)}
+      >
+        <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => setOpenDropdown(null)}>
+          <TouchableOpacity activeOpacity={1} style={styles.dropdownSheet} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.dropdownTitle}>
+              {openDropdown === "role" ? "Select role" : "Select gender"}
+            </Text>
+            {(openDropdown === "role" ? ROLE_OPTIONS : GENDER_OPTIONS).map((opt) => {
+              const selected = openDropdown === "role" ? role === opt.value : gender === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.dropdownOption, selected && styles.dropdownOptionActive]}
+                  onPress={() => {
+                    if (openDropdown === "role") setRole(opt.value);
+                    else setGender(opt.value);
+                    setOpenDropdown(null);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.dropdownOptionText, selected && styles.dropdownOptionTextActive]}>
+                    {opt.label}
+                  </Text>
+                  {selected && <Text style={styles.dropdownCheck}>✓</Text>}
+                </TouchableOpacity>
+              );
+            })}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
 
       {}
       <Modal
@@ -1299,327 +1101,488 @@ export default function AccountCenterScreen() {
   );
 }
 
+// App theme (brown + orange) applied to the grouped-list layout.
+const C = {
+  bg: "#3C2610",
+  card: "#1A1A1A",
+  cardBorder: "#2A2A2A",
+  divider: "#2A2A2A",
+  inputBg: "#252525",
+  inputBorder: "#3A3A3A",
+  accent: "#EC9A15",
+  accentLight: "#FFB84D",
+  accentSoft: "rgba(236, 154, 21, 0.15)",
+  text: "#FFFFFF",
+  muted: "#CAD7D8",
+  faint: "#8A8F90",
+  placeholder: "#999",
+  disabled: "#555",
+};
+
+function Chevron() {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Path d="M9 18l6-6-6-6" stroke={C.faint} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function SmallLock() {
+  return (
+    <Svg width={11} height={11} viewBox="0 0 24 24" fill="none">
+      <Path d="M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z" fill={C.faint} />
+      <Path d="M7 11V7a5 5 0 0 1 10 0v4" stroke={C.faint} strokeWidth={2.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+type FieldRowProps = {
+  label: string;
+  value?: string;
+  editing: boolean;
+  onPress?: () => void;
+  caption?: string;
+  captionLock?: boolean;
+  showChevron?: boolean;
+  stacked?: boolean;
+  last?: boolean;
+  privacy?: { isPublic: boolean; onToggle: () => void };
+  children?: React.ReactNode;
+};
+
+/** Public / Private switch shown beside a field label. */
+function PrivacyPill({ isPublic, onToggle }: { isPublic: boolean; onToggle: () => void }) {
+  return (
+    <TouchableOpacity
+      onPress={onToggle}
+      activeOpacity={0.7}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={isPublic ? "Shown publicly. Tap to make private" : "Private. Tap to make public"}
+      style={[styles.privacyPill, isPublic ? styles.privacyPublic : styles.privacyPrivate]}
+    >
+      <Text style={[styles.privacyText, isPublic ? styles.privacyTextPublic : styles.privacyTextPrivate]}>
+        {isPublic ? "Public" : "Private"}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+/** One row of a grouped card: label on the left, value + chevron on the right; the editor below it while editing. */
+function FieldRow({ label, value, editing, onPress, caption, captionLock, showChevron = true, stacked, last, privacy, children }: FieldRowProps) {
+  const pill = privacy ? <PrivacyPill isPublic={privacy.isPublic} onToggle={privacy.onToggle} /> : null;
+
+  const captionEl = caption ? (
+    <View style={styles.captionRow}>
+      {captionLock && <SmallLock />}
+      <Text style={styles.caption}>{caption}</Text>
+    </View>
+  ) : null;
+
+  if (editing && children) {
+    return (
+      <View style={[styles.row, styles.rowEditing, last && styles.rowLast]}>
+        <View style={styles.labelGroup}>
+          <Text style={styles.editLabel}>{label}</Text>
+          {pill}
+        </View>
+        {children}
+        {captionEl}
+      </View>
+    );
+  }
+
+  const valueText = value && value.trim() ? value : "Not set";
+  const isEmpty = valueText === "Not set";
+  const labelEl = (
+    <View style={styles.labelGroup}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      {pill}
+    </View>
+  );
+
+  return (
+    <TouchableOpacity
+      activeOpacity={onPress ? 0.6 : 1}
+      onPress={onPress}
+      disabled={!onPress}
+      style={[styles.row, last && styles.rowLast]}
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityLabel={`${label}: ${valueText}`}
+    >
+      {stacked ? (
+        <View style={styles.rowStacked}>
+          <View style={styles.rowTop}>
+            {labelEl}
+            {showChevron && onPress && <Chevron />}
+          </View>
+          <Text style={[styles.rowValueStacked, isEmpty && styles.rowValueEmpty]}>{valueText}</Text>
+        </View>
+      ) : (
+        <View style={styles.rowTop}>
+          <View style={styles.rowLabelWrap}>{labelEl}</View>
+          <View style={styles.rowRight}>
+            <Text style={[styles.rowValue, isEmpty && styles.rowValueEmpty]} numberOfLines={1}>
+              {valueText}
+            </Text>
+            {showChevron && onPress && <Chevron />}
+          </View>
+        </View>
+      )}
+      {captionEl}
+    </TouchableOpacity>
+  );
+}
+
+function ActionCard({ icon, title, subtitle, onPress }: { icon: React.ReactNode; title: string; subtitle: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={[styles.card, styles.actionCard]} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={title}>
+      <View style={styles.actionIcon}>{icon}</View>
+      <View style={styles.actionText}>
+        <Text style={styles.actionTitle}>{title}</Text>
+        <Text style={styles.actionSubtitle}>{subtitle}</Text>
+      </View>
+      <Chevron />
+    </TouchableOpacity>
+  );
+}
+
+const GENDER_OPTIONS = [
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Non-binary", label: "Non-binary" },
+  { value: "Prefer not to say", label: "Prefer not to say" },
+];
+
+const ROLE_OPTIONS = [
+  { value: "participant", label: "Participant" },
+  { value: "fan", label: "Fan" },
+];
+
+/** Tappable box that shows the current choice and opens the dropdown sheet. */
+function DropdownTrigger({ value, placeholder, onPress }: { value: string; placeholder: string; onPress: () => void }) {
+  const hasValue = !!value;
+  return (
+    <TouchableOpacity style={styles.dropdown} onPress={onPress} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel={placeholder}>
+      <Text style={[styles.dropdownText, !hasValue && styles.dropdownPlaceholder]}>{hasValue ? value : placeholder}</Text>
+      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+        <Path d="M6 9l6 6 6-6" stroke={C.accent} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+      </Svg>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#3C2610",
+    backgroundColor: C.bg,
     paddingTop: Platform.OS === "android" ? 20 : 0,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 20,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: Platform.OS === "ios" ? 60 : 12,
+    paddingBottom: 8,
   },
-  backButton: {
-    width: 44,
+  headerSide: {
+    width: 64,
     height: 44,
     justifyContent: "center",
-    alignItems: "center",
+    alignItems: "flex-start",
+    paddingLeft: 4,
+  },
+  headerSideRight: {
+    alignItems: "flex-end",
+    paddingLeft: 0,
+    paddingRight: 4,
   },
   headerTitle: {
-    color: "#fff",
+    color: C.text,
     fontSize: 20,
     fontFamily: "PlayfairDisplay_700Bold",
+  },
+  headerAction: {
+    color: C.accent,
+    fontSize: 16,
+    fontFamily: "Rubik_600SemiBold",
   },
   scrollContent: {
+    paddingHorizontal: 16,
     paddingBottom: 40,
   },
-  profileHeaderGradient: {
-    marginBottom: 24,
-    paddingBottom: 30,
-  },
-  profileHeader: {
-    alignItems: "center",
-    paddingTop: 20,
-    paddingHorizontal: 20,
-  },
-  profileImageContainer: {
-    marginBottom: 20,
-  },
-  profileImageWrapper: {
-    position: "relative",
-    width: 140,
-    height: 140,
-  },
-  profileImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 5,
-    borderColor: "#EC9A15",
-  },
-  profileImagePlaceholder: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 5,
-    borderColor: "#EC9A15",
-  },
-  profileImageInitials: {
-    fontSize: 42,
-    color: "#fff",
-    fontFamily: "PlayfairDisplay_700Bold",
-  },
-  profileImageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#EC9A15",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 4,
-    borderColor: "#3C2610",
-    shadowColor: "#EC9A15",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  editImageBadge: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileInfo: {
-    alignItems: "center",
-  },
-  profileName: {
-    color: "#fff",
-    fontSize: 26,
-    fontFamily: "PlayfairDisplay_700Bold",
-    marginBottom: 8,
+  subtitle: {
+    color: C.muted,
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: "center",
-  },
-  profileEmailContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  emailIcon: {
-    marginTop: 2,
-  },
-  profileEmail: {
-    color: "#CAD7D8",
-    fontSize: 15,
     fontFamily: "Rubik_400Regular",
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 28,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sectionTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  sectionTitleIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "rgba(236, 154, 21, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
+    marginBottom: 20,
+    paddingHorizontal: 12,
   },
   sectionTitle: {
-    color: "#fff",
-    fontSize: 20,
+    color: C.text,
+    fontSize: 19,
     fontFamily: "PlayfairDisplay_700Bold",
-    flexShrink: 1,
+    marginBottom: 10,
+    marginTop: 8,
   },
-  updateButtonIcon: {
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: "#EC9A15",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-    width: 44,
-    height: 44,
+  card: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
   },
-  updateButtonIconGradient: {
-    width: "100%",
-    height: "100%",
+
+  // Profile summary
+  summaryCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    marginBottom: 20,
+  },
+  avatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 2,
+    borderColor: C.accent,
     justifyContent: "center",
     alignItems: "center",
   },
-  card: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-    width: "100%",
+  avatarInitials: {
+    fontSize: 24,
+    color: C.text,
+    fontFamily: "PlayfairDisplay_700Bold",
   },
-  securityCard: {
-    marginTop: 16,
+  avatarBadge: {
+    position: "absolute",
+    right: -4,
+    bottom: -4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: C.accent,
+    borderWidth: 3,
+    borderColor: C.card,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  cardHeader: {
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2A2A2A",
+  summaryText: {
+    flex: 1,
+    marginLeft: 16,
   },
-  cardHeaderText: {
-    color: "#CAD7D8",
-    fontSize: 13,
-    fontFamily: "Rubik_400Regular",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  fieldRow: {
-    marginBottom: 20,
-    width: "100%",
-  },
-  fieldLabel: {
-    color: "#CAD7D8",
-    fontSize: 12,
+  summaryName: {
+    color: C.text,
+    fontSize: 18,
     fontFamily: "Rubik_600SemiBold",
-    marginBottom: 10,
-    textTransform: "uppercase",
-    letterSpacing: 1,
   },
-  fieldValue: {
-    color: "#fff",
-    fontSize: 17,
+  summarySub: {
+    color: C.muted,
+    fontSize: 14,
     fontFamily: "Rubik_400Regular",
-    paddingVertical: 4,
+    marginTop: 2,
+  },
+  rolePill: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+    backgroundColor: C.accentSoft,
+  },
+  rolePillText: {
+    color: C.accent,
+    fontSize: 12,
+    fontFamily: "Rubik_500Medium",
+  },
+
+  // Grouped rows
+  groupCard: {
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    marginBottom: 14,
+  },
+  groupLabel: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Rubik_600SemiBold",
+    marginBottom: 2,
+  },
+  row: {
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: C.divider,
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
+  rowEditing: {
+    paddingVertical: 12,
+  },
+  rowTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  rowLabelWrap: {
+    marginRight: 12,
+  },
+  rowLabel: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Rubik_500Medium",
+  },
+  rowRight: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 6,
+  },
+  rowValue: {
+    color: C.muted,
+    fontSize: 15,
+    fontFamily: "Rubik_400Regular",
+    flexShrink: 1,
+    textAlign: "right",
+  },
+  rowValueEmpty: {
+    color: C.faint,
+    fontStyle: "italic",
+  },
+  rowStacked: {
+    width: "100%",
+  },
+  rowValueStacked: {
+    color: C.muted,
+    fontSize: 15,
+    lineHeight: 21,
+    fontFamily: "Rubik_400Regular",
+    marginTop: 6,
+  },
+  captionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 6,
+  },
+  caption: {
+    color: C.faint,
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Rubik_400Regular",
+    flexShrink: 1,
+  },
+  editLabel: {
+    color: C.muted,
+    fontSize: 13,
+    fontFamily: "Rubik_500Medium",
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: "#252525",
-    borderRadius: 14,
-    padding: 14,
-    color: "#fff",
-    fontSize: 16,
+    backgroundColor: C.inputBg,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: C.text,
+    fontSize: 15,
     fontFamily: "Rubik_400Regular",
-    borderWidth: 1.5,
-    borderColor: "#3A3A3A",
+    borderWidth: 1,
+    borderColor: C.inputBorder,
     width: "100%",
   },
   bioInput: {
-    minHeight: 80,
+    minHeight: 84,
     textAlignVertical: "top",
   },
-  threeWordsInputContainer: {
+  threeWordsRow: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#252525",
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#3A3A3A",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    width: "100%",
+    gap: 8,
   },
   threeWordsInput: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: "#fff",
-    fontFamily: "Rubik_400Regular",
+    width: undefined,
+    paddingHorizontal: 10,
   },
-  threeWordsSeparator: {
-    color: "#EC9A15",
-    fontSize: 16,
-    paddingHorizontal: 4,
-    fontFamily: "Rubik_500Medium",
-  },
-  genderContainer: {
+  chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    width: "100%",
+    gap: 8,
   },
-  genderChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: "#252525",
-    borderWidth: 1.5,
-    borderColor: "#3A3A3A",
-    minWidth: 100,
-    flex: 1,
-    maxWidth: "48%",
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: C.inputBg,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
   },
-  genderChipActive: {
-    backgroundColor: "rgba(236, 154, 21, 0.2)",
-    borderColor: "#EC9A15",
-    shadowColor: "#EC9A15",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 4,
+  chipActive: {
+    backgroundColor: C.accentSoft,
+    borderColor: C.accent,
   },
-  genderChipText: {
-    color: "#999",
+  chipText: {
+    color: C.muted,
     fontSize: 14,
     fontFamily: "Rubik_400Regular",
   },
-  genderChipTextActive: {
-    color: "#EC9A15",
+  chipTextActive: {
+    color: C.accent,
     fontFamily: "Rubik_600SemiBold",
   },
-  actionButtons: {
+
+  // Security action cards
+  actionCard: {
     flexDirection: "row",
-    gap: 12,
-    marginTop: 12,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#2A2A2A",
-    width: "100%",
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: "#252525",
     alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#3A3A3A",
+    padding: 14,
+    marginBottom: 12,
   },
-  cancelButtonText: {
-    color: "#CAD7D8",
-    fontSize: 16,
+  actionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.accentSoft,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  actionText: {
+    flex: 1,
+    marginRight: 8,
+  },
+  actionTitle: {
+    color: C.text,
+    fontSize: 15,
     fontFamily: "Rubik_600SemiBold",
+  },
+  actionSubtitle: {
+    color: C.faint,
+    fontSize: 13,
+    fontFamily: "Rubik_400Regular",
+    marginTop: 2,
+  },
+
+  // Sticky save bar
+  saveBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    backgroundColor: C.bg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.08)",
   },
   saveButton: {
-    flex: 1,
-    borderRadius: 16,
+    borderRadius: 26,
     overflow: "hidden",
-    shadowColor: "#EC9A15",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  saveButtonDisabled: {
-    shadowOpacity: 0,
-    elevation: 0,
   },
   saveButtonGradient: {
-    paddingVertical: 16,
+    height: 52,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1628,102 +1591,108 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Rubik_700Bold",
   },
-  securityOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    width: "100%",
-    marginBottom: 8,
+  saveButtonTextDisabled: {
+    color: "#BBB",
   },
-  securityOptionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  securityIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  securityOptionText: {
-    flex: 1,
-    marginRight: 12,
-  },
-  securityOptionTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontFamily: "Rubik_600SemiBold",
-    marginBottom: 6,
-  },
-  securityOptionSubtitle: {
-    color: "#CAD7D8",
-    fontSize: 13,
-    fontFamily: "Rubik_400Regular",
-    lineHeight: 18,
-  },
-  arrowContainer: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(236, 154, 21, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#2A2A2A",
-    marginVertical: 8,
-    marginHorizontal: 4,
-  },
-  inputWithVerify: {
+
+  labelGroup: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    width: "100%",
+    flexShrink: 1,
   },
-  inputWithButton: {
+  privacyPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  privacyPublic: {
+    backgroundColor: C.accentSoft,
+    borderColor: C.accent,
+  },
+  privacyPrivate: {
+    backgroundColor: "transparent",
+    borderColor: C.inputBorder,
+  },
+  privacyText: {
+    fontSize: 11,
+    fontFamily: "Rubik_600SemiBold",
+  },
+  privacyTextPublic: {
+    color: C.accent,
+  },
+  privacyTextPrivate: {
+    color: C.faint,
+  },
+
+  // Dropdown (gender / role)
+  dropdown: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: C.inputBg,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
+  },
+  dropdownText: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Rubik_400Regular",
+  },
+  dropdownPlaceholder: {
+    color: C.placeholder,
+  },
+  dropdownOverlay: {
     flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    paddingHorizontal: 24,
   },
-  verifyButton: {
-    backgroundColor: "#EC9A15",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: 100,
+  dropdownSheet: {
+    backgroundColor: C.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    padding: 10,
   },
-  verifyButtonRole: {
-    marginTop: 8,
-    alignSelf: "flex-start",
-  },
-  verifyButtonText: {
-    color: "#fff",
-    fontSize: 12,
+  dropdownTitle: {
+    color: C.muted,
+    fontSize: 13,
     fontFamily: "Rubik_500Medium",
-    textAlign: "center",
-  },
-  verifiedBadge: {
-    backgroundColor: "#25D366",
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 8,
-    minWidth: 100,
   },
-  verifiedBadgeRole: {
-    marginTop: 8,
-    alignSelf: "flex-start",
+  dropdownOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    borderRadius: 10,
   },
-  verifiedText: {
-    color: "#fff",
-    fontSize: 12,
-    fontFamily: "Rubik_500Medium",
-    textAlign: "center",
+  dropdownOptionActive: {
+    backgroundColor: C.accentSoft,
   },
-  
+  dropdownOptionText: {
+    color: C.text,
+    fontSize: 16,
+    fontFamily: "Rubik_400Regular",
+  },
+  dropdownOptionTextActive: {
+    color: C.accent,
+    fontFamily: "Rubik_600SemiBold",
+  },
+  dropdownCheck: {
+    color: C.accent,
+    fontSize: 16,
+    fontFamily: "Rubik_700Bold",
+  },
+
+  // Photo picker sheet + processing overlay (unchanged)
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",

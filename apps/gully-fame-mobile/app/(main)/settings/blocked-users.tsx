@@ -1,59 +1,88 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform, Alert } from "react-native";
+import { useState } from "react";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { unblockUser, useBlockedUsers, type BlockedUser } from "@/utils/moderation";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
+import ConfirmPopup from "@/components/ui/ConfirmPopup";
 import { getErrorMessage } from "@/api/client";
+
+// Same brown + orange palette as the rest of the app.
+const C = {
+  bg: "#3C2610",
+  card: "#1A1A1A",
+  border: "#2A2A2A",
+  accent: "#EC9A15",
+  accentSoft: "rgba(236, 154, 21, 0.15)",
+  text: "#FFFFFF",
+  muted: "#CAD7D8",
+  faint: "#8A8F90",
+};
 
 export default function BlockedUsersScreen() {
   const blocked = useBlockedUsers();
 
-  const confirmUnblock = (user: BlockedUser) => {
-    Alert.alert(`Unblock ${user.name}?`, "You will see their reels and comments again.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Unblock",
-        onPress: async () => {
-          try {
-            await unblockUser(user.id);
-            toastSuccess("User unblocked");
-          } catch (error) {
-            toastError(getErrorMessage(error));
-          }
-        },
-      },
-    ]);
+  const [pending, setPending] = useState<BlockedUser | null>(null);
+
+  const doUnblock = async () => {
+    if (!pending) return;
+    const user = pending;
+    setPending(null);
+    try {
+      await unblockUser(user.id);
+      toastSuccess("User unblocked");
+    } catch (error) {
+      toastError(getErrorMessage(error));
+    }
   };
+
+  const confirmUnblock = (user: BlockedUser) => setPending(user);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={28} color="#fff" />
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerSide} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Blocked Users</Text>
-        <View style={styles.backButton} />
+        <View style={styles.headerSide} />
       </View>
+
+      <Text style={styles.subtitle}>
+        People you block can't see your reels or comments, and you won't see theirs.
+      </Text>
 
       <FlatList
         data={blocked}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="ban-outline" size={28} color={C.accent} />
+            </View>
             <Text style={styles.emptyTitle}>No blocked users</Text>
             <Text style={styles.emptyText}>People you block from a reel or a chat will appear here.</Text>
           </View>
         }
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Text style={styles.name} numberOfLines={1}>
-              {item.name}
-            </Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase() || "?"}</Text>
+            </View>
+            <View style={styles.info}>
+              <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+              <Text style={styles.meta}>Blocked</Text>
+            </View>
             <TouchableOpacity
               style={styles.unblockButton}
               onPress={() => confirmUnblock(item)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
               accessibilityLabel={`Unblock ${item.name}`}
             >
               <Text style={styles.unblockText}>Unblock</Text>
@@ -61,38 +90,137 @@ export default function BlockedUsersScreen() {
           </View>
         )}
       />
+      <ConfirmPopup
+        visible={pending !== null}
+        title={`Unblock ${pending?.name ?? ""}?`}
+        message="You will see their reels and comments again."
+        confirmText="Unblock"
+        icon="people-outline"
+        onConfirm={doUnblock}
+        onCancel={() => setPending(null)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#3C2610", paddingTop: Platform.OS === "android" ? 20 : 0 },
+  container: {
+    flex: 1,
+    backgroundColor: C.bg,
+    paddingTop: Platform.OS === "android" ? 20 : 0,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === "ios" ? 60 : 20,
-    paddingBottom: 20,
+    paddingHorizontal: 12,
+    paddingTop: Platform.OS === "ios" ? 60 : 12,
+    paddingBottom: 8,
   },
-  backButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
-  headerTitle: { color: "#fff", fontSize: 22, fontWeight: "700", letterSpacing: 0.5 },
-  listContent: { padding: 20, paddingBottom: 30, flexGrow: 1 },
+  headerSide: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    color: C.text,
+    fontSize: 20,
+    fontFamily: "PlayfairDisplay_700Bold",
+  },
+  subtitle: {
+    color: C.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    fontFamily: "Rubik_400Regular",
+    marginBottom: 18,
+    paddingHorizontal: 28,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+    flexGrow: 1,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#252525",
+    backgroundColor: C.card,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: "rgba(236, 154, 21, 0.2)",
+    borderColor: C.border,
+    padding: 14,
+    marginBottom: 10,
   },
-  name: { flex: 1, color: "#fff", fontSize: 16, marginRight: 12 },
-  unblockButton: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: "#EC9A15" },
-  unblockText: { color: "#EC9A15", fontSize: 14, fontWeight: "600" },
-  empty: { alignItems: "center", paddingTop: 60 },
-  emptyTitle: { color: "#fff", fontSize: 18, fontWeight: "700", marginBottom: 8 },
-  emptyText: { color: "#E5DCD0", fontSize: 14, textAlign: "center", paddingHorizontal: 20 },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.accentSoft,
+    borderWidth: 1,
+    borderColor: C.accent,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  avatarText: {
+    color: C.accent,
+    fontSize: 17,
+    fontFamily: "Rubik_700Bold",
+  },
+  info: {
+    flex: 1,
+    marginRight: 10,
+  },
+  name: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Rubik_600SemiBold",
+  },
+  meta: {
+    color: C.faint,
+    fontSize: 12,
+    marginTop: 2,
+    fontFamily: "Rubik_400Regular",
+  },
+  unblockButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: C.accentSoft,
+    borderWidth: 1,
+    borderColor: C.accent,
+  },
+  unblockText: {
+    color: C.accent,
+    fontSize: 13,
+    fontFamily: "Rubik_600SemiBold",
+  },
+  empty: {
+    alignItems: "center",
+    paddingTop: 60,
+    paddingHorizontal: 24,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: C.accentSoft,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    color: C.text,
+    fontSize: 18,
+    fontFamily: "PlayfairDisplay_700Bold",
+    marginBottom: 6,
+  },
+  emptyText: {
+    color: C.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    fontFamily: "Rubik_400Regular",
+  },
 });

@@ -1,4 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { TALENT_CATEGORIES } from "@/constants/talentCategories";
+import { getHomeScreen, getCachedHomeScreen, type HomeScreenData } from "@/api/services/homeService";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
@@ -20,7 +23,8 @@ import {
 } from "react-native-safe-area-context";
 import BottomNav from "@components/layout/BottomNav";
 import DrawerMenu from "@components/layout/DrawerMenu";
-import { HomeIconSVG, ReelIconSVG, SearchIconSVG, UserIconSVG } from "@/icons";
+import { HomeIconSVG, ReelIconSVG, SearchIconSVG, UserIconSVG, BackIcon, FilterIcon, MicIcon, PlayIcon } from "@/icons";
+import { formatCount } from "@/utils/mediaUrl";
 import {
   scale,
   getFontSize,
@@ -96,6 +100,10 @@ export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("Search");
+  // The type pills (All / Stars / Competitions / Reels) sit behind the filter icon.
+  const [showFilters, setShowFilters] = useState(false);
+  // Home data (categories and trending reels) shown on the empty search screen.
+  const [home, setHome] = useState<HomeScreenData | null>(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeSearchType, setActiveSearchType] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -154,6 +162,22 @@ export default function SearchScreen() {
       }
     };
     loadSearchHistory();
+  }, []);
+
+  // Show the cached home data at once, then refresh it.
+  useEffect(() => {
+    let active = true;
+    getCachedHomeScreen().then((cached) => {
+      if (active && cached) setHome(cached);
+    });
+    getHomeScreen()
+      .then((data) => {
+        if (active) setHome(data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Save search query to history when user performs a search
@@ -249,6 +273,19 @@ export default function SearchScreen() {
     }, 400);
   }, [searchQuery, activeSearchType, addToSearchHistory]);
 
+  // The 12 talent categories, linked to the backend id when a name matches (same rule as the home carousel).
+  const suggestedCategories = useMemo(
+    () =>
+      TALENT_CATEGORIES.map((c) => {
+        const match = (home?.categories || []).find((b) => {
+          const n = String(b.name || "").trim().toLowerCase();
+          return n === c.name.toLowerCase() || n === c.key;
+        });
+        return { key: c.key, id: match?.id ?? c.key, name: c.name, tagline: c.tagline, icon: c.icon };
+      }),
+    [home]
+  );
+
   const tabs = [
     { name: "Home", icon: HomeIconSVG, label: "" },
     { name: "Reel", icon: ReelIconSVG, label: "GullyReel" },
@@ -270,25 +307,44 @@ export default function SearchScreen() {
           },
         ]}
       >
-        {}
-        <View style={styles.searchBar}>
-          <View style={styles.searchIconContainer}>
-            <SearchIconSVG color="#999" />
+        <View style={styles.topRow}>
+          <TouchableOpacity
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(main)" as any))}
+            style={styles.backButton}
+            accessibilityLabel="Back"
+          >
+            <BackIcon color="#fff" size={22} />
+          </TouchableOpacity>
+          <View style={[styles.searchBar, styles.searchBarInRow]}>
+            <View style={styles.searchIconContainer}>
+              <SearchIconSVG color="#999" />
+            </View>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search creators, videos, sounds..."
+              testID="search-input"
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              onSubmitEditing={() => {
+              }}
+            />
+            <View style={styles.micWrap}>
+              <MicIcon />
+            </View>
           </View>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Gully Fame..."
-            testID="search-input"
-            placeholderTextColor="#999"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            onSubmitEditing={() => {
-            }}
-          />
+          <TouchableOpacity
+            onPress={() => setShowFilters((v) => !v)}
+            style={styles.backButton}
+            accessibilityLabel="Filters"
+            accessibilityState={{ expanded: showFilters }}
+          >
+            <FilterIcon size={22} color="#fff" />
+          </TouchableOpacity>
         </View>
 
-        {}
+        {showFilters ? (
         <View style={styles.pillsWrapper}>
           <ScrollView
             horizontal
@@ -317,17 +373,21 @@ export default function SearchScreen() {
             })}
           </ScrollView>
         </View>
+        ) : null}
       </View>
 
       {}
       {isLoading ? (
         <SkeletonList rows={8} style={{ flex: 1, padding: 16, backgroundColor: COLORS.background }} />
-      ) : searchQuery.trim() === "" && searchHistory.length > 0 ? (
-        // Show search history when no query is entered
+      ) : searchQuery.trim() === "" ? (
+        // No query: recent searches (if any), then suggested categories and trending reels
         <ScrollView
-          style={[styles.mainContent, { paddingHorizontal: scale(12) }]}
+          style={styles.mainContent}
           contentContainerStyle={{ paddingBottom: bottomNavHeight }}
+          showsVerticalScrollIndicator={false}
         >
+          {searchHistory.length > 0 ? (
+          <View style={{ paddingHorizontal: scale(12) }}>
           <Text style={[styles.sectionTitle, { marginTop: scale(16) }]}>
             Recent Searches
           </Text>
@@ -363,6 +423,73 @@ export default function SearchScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          </View>
+          ) : null}
+
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionHeading}>Explore Categories</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.suggestRow}
+            >
+              {suggestedCategories.map((cat) => (
+                <TouchableOpacity
+                  key={cat.key}
+                  activeOpacity={0.9}
+                  accessibilityRole="button"
+                  accessibilityLabel={cat.name}
+                  style={styles.categoryCard}
+                  onPress={() => router.push(`/(main)/category/${cat.id}` as any)}
+                >
+                  <MaterialCommunityIcons name={cat.icon} size={scale(34)} color={COLORS.accent} />
+                  <View>
+                    <Text style={styles.categoryName} numberOfLines={1}>
+                      {cat.name}
+                    </Text>
+                    <Text style={styles.categoryTagline} numberOfLines={1}>
+                      {cat.tagline}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {(home?.trending?.length ?? 0) > 0 && (
+            <View style={styles.sectionBlock}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionHeading}>Explore Trending</Text>
+                <TouchableOpacity
+                  onPress={() => setActiveSearchType("reels")}
+                  accessibilityRole="button"
+                  accessibilityLabel="See all reels"
+                >
+                  <Text style={styles.seeAll}>See all ›</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.trendGrid}>
+                {home!.trending.map((reel) => (
+                  <TouchableOpacity
+                    key={reel.id}
+                    activeOpacity={0.9}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open reel"
+                    style={styles.trendCard}
+                    onPress={() => {
+                      router.push({ pathname: "/(main)/reel", params: { startReelId: reel.id } } as any);
+                    }}
+                  >
+                    <Image source={safeImageSource(reel.image)} style={styles.trendImage} />
+                    <View style={styles.trendMeta}>
+                      <PlayIcon size={12} color="#fff" />
+                      <Text style={styles.trendCount}>{formatCount(reel.views)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
         </ScrollView>
       ) : (
         <View style={styles.mainContent}>
@@ -385,107 +512,117 @@ export default function SearchScreen() {
 
           {}
           {activeSearchType === "all" && (
-            <View style={{ flex: 1 }}>
-              {searchResults.top_users.length > 0 && (
-              <View style={styles.stickyStarsContainer}>
-                <Text style={styles.sectionTitle}>Meet your Stars</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.horizontalScrollContainer}
-                >
-                  {searchResults.top_users.map((user: any) => (
-                    <TouchableOpacity
-                      key={user._id}
-                      style={styles.topUserCard}
-                      onPress={() => {
-                        openUserProfile({
-                          id: user._id,
-                          firstName: user.first_name,
-                          lastName: user.last_name,
-                          username: user.username,
-                          avatar: user.profile_picture_url,
-                        });
-                      }}
-                    >
-                      <Image
-                        source={safeImageSource(user.profile_picture_url)}
-                        style={styles.topUserAvatar}
-                      />
-                      <Text style={styles.topUserName} numberOfLines={1}>
-                        {user.username}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: bottomNavHeight }}
+            >
+              {searchResults.top_competitions.length > 0 && (
+                <View style={styles.sectionBlock}>
+                  <Text style={styles.sectionHeading}>Competitions</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.suggestRow}
+                  >
+                    {searchResults.top_competitions.map((comp: any) => (
+                      <TouchableOpacity
+                        key={comp._id}
+                        activeOpacity={0.9}
+                        onPress={() => openCompetition(comp._id, comp.status)}
+                        style={styles.suggestCard}
+                      >
+                        <Image
+                          source={safeImageSource(comp.image_url || comp.image)}
+                          style={styles.suggestImage}
+                        />
+                        <View style={styles.suggestScrim} />
+                        <Text style={styles.suggestTitle} numberOfLines={2}>
+                          {comp.title}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
               )}
 
-              {}
-              <FlatList
-                data={searchResults.top_reels}
-                numColumns={1}
-                keyExtractor={(item) => item._id}
-                contentContainerStyle={{ paddingBottom: bottomNavHeight }}
-                showsVerticalScrollIndicator={false}
-                ListHeaderComponent={() => (
-                  <View style={styles.competitionsHeaderBox}>
-                    {searchResults.top_competitions.length > 0 && (
-                    <>
-                    <Text style={styles.sectionTitle}>
-                      Participate in the Gullies
-                    </Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.horizontalScrollContainer}
+              {searchResults.top_users.length > 0 && (
+                <View style={styles.sectionBlock}>
+                  <Text style={styles.sectionHeading}>Meet your Stars</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.suggestRow}
+                  >
+                    {searchResults.top_users.map((user: any) => (
+                      <TouchableOpacity
+                        key={user._id}
+                        style={styles.topUserCard}
+                        onPress={() => {
+                          openUserProfile({
+                            id: user._id,
+                            firstName: user.first_name,
+                            lastName: user.last_name,
+                            username: user.username,
+                            avatar: user.profile_picture_url,
+                          });
+                        }}
+                      >
+                        <Image
+                          source={safeImageSource(user.profile_picture_url)}
+                          style={styles.topUserAvatar}
+                        />
+                        <Text style={styles.topUserName} numberOfLines={1}>
+                          {user.username}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              {searchResults.top_reels.length > 0 && (
+                <View style={styles.sectionBlock}>
+                  <View style={styles.sectionHeaderRow}>
+                    <Text style={styles.sectionHeading}>Reels</Text>
+                    <TouchableOpacity
+                      onPress={() => setActiveSearchType("reels")}
+                      accessibilityRole="button"
+                      accessibilityLabel="See all reels"
                     >
-                      {searchResults.top_competitions.map((comp: any) => (
+                      <Text style={styles.seeAll}>See all ›</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.trendGrid}>
+                    {searchResults.top_reels.map((item: any) => {
+                      const views = typeof item.views === "number" ? formatCount(item.views) : null;
+                      return (
                         <TouchableOpacity
-                          key={comp._id}
+                          key={item._id}
+                          activeOpacity={0.9}
+                          accessibilityRole="button"
+                          accessibilityLabel="Open reel"
+                          style={styles.trendCard}
                           onPress={() => {
-                            openCompetition(comp._id, comp.status);
+                            router.push({ pathname: "/(main)/reel", params: { startReelId: item._id } } as any);
                           }}
-                          style={styles.topCompCard}
                         >
                           <Image
-                            source={safeImageSource(comp.image_url || comp.image)}
-                            style={styles.topCompImage}
+                            source={safeImageSource(item.thumbnail_url)}
+                            style={styles.trendImage}
                           />
-                          <View style={styles.topCompOverlay}>
-                            <Text style={styles.topCompTitle} numberOfLines={1}>
-                              {comp.title}
-                            </Text>
-                          </View>
+                          {views !== null ? (
+                            <View style={styles.trendMeta}>
+                              <PlayIcon size={12} color="#fff" />
+                              <Text style={styles.trendCount}>{views}</Text>
+                            </View>
+                          ) : null}
                         </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                    </>
-                    )}
-                    {searchResults.top_reels.length > 0 && (
-                    <Text
-                      style={[styles.sectionTitle, { marginTop: scale(24) }]}
-                    >
-                      Entries
-                    </Text>
-                    )}
+                      );
+                    })}
                   </View>
-                )}
-                renderItem={({ item }) => (
-                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Open reel"
-                    style={styles.fullReelCard}
-                    onPress={() => {
-                      router.push({ pathname: "/(main)/reel", params: { startReelId: item._id } } as any);
-                    }}
-                  >
-                    <Image
-                      source={safeImageSource(item.thumbnail_url)}
-                      style={styles.fullReelMedia}
-                    />
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
+                </View>
+              )}
+            </ScrollView>
           )}
 
           {}
@@ -676,6 +813,127 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  topRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: scale(6),
+    marginBottom: scale(10),
+  },
+  backButton: {
+    width: scale(36),
+    height: scale(40),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchBarInRow: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  micWrap: {
+    marginLeft: scale(8),
+  },
+  sectionBlock: {
+    marginTop: scale(18),
+  },
+  sectionHeading: {
+    color: COLORS.text,
+    fontSize: getFontSize(18),
+    fontWeight: "700",
+    marginHorizontal: scale(14),
+    marginBottom: scale(12),
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingRight: scale(14),
+  },
+  seeAll: {
+    color: COLORS.accent,
+    fontSize: getFontSize(14),
+    fontWeight: "600",
+  },
+  suggestRow: {
+    paddingHorizontal: scale(14),
+    gap: scale(10),
+  },
+  suggestCard: {
+    width: scale(110),
+    height: scale(140),
+    borderRadius: scale(12),
+    overflow: "hidden",
+    backgroundColor: COLORS.surface,
+  },
+  suggestImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  suggestScrim: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+  suggestTitle: {
+    position: "absolute",
+    left: scale(8),
+    right: scale(8),
+    bottom: scale(8),
+    color: COLORS.text,
+    fontSize: getFontSize(13),
+    fontWeight: "700",
+  },
+  trendGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: scale(14),
+    gap: scale(10),
+  },
+  trendCard: {
+    width: (SCREEN_WIDTH - scale(28) - scale(10)) / 2,
+    aspectRatio: 0.78,
+    borderRadius: scale(14),
+    overflow: "hidden",
+    backgroundColor: COLORS.surface,
+  },
+  trendImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  trendMeta: {
+    position: "absolute",
+    left: scale(10),
+    bottom: scale(10),
+    flexDirection: "row",
+    alignItems: "center",
+    gap: scale(6),
+  },
+  categoryCard: {
+    width: scale(96),
+    height: scale(96),
+    borderRadius: scale(12),
+    padding: scale(10),
+    justifyContent: "flex-start",
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  categoryName: {
+    color: COLORS.text,
+    fontSize: getFontSize(13),
+    fontWeight: "700",
+    marginTop: scale(8),
+  },
+  categoryTagline: {
+    color: COLORS.textMuted,
+    fontSize: getFontSize(11),
+    marginTop: 0,
+  },
+  trendCount: {
+    color: COLORS.text,
+    fontSize: getFontSize(14),
+    fontWeight: "700",
   },
   sectionTitle: {
     color: COLORS.text,

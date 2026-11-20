@@ -93,6 +93,10 @@ export default function MyFameScreen() {
 
   useEffect(() => {
     if (competitionId) initialLoad();
+    else {
+      setIsLoading(false);
+      setLoadError("This leaderboard can't be found.");
+    }
   }, [competitionId, initialLoad]);
 
   const loadMore = async () => {

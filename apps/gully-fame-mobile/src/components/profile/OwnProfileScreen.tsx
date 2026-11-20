@@ -3,17 +3,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import {
-  Dimensions,
   Linking,
   Modal,
   ScrollView,
   StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image as ExpoImage } from "expo-image";
 import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
@@ -26,14 +27,10 @@ import {
   getProfileRoute,
   limitBio,
 } from "@/components/profile/shared/profileTypes";
-import {
-  LevelUpSection,
-  StatsSection,
-  UserInfoSection,
-} from "@/components/profile/shared/ProfileComponents";
+import { LevelUpSection } from "@/components/profile/shared/ProfileComponents";
 import { participantSelfProfileScreenStyles as pStyles } from "@/styles/participantSelfProfileScreenStyles";
 import { fanSelfProfileScreenStyles as fStyles } from "@/styles/fanSelfProfileScreenStyles";
-import { UserIconSVG, HomeIconSVG, ReelIconSVG, SearchIconSVG, BackIcon, SaveIcon } from "@/icons";
+import { UserIconSVG, HomeIconSVG, ReelIconSVG, SearchIconSVG, BackIcon, SaveIcon, VerifiedBadgeIcon } from "@/icons";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import ProfileBurgerMenuModal from "@/components/modals/ProfileBurgerMenuModal/ProfileBurgerMenuModal";
 import UpgradeFanToParticipantModal from "@/components/modals/UpgradeFanToParticipantModal/UpgradeFanToParticipantModal";
@@ -45,8 +42,6 @@ import { useUserReels } from "@/hooks/useUserReels";
 import { useProfileExtras } from "@/hooks/useProfileExtras";
 import { useInteractionReels } from "@/hooks/useInteractionReels";
 import { XP_AND_MISSIONS_ENABLED } from "@/config/features";
-
-const { height } = Dimensions.get("window");
 
 const profileTabs = [
   { name: "Home", icon: HomeIconSVG, label: "" },
@@ -83,6 +78,59 @@ const avatarSource = (path: string | null) => {
   const uri = resolveMediaUrl(path);
   return uri ? { uri } : null;
 };
+
+/* Own-profile header, identity and stats pill. Layout follows the reference design; brand colours are unchanged. */
+const ownStyles = StyleSheet.create({
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 4,
+  },
+  topIcon: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  topActions: { flexDirection: "row", alignItems: "center" },
+  handle: { flex: 1, color: "#fff", fontSize: 17, fontWeight: "700", textAlign: "center" },
+  identity: { paddingHorizontal: 16, paddingTop: 8 },
+  identityRow: { flexDirection: "row", alignItems: "center", gap: 16 },
+  avatarRing: { width: 92, height: 92, borderRadius: 22, padding: 2.5 },
+  avatarImage: { width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#5A3C1C" },
+  identityText: { flex: 1, alignItems: "flex-start" },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  name: { color: "#fff", fontSize: 20, fontWeight: "700", flexShrink: 1 },
+  rankPill: { marginTop: 6, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
+  rankPillFan: { backgroundColor: "#4B5563" },
+  rankPillParticipant: { backgroundColor: "#EC9A15" },
+  rankPillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6 },
+  rankTextFan: { color: "#fff" },
+  rankTextParticipant: { color: "#1A1208" },
+  words: { color: "rgba(255,255,255,0.7)", fontSize: 13, marginTop: 6 },
+  statPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    alignSelf: "stretch",
+    marginTop: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  statText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  statDot: { color: "rgba(255,255,255,0.5)", fontSize: 13 },
+  bio: { color: "rgba(255,255,255,0.92)", fontSize: 14, lineHeight: 20, marginTop: 12 },
+  upgradeButton: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(236,154,21,0.18)",
+  },
+  upgradeText: { color: "#EC9A15", fontSize: 13, fontWeight: "700" },
+  link: { color: "#EC9A15", fontSize: 14, fontWeight: "600", marginTop: 8 },
+});
 
 /** The signed-in user's profile (MyFame). The top section is the original layout for each role. */
 export default function OwnProfileScreen({ role }: { role: "fan" | "participant" }) {
@@ -210,7 +258,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   const tabs: ProfileTab[] = [
     {
       key: "reels",
-      label: "Reels",
+      label: "Videos",
       Icon: ReelsTabIcon,
       source: { ...postsSource, items: videos },
       emptyTitle: "No reels yet",
@@ -223,25 +271,49 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
       key: "saved",
       label: "Saved",
       Icon: BookmarkTabIcon,
+      // Saved posts are private to the owner, so the tab shows a lock.
+      locked: true,
       source: saved,
       emptyTitle: "Nothing saved yet",
     },
   ];
+
+  const insets = useSafeAreaInsets();
+  const handle = profileData.username ? `@${profileData.username}` : "";
+  const words = (profileData.threeWords || "")
+    .split("|")
+    .map((w) => w.trim())
+    .filter(Boolean);
+  const bioText = limitBio(profileData.bio || "").trim();
+  const postCount = reels.loading && posts.length === 0 ? null : posts.length;
+  const followersCount =
+    typeof profileData.followersCount === "number"
+      ? profileData.followersCount
+      : followCounts
+        ? followCounts.followers
+        : null;
+  const followingCount =
+    typeof profileData.followingCount === "number"
+      ? profileData.followingCount
+      : followCounts
+        ? followCounts.following
+        : null;
+  const countText = (n: number | null) => (typeof n === "number" ? formatCount(n) : "–");
 
   const avatar = avatarSource(profileData.profileImage);
   // Disk-cached so the photo shows straight away on later visits.
   const avatarImage = avatar ? (
     <ExpoImage
       source={avatar}
-      style={styles.gamifiedProfileImage}
+      style={ownStyles.avatarImage}
       cachePolicy="memory-disk"
       contentFit="cover"
     />
   ) : (
     <View
       style={[
-        styles.gamifiedProfileImage,
-        { backgroundColor: "#5A3C1C", alignItems: "center", justifyContent: "center" },
+        ownStyles.avatarImage,
+        { alignItems: "center", justifyContent: "center" },
       ]}
     >
       <Text style={{ color: "#EC9A15", fontSize: 40, fontWeight: "700" }}>
@@ -252,76 +324,138 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
 
   const top = (
     <View>
-      <View style={styles.header}>
+      <View style={[ownStyles.topBar, { paddingTop: insets.top + 6 }]}>
         <TouchableOpacity
           onPress={() => router.replace("/(main)" as any)}
-          style={styles.backButton}
+          style={ownStyles.topIcon}
           accessibilityLabel="Back"
           testID="profile-back"
         >
-          <BackIcon color="white" size={24} />
+          <BackIcon color="white" size={22} />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setMenuVisible(true)}
-          style={styles.menuButton}
-          accessibilityLabel="Menu"
-          testID="profile-menu"
-        >
-          <View style={styles.hamburgerIcon}>
-            <View style={styles.hamburgerLine} />
-            <View style={styles.hamburgerLine} />
-            <View style={styles.hamburgerLine} />
-          </View>
-        </TouchableOpacity>
+        <Text style={ownStyles.handle} numberOfLines={1}>
+          {handle}
+        </Text>
+        <View style={ownStyles.topActions}>
+          <TouchableOpacity
+            onPress={() => setMenuVisible(true)}
+            style={ownStyles.topIcon}
+            accessibilityLabel="Menu"
+            testID="profile-menu"
+          >
+            <Ionicons name="settings-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {isFan ? (
-        <View style={styles.gamifiedAvatarContainer}>
+      <View style={ownStyles.identity}>
+        <View style={ownStyles.identityRow}>
           <LinearGradient
-            colors={["#E3E4E5", "#9CA3AF", "#4B5563"]}
-            style={styles.avatarGradientRing}
+            colors={isFan ? ["#E3E4E5", "#9CA3AF", "#4B5563"] : ["#FFD700", "#FF8C00", "#FF0055"]}
+            style={ownStyles.avatarRing}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             {avatarImage}
           </LinearGradient>
-          <View
-            style={[
-              styles.rankBadgeContainer,
-              { backgroundColor: "#4B5563", borderColor: "#E3E4E5" },
-            ]}
-          >
-            <Text style={[styles.rankBadgeText, { color: "#fff" }]}>FAN</Text>
+          <View style={ownStyles.identityText}>
+            <View style={ownStyles.nameRow}>
+              <Text
+                style={ownStyles.name}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.6}
+              >
+                {displayName || (isLoading ? "" : "User")}
+              </Text>
+              {profileData.isVerified ? <VerifiedBadgeIcon size={18} /> : null}
+            </View>
+            <View
+              style={[
+                ownStyles.rankPill,
+                isFan ? ownStyles.rankPillFan : ownStyles.rankPillParticipant,
+              ]}
+            >
+              <Text
+                style={[
+                  ownStyles.rankPillText,
+                  isFan ? ownStyles.rankTextFan : ownStyles.rankTextParticipant,
+                ]}
+              >
+                {isFan ? "FAN" : profileData.currentRank || "STAR"}
+              </Text>
+            </View>
+            {words.length > 0 ? (
+              <Text style={ownStyles.words} numberOfLines={1}>
+                {words.join(" • ")}
+              </Text>
+            ) : null}
           </View>
         </View>
-      ) : (
-        <View style={styles.gamifiedAvatarContainer}>
-          <LinearGradient
-            colors={["#FFD700", "#FF8C00", "#FF0055"]}
-            style={styles.avatarGradientRing}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+
+        <View style={ownStyles.statPill}>
+          <Text style={ownStyles.statText} numberOfLines={1} adjustsFontSizeToFit>Posts ({countText(postCount)})</Text>
+          <Text style={ownStyles.statDot}>•</Text>
+          <TouchableOpacity
+            onPress={() => openFollowers("followers")}
+            testID="profile-followers-count"
+            activeOpacity={0.7}
+            accessibilityRole="button"
           >
-            {avatarImage}
-          </LinearGradient>
-          <View style={styles.rankBadgeContainer}>
-            <Text style={styles.rankBadgeText}>{profileData.currentRank || "STAR"}</Text>
-          </View>
+            <Text style={ownStyles.statText} numberOfLines={1} adjustsFontSizeToFit>Followers ({countText(followersCount)})</Text>
+          </TouchableOpacity>
+          <Text style={ownStyles.statDot}>•</Text>
+          <TouchableOpacity
+            onPress={() => openFollowers("following")}
+            testID="profile-following-count"
+            activeOpacity={0.7}
+            accessibilityRole="button"
+          >
+            <Text style={ownStyles.statText} numberOfLines={1} adjustsFontSizeToFit>Following ({countText(followingCount)})</Text>
+          </TouchableOpacity>
         </View>
-      )}
 
-      <UserInfoSection
-        profileData={profileData}
-        showEditButton={false}
-        role={isFan ? "fan" : "participant"}
-        threeWords={profileData.threeWords}
-        userNameMarginTop={isFan ? height * 0.001 : undefined}
-        handleUpgradeClick={() => setUpgradeVisible(true)}
-        nameFallback={isLoading ? "" : "User"}
-      />
+        {bioText ? <Text style={ownStyles.bio}>{bioText}</Text> : null}
 
-      {/* The social row below pulls itself up 20px (it used to sit under the pencil row). */}
-      <View style={{ marginBottom: 20 }}>
+        {isFan ? (
+          <TouchableOpacity
+            style={ownStyles.upgradeButton}
+            onPress={() => setUpgradeVisible(true)}
+            accessibilityRole="button"
+          >
+            <Text style={ownStyles.upgradeText}>Upgrade to Participant</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {profileData.instagramLink ? (
+          <TouchableOpacity
+            accessibilityLabel="Instagram"
+            onPress={() =>
+              Linking.openURL(
+                `https://instagram.com/${cleanHandle(profileData.instagramLink)}`
+              ).catch(() => {})
+            }
+          >
+            <Text style={ownStyles.link} numberOfLines={1}>
+              instagram.com/{cleanHandle(profileData.instagramLink)}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+        {profileData.xLink ? (
+          <TouchableOpacity
+            accessibilityLabel="X"
+            onPress={() =>
+              Linking.openURL(`https://x.com/${cleanHandle(profileData.xLink)}`).catch(() => {})
+            }
+          >
+            <Text style={ownStyles.link} numberOfLines={1}>
+              x.com/{cleanHandle(profileData.xLink)}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      <View style={{ marginTop: 6, marginBottom: 8 }}>
         <OwnProfileActions
           userId={userId}
           displayName={displayName}
@@ -330,46 +464,11 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
         />
       </View>
 
-      <View style={styles.socialLinksContainer}>
-        {profileData.instagramLink ? (
-          <TouchableOpacity
-            style={styles.socialIconButton}
-            accessibilityLabel="Instagram"
-            onPress={() =>
-              Linking.openURL(
-                `https://instagram.com/${cleanHandle(profileData.instagramLink)}`
-              ).catch(() => {})
-            }
-          >
-            <InstagramIconSVG width={22} height={22} color="#fff" />
-          </TouchableOpacity>
-        ) : null}
-        {profileData.xLink ? (
-          <TouchableOpacity
-            style={styles.socialIconButton}
-            accessibilityLabel="X"
-            onPress={() =>
-              Linking.openURL(`https://x.com/${cleanHandle(profileData.xLink)}`).catch(() => {})
-            }
-          >
-            <XIconSVG width={20} height={20} color="#fff" />
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
       <LinearGradient
         colors={["rgba(41, 33, 24, 0.2)", "#3C2610"]}
         locations={[0.0, 0.4]}
         style={styles.contentContainer}
       >
-        <StatsSection
-          photos={reels.loading && posts.length === 0 ? null : posts.length}
-          followers={typeof profileData.followersCount === "number" ? profileData.followersCount : followCounts ? followCounts.followers : null}
-          following={typeof profileData.followingCount === "number" ? profileData.followingCount : followCounts ? followCounts.following : null}
-          onFollowersPress={() => openFollowers("followers")}
-          onFollowingPress={() => openFollowers("following")}
-        />
-
         {insights ? (
           <View
             style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6, marginBottom: 4 }}
@@ -437,7 +536,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   return (
     <View style={{ flex: 1, backgroundColor: "#3C2610" }}>
       <StatusBar barStyle="light-content" />
-      <ProfileView top={top} tabs={tabs} canCreatePost={!isFan} ownerId={userId} />
+      <ProfileView top={top} tabs={tabs} canCreatePost={!isFan} ownerId={userId} textTabs />
 
       <ProfileBurgerMenuModal
         isVisible={menuVisible}
