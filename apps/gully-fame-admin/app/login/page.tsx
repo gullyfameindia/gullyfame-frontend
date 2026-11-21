@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, Mail, Lock, KeyRound } from 'lucide-react';
 import { loginAdmin, verifyAdminLogin } from '@/lib/authApi';
+import PasswordVisibilityButton from '@/components/PasswordVisibilityButton';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   // Second step when the server asks for the emailed code (A6).
@@ -146,13 +148,14 @@ export default function LoginPage() {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:ring-1 focus:ring-primary-500"
+                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-10 focus:ring-1 focus:ring-primary-500"
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
+              <PasswordVisibilityButton visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />
             </div>
           </div>
 

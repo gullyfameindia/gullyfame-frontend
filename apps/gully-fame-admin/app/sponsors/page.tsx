@@ -9,11 +9,14 @@ import { getSponsors, createSponsor, updateSponsor, deleteSponsor, getSponsorByI
 import { getCompetitions } from '@/lib/competitionApi';
 import { usePagedItems } from '@/lib/hooks';
 import Pagination from '@/components/Pagination';
+import PasswordVisibilityButton from '@/components/PasswordVisibilityButton';
 
 export default function SponsorsPage() {
   const userRole = getUserRole();
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -497,16 +500,17 @@ export default function SponsorsPage() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className={`w-full rounded-lg border pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
+                      className={`w-full rounded-lg border pl-10 pr-10 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
                         errors.password
                           ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
                           : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500/20'
                       }`}
                       placeholder="Enter password (min 6 characters)"
                     />
+                    <PasswordVisibilityButton visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />
                   </div>
                   {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
                 </div>
@@ -518,15 +522,19 @@ export default function SponsorsPage() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      className={`w-full rounded-lg border pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
+                      className={`w-full rounded-lg border pl-10 pr-10 py-3 text-sm focus:outline-none focus:ring-2 transition-all ${
                         errors.confirmPassword
                           ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
                           : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500/20'
                       }`}
                       placeholder="Confirm password"
+                    />
+                    <PasswordVisibilityButton
+                      visible={showConfirmPassword}
+                      onToggle={() => setShowConfirmPassword((v) => !v)}
                     />
                   </div>
                   {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}

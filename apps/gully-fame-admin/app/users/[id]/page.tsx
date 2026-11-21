@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Mail, Phone, Calendar, Wallet, Gift, Users, UserPlus, Ban, Key, Shield, Tag, Power, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { getUserRole } from '@/lib/auth';
+import PasswordVisibilityButton from '@/components/PasswordVisibilityButton';
 import { getUserById, updateUserStatus, resetUserPassword, getUserEarnings, type UserDetail } from '@/lib/userApi';
 
 export default function UserDetailPage() {
@@ -21,6 +22,7 @@ export default function UserDetailPage() {
   const [earnings, setEarnings] = useState<any[]>([]);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Synchronous lock for status/password actions (state alone can't stop a same-tick double click).
@@ -337,13 +339,16 @@ export default function UserDetailPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Reset Password</h2>
-            <input
-              type="password"
-              placeholder="Enter new password (min 6 characters)"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 mb-4 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-            />
+            <div className="relative mb-4">
+              <input
+                type={showNewPassword ? 'text' : 'password'}
+                placeholder="Enter new password (min 6 characters)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-4 pr-10 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+              <PasswordVisibilityButton visible={showNewPassword} onToggle={() => setShowNewPassword((v) => !v)} />
+            </div>
             <div className="flex space-x-2">
               <button
                 onClick={handlePasswordReset}
