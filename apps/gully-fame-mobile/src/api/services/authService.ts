@@ -43,6 +43,8 @@ export interface RegisterRequest {
   email: string;
   password: string;
   role: BackendRole;
+  /** 3-20 chars: lowercase letters, numbers, "." and "_". The server checks it is free. */
+  username: string;
 }
 
 export interface LoginRequest {
@@ -143,6 +145,7 @@ export const authService = {
             email: data.email.trim().toLowerCase(),
             password: data.password,
             role: data.role,
+            username: data.username,
           },
           { skipAuth: true }
         ),

@@ -167,12 +167,9 @@ export default function SearchScreen() {
   // Show the cached home data at once, then refresh it.
   useEffect(() => {
     let active = true;
-    // TEMP (testing skeletons): skip the saved copy in dev so the loading state is visible.
-    if (!__DEV__) {
-      getCachedHomeScreen().then((cached) => {
-        if (active && cached) setHome(cached);
-      });
-    }
+    getCachedHomeScreen().then((cached) => {
+      if (active && cached) setHome(cached);
+    });
     getHomeScreen()
       .then((data) => {
         if (active) setHome(data);

@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ImageBackground, StatusBar, Modal, Animated } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { safeBack } from "@/utils/safeBack";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path, G, Circle, Rect } from "react-native-svg";
+import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { getCategories } from "@/api/services/userService";
 import { getFollowedCategories, setCategoryFollowed } from "@/utils/followedCategories";
 import { TALENT_CATEGORIES } from "@/constants/talentCategories";
 import { listCompetitionsByCategory, getCompetitionReels, type CompetitionListItem } from "@/api/services/competitionService";
 import { SkeletonCards, SkeletonGrid } from "@/components/Skeleton/Skeleton";
+import { Award, CalendarDays, Check, ChevronDown, ChevronLeft, Clock, Film, Plus, Trophy, Users } from "lucide-react-native";
+import { colors, font, radius, space } from "@/theme/tokens";
 
 const { width, height } = Dimensions.get("window");
 
@@ -326,23 +328,21 @@ export default function CategoryDetailScreen() {
         {}
         <View style={styles.header}>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.backButton}>
-            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-              <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-            </Svg>
+            <ChevronLeft size={28} color="#fff" />
           </TouchableOpacity>
-          
-          {}
-          <TouchableOpacity 
+
+          {/* Category switcher: the name itself is the button. */}
+          <TouchableOpacity
             style={styles.categoryDropdown}
             onPress={() => setFilterVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel={`${category.name}. Change category`}
           >
-            <Text style={styles.categoryDropdownText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} ellipsizeMode="clip">{category.name}</Text>
-            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-              <Path d="M6 9l6 6 6-6" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
-            </Svg>
+            <Text style={styles.categoryDropdownText} numberOfLines={1}>{category.name}</Text>
+            <ChevronDown size={18} color={colors.accent} strokeWidth={2.2} />
           </TouchableOpacity>
-          
-          <View style={{ width: 40 }} />
+
+          <View style={{ width: 44 }} />
         </View>
 
         {}
@@ -351,23 +351,34 @@ export default function CategoryDetailScreen() {
           style={styles.heroSection}
           resizeMode="cover"
         >
+          {/* Darkens slightly for the text, then melts into the page colour (no hard edge). */}
           <LinearGradient
-            colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)']}
+            colors={["rgba(60, 38, 16, 0.15)", "rgba(60, 38, 16, 0.55)", "#3C2610"]}
+            locations={[0, 0.55, 1]}
             style={styles.heroOverlay}
           >
             <View style={styles.heroContent}>
-              <Text style={styles.heroTitle}>{category.name.toUpperCase()}</Text>
-              <Text style={styles.heroTagline}>{category.tagline}</Text>
-              <TouchableOpacity 
+              <Text style={styles.heroTitle} numberOfLines={1}>{category.name}</Text>
+              {category.tagline ? (
+                <Text style={styles.heroTagline} numberOfLines={2}>{category.tagline}</Text>
+              ) : null}
+              <TouchableOpacity
                 style={[styles.followBtn, isFollowing && styles.followingBtn]}
                 onPress={() => {
                   const next = !isFollowing;
                   setIsFollowing(next);
                   if (talentKey) setCategoryFollowed(talentKey, next);
                 }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isFollowing }}
               >
-                <Text style={styles.followBtnText} numberOfLines={1} ellipsizeMode="clip">
-                  {isFollowing ? "Following" : "Follow Category"}
+                {isFollowing ? (
+                  <Check size={16} color={colors.text} strokeWidth={2.4} />
+                ) : (
+                  <Plus size={16} color="#1A1A1A" strokeWidth={2.4} />
+                )}
+                <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]} numberOfLines={1}>
+                  {isFollowing ? "Following" : "Follow"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -377,23 +388,29 @@ export default function CategoryDetailScreen() {
         {}
         <View style={styles.tabButtons}>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "competitions" && styles.tabButtonActive]}
+            style={styles.tabButton}
             onPress={() => handleTabChange("competitions")}
             activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === "competitions" }}
           >
             <Text style={[styles.tabButtonText, activeTab === "competitions" && styles.tabButtonTextActive]}>
               Competitions
             </Text>
+            <View style={[styles.tabUnderline, activeTab === "competitions" && styles.tabUnderlineActive]} />
           </TouchableOpacity>
           
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "reels" && styles.tabButtonActive]}
+            style={styles.tabButton}
             onPress={() => handleTabChange("reels")}
             activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === "reels" }}
           >
             <Text style={[styles.tabButtonText, activeTab === "reels" && styles.tabButtonTextActive]}>
               Reels
             </Text>
+            <View style={[styles.tabUnderline, activeTab === "reels" && styles.tabUnderlineActive]} />
           </TouchableOpacity>
         </View>
 
@@ -409,7 +426,7 @@ export default function CategoryDetailScreen() {
                   activeOpacity={0.7}
                 >
                   {status === "live" && <Animated.View style={[styles.liveIndicator, { opacity: liveDotBlink }]} />}
-                  <Text style={[styles.filterChipText, statusFilter === status && styles.filterChipTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} ellipsizeMode="clip">
+                  <Text style={[styles.filterChipText, statusFilter === status && styles.filterChipTextActive]} numberOfLines={1}>
                     {status.charAt(0).toUpperCase() + status.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -449,16 +466,34 @@ export default function CategoryDetailScreen() {
                 }
                 return (
                   <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>
-                      {listsError ? "Couldn't load competitions" : "No competitions in this category yet"}
-                    </Text>
-                    {listsError ? (
-                      <TouchableOpacity accessibilityRole="button" onPress={() => setReloadKey((k) => k + 1)}>
-                        <Text style={[styles.emptyStateSubtext, { color: "#EC9A15" }]}>Tap to try again</Text>
+                    <View style={styles.emptyIcon}>
+                      <Trophy size={22} color={colors.accent} strokeWidth={1.8} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.emptyStateText}>
+                        {listsError
+                          ? "Couldn't load competitions"
+                          : statusFilter === "all"
+                            ? `No ${category.name} competitions yet`
+                            : `No ${statusFilter} ${category.name} competitions`}
+                      </Text>
+                      <Text style={styles.emptyStateSubtext}>
+                        {listsError
+                          ? "Check your connection and try again."
+                          : "Follow this category and new competitions will show up here."}
+                      </Text>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        style={styles.emptyButton}
+                        onPress={() =>
+                          listsError
+                            ? setReloadKey((k) => k + 1)
+                            : router.push("/(main)/competitions/upcoming" as any)
+                        }
+                      >
+                        <Text style={styles.emptyButtonText}>{listsError ? "Try again" : "See all competitions"}</Text>
                       </TouchableOpacity>
-                    ) : (
-                      <Text style={styles.emptyStateSubtext}>Browse all competitions from the home screen.</Text>
-                    )}
+                    </View>
                   </View>
                 );
               }
@@ -491,27 +526,17 @@ export default function CategoryDetailScreen() {
                               <Text style={styles.compCardTitleNew} numberOfLines={2}>{comp.title}</Text>
                               <View style={styles.compCardDetailsNew}>
                                 <View style={styles.compDetailItemNew}>
-                                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                                    <Circle cx="12" cy="12" r="10" stroke="#EC9A15" strokeWidth={2}/>
-                                    <Path d="M12 6v6l4 2" stroke="#EC9A15" strokeWidth={2} strokeLinecap="round"/>
-                                  </Svg>
+                                  <Clock size={14} color={colors.accent} strokeWidth={2} />
                                   <Text style={styles.compDetailTextNew}>{comp.endDate}</Text>
                                 </View>
                                 <View style={styles.compDetailItemNew}>
-                                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                                    <Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#EC9A15" strokeWidth={2}/>
-                                    <Circle cx="9" cy="7" r="4" stroke="#EC9A15" strokeWidth={2}/>
-                                  </Svg>
+                                  <Users size={14} color={colors.accent} strokeWidth={2} />
                                   <Text style={styles.compDetailTextNew}>{comp.participants} joined</Text>
                                 </View>
                               </View>
                               <View style={styles.compCardFooterNew}>
                                 <View style={styles.prizeRowNew}>
-                                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                                    <G>
-                                      <Path d="M12 14V17M12 14C9.58104 14 7.56329 12.2822 7.10002 10M12 14C14.419 14 16.4367 12.2822 16.9 10M17 5H19.75C19.9823 5 20.0985 5 20.1951 5.01921C20.5918 5.09812 20.9019 5.40822 20.9808 5.80491C21 5.90151 21 6.01767 21 6.25C21 6.94698 21 7.29547 20.9424 7.58527C20.7056 8.77534 19.7753 9.70564 18.5853 9.94236C18.2955 10 17.947 10 17.25 10H17H16.9M7 5H4.25C4.01767 5 3.90151 5 3.80491 5.01921C3.40822 5.09812 3.09812 5.40822 3.01921 5.80491C3 5.90151 3 6.01767 3 6.25C3 6.94698 3 7.29547 3.05764 7.58527C3.29436 8.77534 4.22466 9.70564 5.41473 9.94236C5.70453 10 6.05302 10 6.75 10H7H7.10002M12 17C12.93 17 13.395 17 13.7765 17.1022C14.8117 17.3796 15.6204 18.1883 15.8978 19.2235C16 19.605 16 20.07 16 21H8C8 20.07 8 19.605 8.10222 19.2235C8.37962 18.1883 9.18827 17.3796 10.2235 17.1022C10.605 17 11.07 17 12 17ZM7.10002 10C7.03443 9.67689 7 9.34247 7 9V4.57143C7 4.03831 7 3.77176 7.09903 3.56612C7.19732 3.36201 7.36201 3.19732 7.56612 3.09903C7.77176 3 8.03831 3 8.57143 3H15.4286C15.9617 3 16.2282 3 16.4339 3.09903C16.638 3.19732 16.8027 3.36201 16.901 3.56612C17 3.77176 17 4.03831 17 4.57143V9C17 9.34247 16.9656 9.67689 16.9 10" stroke="#EC9A15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </G>
-                                  </Svg>
+                                  <Trophy size={16} color={colors.accent} strokeWidth={2} />
                                   <Text style={styles.compPrizeTextNew}>{comp.prize}</Text>
                                 </View>
                                 <TouchableOpacity 
@@ -521,7 +546,7 @@ export default function CategoryDetailScreen() {
                                     router.push(`/(main)/competition/live/${comp.id}?scrollToEntries=true` as any);
                                   }}
                                 >
-                                  <Text style={styles.voteBtnTextNew}>Vote Now</Text>
+                                  <Text style={styles.voteBtnTextNew}>Vote</Text>
                                 </TouchableOpacity>
                               </View>
                             </View>
@@ -550,20 +575,13 @@ export default function CategoryDetailScreen() {
                               <Text style={styles.compCardTitleNew} numberOfLines={2}>{comp.title}</Text>
                               <View style={styles.compCardDetailsNew}>
                                 <View style={styles.compDetailItemNew}>
-                                  <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                                    <Rect x="3" y="4" width="18" height="18" rx="2" stroke="#EC9A15" strokeWidth={2}/>
-                                    <Path d="M16 2v4M8 2v4M3 10h18" stroke="#EC9A15" strokeWidth={2}/>
-                                  </Svg>
-                                  <Text style={styles.compDetailTextNew}>Starts: {comp.startDate}</Text>
+                                  <CalendarDays size={14} color={colors.accent} strokeWidth={2} />
+                                  <Text style={styles.compDetailTextNew}>Starts {comp.startDate}</Text>
                                 </View>
                               </View>
                               <View style={styles.compCardFooterNew}>
                                 <View style={styles.prizeRowNew}>
-                                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                                    <G>
-                                      <Path d="M12 14V17M12 14C9.58104 14 7.56329 12.2822 7.10002 10M12 14C14.419 14 16.4367 12.2822 16.9 10M17 5H19.75C19.9823 5 20.0985 5 20.1951 5.01921C20.5918 5.09812 20.9019 5.40822 20.9808 5.80491C21 5.90151 21 6.01767 21 6.25C21 6.94698 21 7.29547 20.9424 7.58527C20.7056 8.77534 19.7753 9.70564 18.5853 9.94236C18.2955 10 17.947 10 17.25 10H17H16.9M7 5H4.25C4.01767 5 3.90151 5 3.80491 5.01921C3.40822 5.09812 3.09812 5.40822 3.01921 5.80491C3 5.90151 3 6.01767 3 6.25C3 6.94698 3 7.29547 3.05764 7.58527C3.29436 8.77534 4.22466 9.70564 5.41473 9.94236C5.70453 10 6.05302 10 6.75 10H7H7.10002M12 17C12.93 17 13.395 17 13.7765 17.1022C14.8117 17.3796 15.6204 18.1883 15.8978 19.2235C16 19.605 16 20.07 16 21H8C8 20.07 8 19.605 8.10222 19.2235C8.37962 18.1883 9.18827 17.3796 10.2235 17.1022C10.605 17 11.07 17 12 17ZM7.10002 10C7.03443 9.67689 7 9.34247 7 9V4.57143C7 4.03831 7 3.77176 7.09903 3.56612C7.19732 3.36201 7.36201 3.19732 7.56612 3.09903C7.77176 3 8.03831 3 8.57143 3H15.4286C15.9617 3 16.2282 3 16.4339 3.09903C16.638 3.19732 16.8027 3.36201 16.901 3.56612C17 3.77176 17 4.03831 17 4.57143V9C17 9.34247 16.9656 9.67689 16.9 10" stroke="#EC9A15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </G>
-                                  </Svg>
+                                  <Trophy size={16} color={colors.accent} strokeWidth={2} />
                                   <Text style={styles.compPrizeTextNew}>{comp.prize}</Text>
                                 </View>
                                 <TouchableOpacity 
@@ -580,7 +598,7 @@ export default function CategoryDetailScreen() {
                                     router.push(`/(main)/competition/upcoming/${comp.id}` as any);
                                   }}
                                 >
-                                  <Text style={styles.joinBtnTextNew}>Join Now</Text>
+                                  <Text style={styles.joinBtnTextNew}>Join</Text>
                                 </TouchableOpacity>
                               </View>
                             </View>
@@ -606,19 +624,13 @@ export default function CategoryDetailScreen() {
                               <Text style={styles.compCardTitleNew} numberOfLines={2}>{comp.title}</Text>
                               <View style={styles.compCardDetailsNew}>
                                 <View style={styles.compDetailItemNew}>
-                                  <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                                    <Path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#FFD700"/>
-                                  </Svg>
+                                  <Award size={14} color={colors.accent} strokeWidth={2} />
                                   <Text style={styles.compDetailTextNew}>Ended · {comp.participants} joined</Text>
                                 </View>
                               </View>
                               <View style={styles.compCardFooterNew}>
                                 <View style={styles.prizeRowNew}>
-                                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                                    <G>
-                                      <Path d="M12 14V17M12 14C9.58104 14 7.56329 12.2822 7.10002 10M12 14C14.419 14 16.4367 12.2822 16.9 10M17 5H19.75C19.9823 5 20.0985 5 20.1951 5.01921C20.5918 5.09812 20.9019 5.40822 20.9808 5.80491C21 5.90151 21 6.01767 21 6.25C21 6.94698 21 7.29547 20.9424 7.58527C20.7056 8.77534 19.7753 9.70564 18.5853 9.94236C18.2955 10 17.947 10 17.25 10H17H16.9M7 5H4.25C4.01767 5 3.90151 5 3.80491 5.01921C3.40822 5.09812 3.09812 5.40822 3.01921 5.80491C3 5.90151 3 6.01767 3 6.25C3 6.94698 3 7.29547 3.05764 7.58527C3.29436 8.77534 4.22466 9.70564 5.41473 9.94236C5.70453 10 6.05302 10 6.75 10H7H7.10002M12 17C12.93 17 13.395 17 13.7765 17.1022C14.8117 17.3796 15.6204 18.1883 15.8978 19.2235C16 19.605 16 20.07 16 21H8C8 20.07 8 19.605 8.10222 19.2235C8.37962 18.1883 9.18827 17.3796 10.2235 17.1022C10.605 17 11.07 17 12 17ZM7.10002 10C7.03443 9.67689 7 9.34247 7 9V4.57143C7 4.03831 7 3.77176 7.09903 3.56612C7.19732 3.36201 7.36201 3.19732 7.56612 3.09903C7.77176 3 8.03831 3 8.57143 3H15.4286C15.9617 3 16.2282 3 16.4339 3.09903C16.638 3.19732 16.8027 3.36201 16.901 3.56612C17 3.77176 17 4.03831 17 4.57143V9C17 9.34247 16.9656 9.67689 16.9 10" stroke="#EC9A15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </G>
-                                  </Svg>
+                                  <Trophy size={16} color={colors.accent} strokeWidth={2} />
                                   <Text style={styles.compPrizeTextNew}>{comp.prize}</Text>
                                 </View>
                                 <TouchableOpacity 
@@ -628,7 +640,7 @@ export default function CategoryDetailScreen() {
                                     router.push(`/(main)/competition/past/${comp.id}` as any);
                                   }}
                                 >
-                                  <Text style={styles.resultsBtnTextNew}>View Results</Text>
+                                  <Text style={styles.resultsBtnTextNew}>Results</Text>
                                 </TouchableOpacity>
                               </View>
                             </View>
@@ -645,7 +657,7 @@ export default function CategoryDetailScreen() {
             {topPerformers.length > 0 && (
             <View style={styles.section}>
               <View style={[styles.sectionHeader, { justifyContent: 'center', width: '100%' }]}>
-                <Text style={[styles.sectionTitle, { textAlign: 'center', width: '100%' }]}>Top Three Performers This Week</Text>
+                <Text style={[styles.sectionTitle, { textAlign: 'center', width: '100%' }]}>Top performers this week</Text>
               </View>
               <View style={styles.topDancersContainer}>
                 {}
@@ -805,8 +817,20 @@ export default function CategoryDetailScreen() {
             )}
             {sampleReels.length === 0 && !listsLoading && (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>No reels in this category yet</Text>
-                <Text style={styles.emptyStateSubtext}>Watch the latest reels in GullyReel.</Text>
+                <View style={styles.emptyIcon}>
+                  <Film size={22} color={colors.accent} strokeWidth={1.8} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.emptyStateText}>No {category.name} entries yet</Text>
+                  <Text style={styles.emptyStateSubtext}>Competition entries in this category show up here.</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    style={styles.emptyButton}
+                    onPress={() => router.push("/(main)/reel" as any)}
+                  >
+                    <Text style={styles.emptyButtonText}>Watch GullyReel</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
             <View style={styles.reelsGrid}>
@@ -839,142 +863,102 @@ export default function CategoryDetailScreen() {
       </ScrollView>
 
       {}
+      {/* Category switcher: a bottom sheet listing every talent category. */}
       <Modal
         visible={filterVisible}
-        transparent={true}
-        animationType="fade"
+        transparent
+        animationType="slide"
         onRequestClose={() => setFilterVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setFilterVisible(false)}
-        >
-          <View style={styles.filterPopup}>
-            <View style={styles.filterHeader}>
-              <Text style={styles.filterHeaderText}>Select Category</Text>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled bounces={false}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setFilterVisible(false)} />
+        <View style={styles.filterPopup}>
+          <View style={styles.sheetGrabber} />
+          <Text style={styles.filterHeaderText}>Categories</Text>
+          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
             {TALENT_CATEGORIES.map((t) => {
               const backend = allCategories.find((b) => matchTalent(b.label)?.key === t.key);
-              return { id: String(backend?.id ?? t.key), name: t.name };
-            }).map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.filterOption,
-                  String(selectedCategoryId) === cat.id.toString() && styles.filterOptionActive
-                ]}
-                onPress={() => {
-                  setSelectedCategoryId(cat.id.toString());
-                  setFilterVisible(false);
-                  router.replace(`/(main)/category/${cat.id}` as any);
-                }}
-              >
-                <Text
-                  style={[
-                  styles.filterOptionText,
-                  String(selectedCategoryId) === cat.id.toString() && styles.filterOptionTextActive
-                ]}>
-                  {cat.name}
-                </Text>
-                {String(selectedCategoryId) === cat.id.toString() && (
-                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                    <Path d="M20 6L9 17l-5-5" stroke="#EC9A15" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"/>
-                  </Svg>
-                )}
-              </TouchableOpacity>
-            ))}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
+              const id = String(backend?.id ?? t.key);
+              const active = String(selectedCategoryId) === id || talentKey === t.key;
+              return (
+                <TouchableOpacity
+                  key={t.key}
+                  style={[styles.filterOption, active && styles.filterOptionActive]}
+                  onPress={() => {
+                    setFilterVisible(false);
+                    if (active) return;
+                    setSelectedCategoryId(id);
+                    router.replace(`/(main)/category/${id}` as any);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                >
+                  <View style={[styles.filterOptionIcon, active && styles.filterOptionIconActive]}>
+                    <MaterialCommunityIcons name={t.icon} size={22} color={active ? "#1A1A1A" : colors.accent} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.filterOptionText, active && styles.filterOptionTextActive]}>{t.name}</Text>
+                    <Text style={styles.filterOptionSub} numberOfLines={1}>{t.tagline}</Text>
+                  </View>
+                  {active ? <Check size={20} color={colors.accent} strokeWidth={2.5} /> : null}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
       </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  sheetGrabber: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: space.sm },
+  filterOptionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.accentSoft,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterOptionIconActive: { backgroundColor: colors.accent },
+  filterOptionSub: { fontSize: 13, color: colors.textMuted, fontFamily: font.regular, marginTop: 1 },
+  followingBtnText: { color: colors.text },
+  tabUnderline: { height: 2, alignSelf: "stretch", borderRadius: 1, backgroundColor: "transparent" },
+  tabUnderlineActive: { backgroundColor: colors.accent },
+  emptyIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: colors.accentSoft,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyButton: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accent,
+    justifyContent: "center",
+  },
+  emptyButtonText: { color: "#1A1A1A", fontSize: 13, fontFamily: font.semibold },
   container: {
     flex: 1,
     backgroundColor: "#3C2610",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-  },
-  categoryDropdown: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: width - 40 - 40 - 40 - 8,
-    marginHorizontal: 4,
-    justifyContent: "center",
-    backgroundColor: "#2a2a2a",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-  categoryDropdownText: {
-    flex: 1,
-    textAlign: "center",
-    color: "#fff",
-    fontSize: 16,
-  },
-  heroSection: {
-    width: width,
-    height: height * 0.28,
-  },
-  heroOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    padding: 20,
-  },
-  heroContent: {
-    alignItems: "flex-start",
-  },
-  heroTitle: {
-    alignSelf: "stretch",
-    fontSize: width * 0.08,
-    color: "#fff",
-    marginBottom: 8,
-    letterSpacing: 2,
-  },
-  heroTagline: {
-    fontSize: width * 0.038,
-    color: "#fff",
-    marginBottom: 20,
-    opacity: 0.9,
-  },
-  followBtn: {
-    backgroundColor: "#EC9A15",
-    width: 190,
-    height: 42,
-    paddingHorizontal: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "#EC9A15",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  followingBtn: {
-    backgroundColor: "#2a2a2a",
-  },
-  followBtnText: {
-    textAlign: "center",
-    includeFontPadding: false,
-    color: "#fff",
-    fontSize: 14,
-    alignSelf: "stretch",
-  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: space.sm, paddingTop: 44, paddingBottom: space.sm },
+  backButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
+  categoryDropdown: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 44 },
+  categoryDropdownText: { flexShrink: 1, color: colors.text, fontSize: 20, fontFamily: font.titleMedium },
+  heroSection: { width: width, height: height * 0.26 },
+  heroOverlay: { flex: 1, justifyContent: "flex-end", paddingHorizontal: space.lg, paddingBottom: space.lg },
+  heroContent: { alignItems: "flex-start" },
+  heroTitle: { alignSelf: "stretch", fontSize: 30, color: colors.text, fontFamily: font.title },
+  heroTagline: { fontSize: 14, lineHeight: 20, color: colors.textBody, fontFamily: font.regular, marginTop: 2, marginBottom: space.md },
+  followBtn: { flexDirection: "row", alignItems: "center", gap: 6, height: 34, paddingHorizontal: 14, borderRadius: radius.sm, backgroundColor: colors.accent, borderWidth: 1, borderColor: colors.accent },
+  followingBtn: { backgroundColor: "rgba(0, 0, 0, 0.35)", borderColor: "rgba(255, 255, 255, 0.35)" },
+  followBtnText: { color: "#1A1A1A", fontSize: 14, fontFamily: font.semibold, includeFontPadding: false },
   statsSection: {
     flexDirection: "row",
     backgroundColor: "#40301F",
@@ -1000,43 +984,14 @@ const styles = StyleSheet.create({
     color: "#999",
     marginTop: 2,
   },
-  tabButtons: {
-    flexDirection: "row",
-    backgroundColor: "#40301F",
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    gap: 12,
-  },
-  tabButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#1a1a1a",
-  },
-  tabButtonActive: {
-    backgroundColor: "#EC9A15",
-  },
-  tabButtonText: {
-    textAlign: "center",
-    includeFontPadding: false,
-    fontSize: 15,
-    color: "#999",
-  },
-  tabButtonTextActive: {
-    color: "#fff",
-  },
-  content: {
-    paddingTop: 20,
-  },
-  section: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    marginBottom: 12,
-  },
+  tabButtons: { flexDirection: "row", paddingHorizontal: space.lg, gap: space.xl, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 0.08)" },
+  tabButton: { alignItems: "center", paddingTop: space.sm },
+  tabButtonActive: {},
+  tabButtonText: { fontSize: 15, color: colors.textMuted, fontFamily: font.semibold, includeFontPadding: false, paddingBottom: 10 },
+  tabButtonTextActive: { color: colors.text },
+  content: { paddingTop: space.lg },
+  section: { marginBottom: space.xl, paddingHorizontal: space.lg },
+  sectionHeader: { marginBottom: space.md },
   sectionTitleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1049,11 +1004,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF3B30",
     marginTop: 2,
   },
-  sectionTitle: {
-    fontSize: 17,
-    color: "#fff",
-    marginBottom: 12,
-  },
+  sectionTitle: { fontSize: 16, color: colors.text, fontFamily: font.semibold, marginBottom: space.md },
   compCard: {
     backgroundColor: "#40301F",
     borderRadius: 10,
@@ -1149,9 +1100,7 @@ const styles = StyleSheet.create({
     color: "#EC9A15",
     fontSize: 13,
   },
-  pastCompScroll: {
-    gap: 15,
-  },
+  pastCompScroll: { gap: space.md, paddingRight: space.lg },
   pastCompCard: {
     width: width * 0.6,
     height: 280,
@@ -1387,220 +1336,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#fff",
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  filterPopup: {
-    backgroundColor: "#2a2a2a",
-    borderRadius: 20,
-    width: "80%",
-    maxHeight: "70%",
-    overflow: "hidden",
-  },
-  filterHeader: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#3a3a3a",
-  },
-  filterHeaderText: {
-    fontSize: 18,
-    color: "#fff",
-    textAlign: "center",
-  },
-  filterOption: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: "#3a3a3a",
-  },
-  filterOptionActive: {
-    backgroundColor: "rgba(236, 154, 21, 0.1)",
-  },
-  filterOptionText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#fff",
-  },
-  filterOptionTextActive: {
-    color: "#EC9A15",
-  },
-  filterContainer: {
-    backgroundColor: "#40301F",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#rgba(130, 94, 35, 0.1)",
-  },
-  filterRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  filterChip: {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    height: 40,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-    borderRadius: 18,
-    backgroundColor: "#1a1a1a",
-    borderWidth: 1.5,
-    borderColor: "#3a3a3a",
-  },
-  filterChipActive: {
-    backgroundColor: "#EC9A15",
-    borderColor: "#EC9A15",
-    shadowColor: "#EC9A15",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  filterChipText: {
-    textAlign: "center",
-    includeFontPadding: false,
-    fontSize: 13,
-    color: "#999",
-  },
-  filterChipTextActive: {
-    color: "#fff",
-  },
-  liveIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#FF3B30",
-    position: "absolute",
-    right: 8,
-    top: 6,
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 8,
-  },
-  emptyStateSubtext: {
-    alignSelf: "stretch",
-    textAlign: "center",
-    fontSize: 13,
-    color: "#999",
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.55)" },
+  filterPopup: { position: "absolute", left: 0, right: 0, bottom: 0, maxHeight: "75%", backgroundColor: colors.card, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, borderTopWidth: 1, borderColor: colors.cardBorder, paddingTop: space.sm, paddingBottom: space.xl },
+  filterHeader: {},
+  filterHeaderText: { color: colors.text, fontSize: 20, fontFamily: font.titleMedium, paddingHorizontal: space.xl, paddingTop: space.sm, paddingBottom: space.md },
+  filterOption: { flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: space.xl, paddingVertical: 10 },
+  filterOptionActive: { backgroundColor: "rgba(236, 154, 21, 0.08)" },
+  filterOptionText: { fontSize: 16, color: colors.text, fontFamily: font.semibold },
+  filterOptionTextActive: { color: colors.accent },
+  filterContainer: { paddingTop: space.md, paddingHorizontal: space.lg },
+  filterRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  filterChip: { flexDirection: "row", alignItems: "center", gap: 6, height: 32, paddingHorizontal: 14, borderRadius: 16, backgroundColor: "rgba(255, 255, 255, 0.08)" },
+  filterChipActive: { backgroundColor: colors.accent },
+  filterChipText: { fontSize: 13, color: colors.textBody, fontFamily: font.semibold, includeFontPadding: false },
+  filterChipTextActive: { color: "#1A1A1A" },
+  liveIndicator: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#FF3B30" },
+  emptyState: { flexDirection: "row", gap: space.md, marginHorizontal: space.lg, padding: 14, borderRadius: radius.md, backgroundColor: colors.card, borderWidth: 1, borderColor: "rgba(236, 154, 21, 0.25)" },
+  emptyStateText: { fontSize: 15, color: colors.text, fontFamily: font.semibold },
+  emptyStateSubtext: { fontSize: 13, lineHeight: 18, color: colors.textBody, fontFamily: font.regular, marginTop: 2 },
   
-  compCardNew: {
-    width: width * 0.75,
-    borderRadius: 10,
-    overflow: "hidden",
-    backgroundColor: "#40301F",
-    marginRight: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  compCardImageNew: {
-    width: "100%",
-    height: 250,
-  },
-  compCardContentNew: {
-    backgroundColor: "#40301F",
-    padding: 12,
-  },
-  compCardTitleNew: {
-    fontSize: 22,
-    color: "#fff",
-    fontWeight: "700",
-    marginBottom: 8,
-    lineHeight: 28,
-  },
-  compCardDetailsNew: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 6,
-  },
-  compDetailItemNew: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  compDetailTextNew: {
-    fontSize: 12,
-    color: "#ccc",
-  },
-  compCardFooterNew: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  prizeRowNew: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  compPrizeTextNew: {
-    fontSize: 14,
-    color: "#EC9A15",
-    fontWeight: "600",
-  },
-  voteBtnNew: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#EC9A15",
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  voteBtnTextNew: {
-    textAlign: "center",
-    includeFontPadding: false,
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  joinBtnNew: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#EC9A15",
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  joinBtnTextNew: {
-    textAlign: "center",
-    includeFontPadding: false,
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  resultsBtnNew: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  resultsBtnTextNew: {
-    textAlign: "center",
-    includeFontPadding: false,
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "600",
-  },
+  compCardNew: { width: width * 0.72, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.card, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.06)" },
+  compCardImageNew: { width: "100%", height: 190 },
+  compCardContentNew: { padding: space.md },
+  compCardTitleNew: { fontSize: 16, lineHeight: 21, color: colors.text, fontFamily: font.semibold, marginBottom: 6 },
+  compCardDetailsNew: { flexDirection: "row", flexWrap: "wrap", gap: space.md, marginBottom: space.md },
+  compDetailItemNew: { flexDirection: "row", alignItems: "center", gap: 5 },
+  compDetailTextNew: { fontSize: 12, color: colors.textBody, fontFamily: font.regular },
+  compCardFooterNew: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  prizeRowNew: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+  compPrizeTextNew: { fontSize: 14, color: colors.accent, fontFamily: font.semibold },
+  voteBtnNew: { alignItems: "center", justifyContent: "center", height: 32, paddingHorizontal: 16, borderRadius: radius.sm, backgroundColor: colors.accent },
+  voteBtnTextNew: { color: "#1A1A1A", fontSize: 13, fontFamily: font.semibold, includeFontPadding: false },
+  joinBtnNew: { alignItems: "center", justifyContent: "center", height: 32, paddingHorizontal: 16, borderRadius: radius.sm, backgroundColor: colors.accent },
+  joinBtnTextNew: { color: "#1A1A1A", fontSize: 13, fontFamily: font.semibold, includeFontPadding: false },
+  resultsBtnNew: { alignItems: "center", justifyContent: "center", height: 32, paddingHorizontal: 16, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.line },
+  resultsBtnTextNew: { color: colors.text, fontSize: 13, fontFamily: font.semibold, includeFontPadding: false },
 });

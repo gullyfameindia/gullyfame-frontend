@@ -127,8 +127,6 @@ export default function GullyFameHome() {
   // The last home screen saved on this device shows first; the server copy replaces it.
   const homeLoadedRef = useRef(false);
   useEffect(() => {
-    // TEMP (testing skeletons): skip the saved copy in dev so the loading state is visible.
-    if (__DEV__) return;
     getCachedHomeScreen().then((cached) => {
       if (cached && !homeLoadedRef.current) applyHome(cached);
     });

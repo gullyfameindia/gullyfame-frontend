@@ -173,6 +173,11 @@ const BACKEND_KEY_BY_TEXT: Record<string, string> = {
   "amount must be a positive number": "invalid_amount",
   "You cannot tip yourself": "cannot_tip_self",
   "Support is only available on competition entries": "tip_competition_only",
+  "Choose a username": "username_required",
+  "Username must be 3 to 20 characters": "username_length",
+  "Use only lowercase letters, numbers, . and _": "username_chars",
+  "That username isn't available. Try another one.": "username_reserved",
+  "That username is already taken. Try another one.": "username_taken",
   "Notification not found": "notification_not_found",
   "Sound FX added successfully": "soundfx_created",
   "Sound FX deleted successfully": "soundfx_deleted",
@@ -233,6 +238,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_recharge_amount: "Enter a whole amount within the allowed recharge range.",
   cannot_tip_self: "You cannot tip your own reel.",
   tip_competition_only: "Support is only for competition entries.",
+  username_required: "Choose a username.",
+  username_length: "Username must be 3 to 20 characters.",
+  username_chars: "Use only lowercase letters, numbers, . and _ in your username.",
+  username_reserved: "That username isn't available. Try another one.",
+  username_taken: "That username is already taken. Try another one.",
   razorpay_not_configured: "Payments are not available right now.",
   payment_details_required: "Payment details are missing.",
   payment_order_not_found: "Payment order not found.",
@@ -498,15 +508,7 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// TEMP (testing skeleton loaders): remove this constant and the delay below when done.
-const TEMP_LOADING_DELAY_MS = 5000;
-
 apiClient.interceptors.request.use(async (config) => {
-  // TEMP: slow every request down so loading states stay visible. Dev builds only.
-  // Sign-in, OTP and logout (auth/*) are left out so they stay fast.
-  if (__DEV__ && TEMP_LOADING_DELAY_MS > 0 && !/(^|\/)auth\//.test(config.url ?? "")) {
-    await new Promise((resolve) => setTimeout(resolve, TEMP_LOADING_DELAY_MS));
-  }
   if (!isOnline) {
     throw new ApiError("You're offline. Check your internet connection and try again.", {
       isNetworkError: true,

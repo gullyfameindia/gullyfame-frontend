@@ -3,8 +3,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useFocusEffect } from "expo-router/react-navigation";
 import {
+  ActivityIndicator,
   Linking,
   Modal,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,9 +20,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image as ExpoImage } from "expo-image";
 import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
-import { toastError, toastSuccess } from "@/components/ui/Toast";
+import { toastSuccess } from "@/components/ui/Toast";
 import { formatCount, resolveMediaUrl } from "@/utils/mediaUrl";
-import { Ionicons } from "@expo/vector-icons";
+import { Camera, ChevronLeft, Eye, Settings, Star, X } from "lucide-react-native";
 import { useOwnProfile } from "@/components/profile/shared/profileHooks";
 import {
   BIO_MAX_LENGTH,
@@ -29,9 +31,15 @@ import {
 } from "@/components/profile/shared/profileTypes";
 import { LevelUpSection } from "@/components/profile/shared/ProfileComponents";
 import { participantSelfProfileScreenStyles as pStyles } from "@/styles/participantSelfProfileScreenStyles";
-import { fanSelfProfileScreenStyles as fStyles } from "@/styles/fanSelfProfileScreenStyles";
 import { UserIconSVG, HomeIconSVG, ReelIconSVG, SearchIconSVG, BackIcon, SaveIcon, VerifiedBadgeIcon } from "@/icons";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
+import OutlinedField, { darkFieldInputStyle } from "@/components/ui/OutlinedField";
+import * as ImagePicker from "expo-image-picker";
+import { updateProfile } from "@api/services/userService";
+import { getErrorMessage } from "@api/client";
+import { validatePickedAsset } from "@/utils/fileValidation";
+import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
+import { cleanUsername, usernameRuleProblem, useUsernameCheck, USERNAME_MAX } from "@/hooks/useUsernameCheck";
 import ProfileBurgerMenuModal from "@/components/modals/ProfileBurgerMenuModal/ProfileBurgerMenuModal";
 import UpgradeFanToParticipantModal from "@/components/modals/UpgradeFanToParticipantModal/UpgradeFanToParticipantModal";
 import ProfileView, { ProfileTab } from "@/components/profile/ProfileView";
@@ -86,52 +94,128 @@ const ownStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingTop: 6,
     paddingBottom: 4,
   },
-  topIcon: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  topIcon: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   topActions: { flexDirection: "row", alignItems: "center" },
-  handle: { flex: 1, color: "#fff", fontSize: 17, fontWeight: "700", textAlign: "center" },
+  handle: { flex: 1, color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  handleWrap: { flex: 1, alignItems: "center" },
+  handleEmpty: { flex: 0, color: "#EC9A15" },
   identity: { paddingHorizontal: 16, paddingTop: 8 },
-  identityRow: { flexDirection: "row", alignItems: "center", gap: 16 },
-  avatarRing: { width: 92, height: 92, borderRadius: 22, padding: 2.5 },
-  avatarImage: { width: "100%", height: "100%", borderRadius: 20, backgroundColor: "#5A3C1C" },
-  identityText: { flex: 1, alignItems: "flex-start" },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  name: { color: "#fff", fontSize: 20, fontWeight: "700", flexShrink: 1 },
-  rankPill: { marginTop: 6, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
-  rankPillFan: { backgroundColor: "#4B5563" },
-  rankPillParticipant: { backgroundColor: "#EC9A15" },
-  rankPillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6 },
-  rankTextFan: { color: "#fff" },
-  rankTextParticipant: { color: "#1A1208" },
-  words: { color: "rgba(255,255,255,0.7)", fontSize: 13, marginTop: 6 },
-  statPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-evenly",
-    alignSelf: "stretch",
-    marginTop: 16,
-    paddingVertical: 9,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  statText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  statDot: { color: "rgba(255,255,255,0.5)", fontSize: 13 },
-  bio: { color: "rgba(255,255,255,0.92)", fontSize: 14, lineHeight: 20, marginTop: 12 },
+  identityRow: { flexDirection: "row", alignItems: "center", gap: 20 },
+  avatarRing: { width: 86, height: 86, borderRadius: 43, padding: 3, borderWidth: 2, borderColor: "#EC9A15" },
+  avatarRingFan: { borderColor: "rgba(255, 255, 255, 0.35)" },
+  avatarImage: { width: "100%", height: "100%", borderRadius: 40, backgroundColor: "#5A3C1C" },
+  stats: { flex: 1, flexDirection: "row", justifyContent: "space-around" },
+  stat: { alignItems: "center", minWidth: 64, paddingVertical: 4 },
+  statNumber: { color: "#fff", fontSize: 18, fontFamily: "Inter_700Bold" },
+  statLabel: { color: "#CAD7D8", fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 1 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12 },
+  name: { color: "#fff", fontSize: 20, fontFamily: "PlayfairDisplay_700Bold", flexShrink: 1 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
+  rank: { color: "#EC9A15", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  rankFan: { color: "#C9C2B8" },
+  words: { flexShrink: 1, color: "#CAD7D8", fontSize: 13, fontFamily: "Inter_400Regular" },
+  bio: { color: "rgba(255,255,255,0.92)", fontSize: 14, lineHeight: 20, marginTop: 10, fontFamily: "Inter_400Regular" },
   upgradeButton: {
     alignSelf: "flex-start",
     marginTop: 10,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
+    height: 32,
+    justifyContent: "center",
+    borderRadius: 8,
     backgroundColor: "rgba(236,154,21,0.18)",
   },
-  upgradeText: { color: "#EC9A15", fontSize: 13, fontWeight: "700" },
-  link: { color: "#EC9A15", fontSize: 14, fontWeight: "600", marginTop: 8 },
+  upgradeText: { color: "#EC9A15", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  link: { color: "#EC9A15", fontSize: 14, fontFamily: "Inter_500Medium", marginTop: 6 },
+  insights: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, marginTop: 2, marginBottom: 10 },
+  insightsText: { color: "#8A8F90", fontSize: 13, fontFamily: "Inter_400Regular" },
 });
+
+const editStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.55)" },
+  sheet: {
+    maxHeight: "92%",
+    backgroundColor: "#1A1A1A",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.35)",
+    paddingTop: 8,
+  },
+  grabber: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: "#3A3A3A", marginBottom: 8 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingBottom: 8 },
+  title: { color: "#fff", fontSize: 20, fontFamily: "PlayfairDisplay_700Bold" },
+  body: { paddingHorizontal: 20, paddingBottom: 12 },
+  photoRow: { alignItems: "center", paddingVertical: 8 },
+  photoWrap: { width: 84, height: 84 },
+  photo: { width: 84, height: 84, borderRadius: 42, backgroundColor: "#5A3C1C" },
+  photoEmpty: { alignItems: "center", justifyContent: "center" },
+  photoLetter: { color: "#EC9A15", fontSize: 32, fontFamily: "Inter_700Bold" },
+  photoBadge: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#EC9A15",
+    borderWidth: 2,
+    borderColor: "#1A1A1A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoText: { color: "#EC9A15", fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 8 },
+  nameRow: { flexDirection: "row", gap: 10, marginTop: 8 },
+  bioBox: {
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#3A3A3A",
+    backgroundColor: "#252525",
+  },
+  boxFocused: { borderColor: "#EC9A15" },
+  boxLabel: { color: "#CAD7D8", fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  bioInput: {
+    minHeight: 70,
+    color: "#fff",
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: "Inter_400Regular",
+    textAlignVertical: "top",
+    paddingVertical: 4,
+    paddingHorizontal: 0,
+  },
+  counter: { alignSelf: "flex-end", color: "#8A8F90", fontSize: 11, fontFamily: "Inter_400Regular" },
+  sectionLabel: { color: "#CAD7D8", fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 18, marginBottom: 6 },
+  wordsRow: { flexDirection: "row", gap: 8 },
+  wordInput: {
+    flex: 1,
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#3A3A3A",
+    backgroundColor: "#252525",
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Inter_400Regular",
+  },
+  at: { color: "#8A8F90", fontSize: 14, fontFamily: "Inter_500Medium", marginLeft: 8, marginRight: 2 },
+  note: { color: "#8A8F90", fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 6 },
+  error: { color: "#F87171", fontSize: 13, fontFamily: "Inter_500Medium", marginTop: 10 },
+  footer: { paddingHorizontal: 20, paddingTop: 10 },
+  save: { height: 48, borderRadius: 12, backgroundColor: "#EC9A15", alignItems: "center", justifyContent: "center" },
+  saveText: { color: "#1A1A1A", fontSize: 16, fontFamily: "Inter_700Bold" },
+});
+
+const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+
 
 /** The signed-in user's profile (MyFame). The top section is the original layout for each role. */
 export default function OwnProfileScreen({ role }: { role: "fan" | "participant" }) {
@@ -152,7 +236,6 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
       );
     }
   }, [isLoading, savedRole, effectiveRole, role]);
-  const styles = isFan ? fStyles : pStyles;
   const [activeTab, setActiveTab] = useState("MyFame");
   const [menuVisible, setMenuVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
@@ -162,6 +245,17 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   const [tempThreeWords, setTempThreeWords] = useState(["", "", ""]);
   const [tempInsta, setTempInsta] = useState("");
   const [tempX, setTempX] = useState("");
+  const [tempFirst, setTempFirst] = useState("");
+  const [tempLast, setTempLast] = useState("");
+  const [tempUsername, setTempUsername] = useState("");
+  const usernameCheck = useUsernameCheck(tempUsername, {
+    signedIn: true,
+    current: profileData.username || "",
+  });
+  const [tempPhoto, setTempPhoto] = useState<string | null>(null);
+  const [editFocus, setEditFocus] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
   const [mobile, setMobile] = useState("");
   const [storedEmail, setStoredEmail] = useState("");
 
@@ -205,34 +299,103 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
       .map((w) => w.trim())
       .filter(Boolean);
     setTempThreeWords([words[0] || "", words[1] || "", words[2] || ""]);
-    setTempInsta(profileData.instagramLink || "");
-    setTempX(profileData.xLink || "");
+    setTempInsta(cleanHandle(profileData.instagramLink || ""));
+    setTempX(cleanHandle(profileData.xLink || ""));
+    setTempFirst(profileData.firstName || "");
+    setTempLast(profileData.lastName || "");
+    setTempUsername(cleanUsername(profileData.username || ""));
+    setTempPhoto(null);
+    setEditError("");
     setEditVisible(true);
   }, [profileData]);
 
+  // Gallery only: the photo is uploaded when Save is pressed.
+  const pickPhoto = async () => {
+    const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      if (!canAskAgain) showPermissionSettingsAlert("Photo library access");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const invalid = validatePickedAsset(result.assets[0], ["image"]);
+    if (invalid) {
+      setEditError(invalid);
+      return;
+    }
+    setEditError("");
+    setTempPhoto(result.assets[0].uri);
+  };
+
   const saveEdit = async () => {
-    const threeWordsFormatted = tempThreeWords.filter((w) => w.trim()).join(" | ");
-    setProfileData((prev) => ({
-      ...prev,
-      bio: limitBio(tempBio).trim(),
-      threeWords: threeWordsFormatted || undefined,
-      instagramLink: tempInsta,
-      xLink: tempX,
-    }));
-    // The backend user model has no bio / three-words / social link fields yet,
-    // so these are kept on this device only.
+    if (savingEdit) return;
+    const first = tempFirst.trim();
+    const last = tempLast.trim();
+    if (!first) {
+      setEditError("First name can't be empty.");
+      return;
+    }
+    const handle = cleanUsername(tempUsername);
+    const usernameChanged = handle !== cleanUsername(profileData.username || "");
+    if (usernameChanged) {
+      const problem = usernameRuleProblem(handle);
+      if (problem) {
+        setEditError(problem === "Choose a username" ? "Choose a username." : `Username: ${problem.toLowerCase()}.`);
+        return;
+      }
+      if (usernameCheck.status === "taken" || usernameCheck.status === "invalid") {
+        setEditError(usernameCheck.message);
+        return;
+      }
+    }
+    setSavingEdit(true);
+    setEditError("");
+    const threeWordsFormatted = tempThreeWords.map((w) => w.trim()).filter(Boolean).join(" | ");
+    const insta = cleanHandle(tempInsta.trim());
+    const x = cleanHandle(tempX.trim());
     try {
+      // Name and photo are saved on the server (PUT /user/profile).
+      const nameChanged = first !== (profileData.firstName || "") || last !== (profileData.lastName || "");
+      if (nameChanged || usernameChanged || tempPhoto) {
+        const saved = await updateProfile({
+          ...(nameChanged ? { firstName: first, lastName: last } : {}),
+          ...(usernameChanged ? { username: handle } : {}),
+          ...(tempPhoto ? { profileImage: tempPhoto } : {}),
+        });
+        setProfileData((prev) => ({
+          ...prev,
+          firstName: saved.firstName ?? first,
+          lastName: saved.lastName ?? last,
+          username: saved.username ?? (usernameChanged ? handle : prev.username),
+          profileImage: saved.profileImage || prev.profileImage,
+        }));
+      }
+      // The backend has no bio / three-words / social link fields yet, so these stay on this device.
       await AsyncStorage.multiSet([
         ["userBio", limitBio(tempBio).trim()],
         ["userThreeWords", threeWordsFormatted],
-        ["userInstagram", tempInsta],
-        ["userXLink", tempX],
+        ["userInstagram", insta],
+        ["userXLink", x],
       ]);
-      toastSuccess("Profile details saved on this device");
-    } catch {
-      toastError("Could not save your profile details.");
+      setProfileData((prev) => ({
+        ...prev,
+        bio: limitBio(tempBio).trim(),
+        threeWords: threeWordsFormatted || undefined,
+        instagramLink: insta,
+        xLink: x,
+      }));
+      toastSuccess("Profile updated");
+      setEditVisible(false);
+    } catch (error) {
+      setEditError(getErrorMessage(error));
+    } finally {
+      setSavingEdit(false);
     }
-    setEditVisible(false);
   };
 
   const displayName = [profileData.firstName, profileData.lastName].filter(Boolean).join(" ");
@@ -317,11 +480,13 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
         { alignItems: "center", justifyContent: "center" },
       ]}
     >
-      <Text style={{ color: "#EC9A15", fontSize: 40, fontWeight: "700" }}>
+      <Text style={{ color: "#EC9A15", fontSize: 34, fontFamily: "Inter_700Bold" }}>
         {displayName.charAt(0).toUpperCase()}
       </Text>
     </View>
   );
+
+  const editAvatar = tempPhoto ? { uri: tempPhoto } : avatar;
 
   // While the profile loads, keep the top bar and show shimmer blocks for everything below it.
   const topLoading = (
@@ -345,11 +510,20 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
           accessibilityLabel="Back"
           testID="profile-back"
         >
-          <BackIcon color="white" size={22} />
+          <ChevronLeft color="#fff" size={28} />
         </TouchableOpacity>
-        <Text style={ownStyles.handle} numberOfLines={1}>
-          {handle}
-        </Text>
+        {/* @username centred in the top bar; without one, a shortcut to pick it. */}
+        {handle ? (
+          <Text style={ownStyles.handle} numberOfLines={1} testID="profile-username">
+            {handle}
+          </Text>
+        ) : (
+          <TouchableOpacity style={ownStyles.handleWrap} onPress={openEdit} accessibilityRole="button" testID="profile-add-username">
+            <Text style={[ownStyles.handle, ownStyles.handleEmpty]} numberOfLines={1}>
+              Add username
+            </Text>
+          </TouchableOpacity>
+        )}
         <View style={ownStyles.topActions}>
           <TouchableOpacity
             onPress={() => setMenuVisible(true)}
@@ -357,77 +531,61 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
             accessibilityLabel="Menu"
             testID="profile-menu"
           >
-            <Ionicons name="settings-outline" size={22} color="#fff" />
+            <Settings color="#fff" size={23} strokeWidth={1.8} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={ownStyles.identity}>
         <View style={ownStyles.identityRow}>
-          <LinearGradient
-            colors={isFan ? ["#E3E4E5", "#9CA3AF", "#4B5563"] : ["#FFD700", "#FF8C00", "#FF0055"]}
-            style={ownStyles.avatarRing}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            {avatarImage}
-          </LinearGradient>
-          <View style={ownStyles.identityText}>
-            <View style={ownStyles.nameRow}>
-              <Text
-                style={ownStyles.name}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.6}
-              >
-                {displayName || (isLoading ? "" : "User")}
-              </Text>
-              {!displayName && isLoading ? <Skeleton width={140} height={20} radius={6} /> : null}
-              {profileData.isVerified ? <VerifiedBadgeIcon size={18} /> : null}
+          <View style={[ownStyles.avatarRing, isFan && ownStyles.avatarRingFan]}>{avatarImage}</View>
+          {/* Posts / Followers / Following as columns: number on top, label below. */}
+          <View style={ownStyles.stats}>
+            <View style={ownStyles.stat}>
+              <Text style={ownStyles.statNumber}>{countText(postCount)}</Text>
+              <Text style={ownStyles.statLabel}>Posts</Text>
             </View>
-            <View
-              style={[
-                ownStyles.rankPill,
-                isFan ? ownStyles.rankPillFan : ownStyles.rankPillParticipant,
-              ]}
+            <TouchableOpacity
+              style={ownStyles.stat}
+              onPress={() => openFollowers("followers")}
+              testID="profile-followers-count"
+              activeOpacity={0.7}
+              accessibilityRole="button"
             >
-              <Text
-                style={[
-                  ownStyles.rankPillText,
-                  isFan ? ownStyles.rankTextFan : ownStyles.rankTextParticipant,
-                ]}
-              >
-                {isFan ? "FAN" : profileData.currentRank || "STAR"}
-              </Text>
-            </View>
-            {words.length > 0 ? (
-              <Text style={ownStyles.words} numberOfLines={1}>
-                {words.join(" • ")}
-              </Text>
-            ) : null}
+              <Text style={ownStyles.statNumber}>{countText(followersCount)}</Text>
+              <Text style={ownStyles.statLabel}>Followers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={ownStyles.stat}
+              onPress={() => openFollowers("following")}
+              testID="profile-following-count"
+              activeOpacity={0.7}
+              accessibilityRole="button"
+            >
+              <Text style={ownStyles.statNumber}>{countText(followingCount)}</Text>
+              <Text style={ownStyles.statLabel}>Following</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={ownStyles.statPill}>
-          <Text style={ownStyles.statText} numberOfLines={1} adjustsFontSizeToFit>Posts ({countText(postCount)})</Text>
-          <Text style={ownStyles.statDot}>•</Text>
-          <TouchableOpacity
-            onPress={() => openFollowers("followers")}
-            testID="profile-followers-count"
-            activeOpacity={0.7}
-            accessibilityRole="button"
-          >
-            <Text style={ownStyles.statText} numberOfLines={1} adjustsFontSizeToFit>Followers ({countText(followersCount)})</Text>
-          </TouchableOpacity>
-          <Text style={ownStyles.statDot}>•</Text>
-          <TouchableOpacity
-            onPress={() => openFollowers("following")}
-            testID="profile-following-count"
-            activeOpacity={0.7}
-            accessibilityRole="button"
-          >
-            <Text style={ownStyles.statText} numberOfLines={1} adjustsFontSizeToFit>Following ({countText(followingCount)})</Text>
-          </TouchableOpacity>
+        <View style={ownStyles.nameRow}>
+          <Text style={ownStyles.name} numberOfLines={1}>
+            {displayName || (isLoading ? "" : "User")}
+          </Text>
+          {!displayName && isLoading ? <Skeleton width={140} height={20} radius={6} /> : null}
+          {profileData.isVerified ? <VerifiedBadgeIcon size={18} /> : null}
+        </View>
+        <View style={ownStyles.metaRow}>
+          <Star size={13} color={isFan ? "#C9C2B8" : "#EC9A15"} fill={isFan ? "transparent" : "#EC9A15"} strokeWidth={2} />
+          <Text style={[ownStyles.rank, isFan && ownStyles.rankFan]}>
+            {isFan ? "Fan" : titleCase(String(profileData.currentRank || "Star"))}
+          </Text>
+          {words.length > 0 ? (
+            <Text style={ownStyles.words} numberOfLines={1}>
+              {"  ·  "}
+              {words.join(", ")}
+            </Text>
+          ) : null}
         </View>
 
         {bioText ? <Text style={ownStyles.bio}>{bioText}</Text> : null}
@@ -479,22 +637,19 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
         />
       </View>
 
-      <LinearGradient
-        colors={["rgba(41, 33, 24, 0.2)", "#3C2610"]}
-        locations={[0.0, 0.4]}
-        style={styles.contentContainer}
-      >
-        {insights ? (
-          <View
-            style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6, marginBottom: 4 }}
-            accessibilityLabel={`${insights.views} profile views in the last ${insights.days} days`}
-          >
-            <Ionicons name="eye-outline" size={15} color="#C9B9A6" />
-            <Text style={{ color: "#C9B9A6", fontSize: 13 }}>
-              {formatCount(insights.views)} profile {insights.views === 1 ? "view" : "views"} in the last {insights.days} days
-            </Text>
-          </View>
-        ) : null}
+      {insights ? (
+        <View
+          style={ownStyles.insights}
+          accessibilityLabel={`${insights.views} profile views in the last ${insights.days} days`}
+        >
+          <Eye size={15} color="#8A8F90" strokeWidth={2} />
+          <Text style={ownStyles.insightsText} numberOfLines={1}>
+            {formatCount(insights.views)} profile {insights.views === 1 ? "view" : "views"} · last {insights.days} days
+          </Text>
+        </View>
+      ) : null}
+
+      <View>
 
         {/* Level-up stars, Next Rank bar and "How to Level Up": hidden while levels are switched off */}
         {!XP_AND_MISSIONS_ENABLED ? null : isFan ? (
@@ -544,7 +699,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
             </View>
           </View>
         )}
-      </LinearGradient>
+      </View>
     </View>
   );
 
@@ -611,115 +766,195 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
       <Modal
         visible={editVisible}
         transparent
-        animationType="fade"
-        onRequestClose={() => setEditVisible(false)}
+        animationType="slide"
+        onRequestClose={() => !savingEdit && setEditVisible(false)}
       >
-        {/* The sheet shrinks above the keyboard: header and Cancel/Save stay fixed, only the fields
-            scroll. Before, Save sat under the Android keyboard and could not be reached. */}
-        <KeyboardAvoidingScreen style={pStyles.editBioOverlay}>
-          <View style={[pStyles.editBioContainer, { maxHeight: "100%", flexShrink: 1 }]}>
-            <View style={pStyles.editBioHeader}>
-              <Text style={pStyles.editBioTitle}>Edit profile</Text>
+        {/* Bottom sheet that shrinks above the keyboard; the header and Save stay reachable. */}
+        <KeyboardAvoidingScreen style={editStyles.overlay}>
+          <Pressable style={{ flex: 1 }} onPress={() => !savingEdit && setEditVisible(false)} />
+          <View style={[editStyles.sheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            <View style={editStyles.grabber} />
+            <View style={editStyles.header}>
+              <Text style={editStyles.title}>Edit profile</Text>
               <TouchableOpacity
                 onPress={() => setEditVisible(false)}
+                disabled={savingEdit}
+                hitSlop={10}
                 accessibilityLabel="Close"
                 testID="profile-edit-close"
               >
-                <Text style={pStyles.editBioClose}>✕</Text>
+                <X size={22} color="#fff" />
               </TouchableOpacity>
             </View>
+
             <ScrollView
               style={{ flexShrink: 1 }}
+              contentContainerStyle={editStyles.body}
               keyboardShouldPersistTaps="handled"
               testID="profile-edit-scroll"
             >
-              <Text style={pStyles.editLabel}>Bio</Text>
-              <TextInput
-                style={pStyles.editBioInput}
-                value={tempBio}
-                testID="profile-edit-bio"
-                onChangeText={(text) => setTempBio(limitBio(text))}
-                placeholder="Write something about yourself..."
-                placeholderTextColor="#999"
-                multiline
-                maxLength={BIO_MAX_LENGTH}
-              />
-              <Text style={pStyles.bioCharCount}>
-                {tempBio.length}/{BIO_MAX_LENGTH}
-              </Text>
+              <TouchableOpacity style={editStyles.photoRow} onPress={pickPhoto} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Change profile photo">
+                <View style={editStyles.photoWrap}>
+                  {editAvatar ? (
+                    <ExpoImage source={editAvatar} style={editStyles.photo} contentFit="cover" />
+                  ) : (
+                    <View style={[editStyles.photo, editStyles.photoEmpty]}>
+                      <Text style={editStyles.photoLetter}>{(tempFirst || displayName).charAt(0).toUpperCase()}</Text>
+                    </View>
+                  )}
+                  <View style={editStyles.photoBadge}>
+                    <Camera size={14} color="#1A1A1A" strokeWidth={2.2} />
+                  </View>
+                </View>
+                <Text style={editStyles.photoText}>{tempPhoto ? "New photo selected" : "Change photo"}</Text>
+              </TouchableOpacity>
 
-              <Text style={[pStyles.editLabel, { marginTop: 20 }]}>
-                Describe yourself in three words
-              </Text>
-              <View style={pStyles.threeWordsEditContainer}>
+              <View style={editStyles.nameRow}>
+                <OutlinedField dark label="First name" required focused={editFocus === "first"} style={{ flex: 1 }}>
+                  <TextInput
+                    style={darkFieldInputStyle}
+                    value={tempFirst}
+                    onChangeText={setTempFirst}
+                    onFocus={() => setEditFocus("first")}
+                    onBlur={() => setEditFocus(null)}
+                    maxLength={40}
+                    autoCapitalize="words"
+                    testID="profile-edit-first-name"
+                  />
+                </OutlinedField>
+                <OutlinedField dark label="Last name" focused={editFocus === "last"} style={{ flex: 1 }}>
+                  <TextInput
+                    style={darkFieldInputStyle}
+                    value={tempLast}
+                    onChangeText={setTempLast}
+                    onFocus={() => setEditFocus("last")}
+                    onBlur={() => setEditFocus(null)}
+                    maxLength={40}
+                    autoCapitalize="words"
+                    testID="profile-edit-last-name"
+                  />
+                </OutlinedField>
+              </View>
+
+              <OutlinedField
+                dark
+                label="Username"
+                required
+                icon="at-outline"
+                focused={editFocus === "username"}
+                error={usernameCheck.status === "taken" || usernameCheck.status === "invalid" ? usernameCheck.message : false}
+                helper={
+                  usernameCheck.status === "available"
+                    ? `✓ ${usernameCheck.message}`
+                    : usernameCheck.status === "checking"
+                      ? "Checking…"
+                      : editFocus === "username"
+                        ? "3–20 characters: a–z, 0–9, . and _"
+                        : undefined
+                }
+              >
+                <TextInput
+                  style={darkFieldInputStyle}
+                  value={tempUsername}
+                  onChangeText={(t) => setTempUsername(cleanUsername(t))}
+                  onFocus={() => setEditFocus("username")}
+                  onBlur={() => setEditFocus(null)}
+                  placeholder="e.g. john.dances"
+                  placeholderTextColor="#7C8283"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  maxLength={USERNAME_MAX}
+                  testID="profile-edit-username"
+                />
+              </OutlinedField>
+
+              <View style={[editStyles.bioBox, editFocus === "bio" && editStyles.boxFocused]}>
+                <Text style={editStyles.boxLabel}>Bio</Text>
+                <TextInput
+                  style={editStyles.bioInput}
+                  value={tempBio}
+                  testID="profile-edit-bio"
+                  onChangeText={(text) => setTempBio(limitBio(text))}
+                  onFocus={() => setEditFocus("bio")}
+                  onBlur={() => setEditFocus(null)}
+                  placeholder="What do you perform? Where are you from?"
+                  placeholderTextColor="#7C8283"
+                  multiline
+                  maxLength={BIO_MAX_LENGTH}
+                />
+                <Text style={editStyles.counter}>
+                  {tempBio.length}/{BIO_MAX_LENGTH}
+                </Text>
+              </View>
+
+              <Text style={editStyles.sectionLabel}>Three words about you</Text>
+              <View style={editStyles.wordsRow}>
                 {[0, 1, 2].map((i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 ? <Text style={pStyles.threeWordsEditSeparator}>|</Text> : null}
-                    <TextInput
-                      style={pStyles.threeWordsEditInput}
-                      placeholder={["1st word", "2nd word", "3rd word"][i]}
-                      placeholderTextColor="#999"
-                      value={tempThreeWords[i]}
-                      testID={`profile-edit-word-${i + 1}`}
-                      onChangeText={(text) => {
-                        const next = [...tempThreeWords];
-                        next[i] = text;
-                        setTempThreeWords(next);
-                      }}
-                    />
-                  </React.Fragment>
+                  <TextInput
+                    key={i}
+                    style={[editStyles.wordInput, editFocus === `w${i}` && editStyles.boxFocused]}
+                    placeholder={["Bold", "Creative", "Fearless"][i]}
+                    placeholderTextColor="#7C8283"
+                    value={tempThreeWords[i]}
+                    maxLength={20}
+                    testID={`profile-edit-word-${i + 1}`}
+                    onFocus={() => setEditFocus(`w${i}`)}
+                    onBlur={() => setEditFocus(null)}
+                    onChangeText={(text) => {
+                      const next = [...tempThreeWords];
+                      next[i] = text;
+                      setTempThreeWords(next);
+                    }}
+                  />
                 ))}
               </View>
 
-              <Text style={[pStyles.editLabel, { marginTop: 20 }]}>Social links</Text>
-              <View style={{ gap: 10 }}>
-                <View style={pStyles.socialInputContainer}>
-                  <View style={{ marginRight: 8 }}>
-                    <InstagramIconSVG width={18} height={18} color="#EC9A15" />
-                  </View>
-                  <TextInput
-                    style={pStyles.socialInput}
-                    placeholder="Instagram handle"
-                    placeholderTextColor="#999"
-                    value={tempInsta}
-                    testID="profile-edit-instagram"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onChangeText={setTempInsta}
-                  />
-                </View>
-                <View style={pStyles.socialInputContainer}>
-                  <View style={{ marginRight: 8 }}>
-                    <XIconSVG width={18} height={18} color="#EC9A15" />
-                  </View>
-                  <TextInput
-                    style={pStyles.socialInput}
-                    placeholder="X (Twitter) handle"
-                    placeholderTextColor="#999"
-                    value={tempX}
-                    testID="profile-edit-x"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onChangeText={setTempX}
-                  />
-                </View>
-              </View>
+              <Text style={editStyles.sectionLabel}>Links</Text>
+              <OutlinedField dark label="Instagram" focused={editFocus === "ig"}>
+                <InstagramIconSVG width={18} height={18} color="#EC9A15" />
+                <Text style={editStyles.at}>@</Text>
+                <TextInput
+                  style={darkFieldInputStyle}
+                  placeholder="username"
+                  placeholderTextColor="#7C8283"
+                  value={tempInsta}
+                  testID="profile-edit-instagram"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onFocus={() => setEditFocus("ig")}
+                  onBlur={() => setEditFocus(null)}
+                  onChangeText={setTempInsta}
+                />
+              </OutlinedField>
+              <OutlinedField dark label="X (Twitter)" focused={editFocus === "x"}>
+                <XIconSVG width={16} height={16} color="#EC9A15" />
+                <Text style={editStyles.at}>@</Text>
+                <TextInput
+                  style={darkFieldInputStyle}
+                  placeholder="username"
+                  placeholderTextColor="#7C8283"
+                  value={tempX}
+                  testID="profile-edit-x"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onFocus={() => setEditFocus("x")}
+                  onBlur={() => setEditFocus(null)}
+                  onChangeText={setTempX}
+                />
+              </OutlinedField>
+              <Text style={editStyles.note}>Bio, words and links are saved on this phone for now.</Text>
+
+              {editError ? <Text style={editStyles.error}>{editError}</Text> : null}
             </ScrollView>
 
-            <View style={pStyles.editBioButtons}>
+            <View style={editStyles.footer}>
               <TouchableOpacity
-                style={pStyles.cancelButton}
-                onPress={() => setEditVisible(false)}
-                testID="profile-edit-cancel"
-              >
-                <Text style={pStyles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={pStyles.saveButton}
+                style={[editStyles.save, savingEdit && { opacity: 0.6 }]}
                 onPress={saveEdit}
+                disabled={savingEdit}
                 testID="profile-edit-save"
               >
-                <Text style={pStyles.saveButtonText}>Save</Text>
+                {savingEdit ? <ActivityIndicator color="#1A1A1A" /> : <Text style={editStyles.saveText}>Save</Text>}
               </TouchableOpacity>
             </View>
           </View>

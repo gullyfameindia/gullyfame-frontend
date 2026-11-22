@@ -31,6 +31,7 @@ import { authService, AUTH_RULES } from "@api/services/authService";
 import { getErrorMessage } from "@api/client";
 import { getNativePushToken, getDeviceType, registerPushTokenWithBackend } from "@utils/pushToken";
 import { saveUserSession } from "@utils/userSession";
+import { cleanUsername, usernameRuleProblem, useUsernameCheck, USERNAME_MAX } from "@/hooks/useUsernameCheck";
 
 let GoogleSignin: any = null;
 try {
@@ -43,6 +44,8 @@ const { width, height } = Dimensions.get("window");
 
 export default function CreateAccount() {
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const usernameCheck = useUsernameCheck(username);
   const [focus, setFocus] = useState<string | null>(null);
   const [country, setCountry] = useState<Country>(findCountry(DEFAULT_COUNTRY_ISO));
   const [mobileNo, setMobileNo] = useState("");
@@ -158,6 +161,16 @@ export default function CreateAccount() {
       setErrorMessage("Name must be 255 characters or fewer.");
       return;
     }
+    const handle = cleanUsername(username);
+    const handleProblem = usernameRuleProblem(handle);
+    if (handleProblem) {
+      setErrorMessage(handleProblem === "Choose a username" ? "Choose a username." : `Username: ${handleProblem.toLowerCase()}.`);
+      return;
+    }
+    if (usernameCheck.status === "taken" || usernameCheck.status === "invalid") {
+      setErrorMessage(usernameCheck.message);
+      return;
+    }
     if (!isValidNationalNumber(country, mobile)) {
       setErrorMessage(
         country.minDigits === country.maxDigits
@@ -201,6 +214,7 @@ export default function CreateAccount() {
         email: mail,
         password,
         role: backendRole,
+        username: handle,
       });
       if (!result.success) {
         const msg = result.message || "";
@@ -339,6 +353,41 @@ export default function CreateAccount() {
               textContentType="name"
               returnKeyType="next"
               testID="signup-full-name"
+            />
+          </OutlinedField>
+
+          <OutlinedField
+            dark
+            label="Username"
+            required
+            icon="at-outline"
+            focused={focus === "username"}
+            error={usernameCheck.status === "taken" || usernameCheck.status === "invalid" ? usernameCheck.message : false}
+            helper={
+              usernameCheck.status === "available"
+                ? `✓ ${usernameCheck.message}`
+                : usernameCheck.status === "checking"
+                  ? "Checking…"
+                  : focus === "username" && !username
+                    ? "3–20 characters: a–z, 0–9, . and _"
+                    : undefined
+            }
+          >
+            <TextInput
+              style={darkFieldInputStyle}
+              placeholder="e.g. john.dances"
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
+              value={username}
+              onChangeText={(t) => setUsername(cleanUsername(t))}
+              onFocus={() => setFocus("username")}
+              onBlur={() => setFocus(null)}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username-new"
+              textContentType="username"
+              maxLength={USERNAME_MAX}
+              returnKeyType="next"
+              testID="signup-username"
             />
           </OutlinedField>
 

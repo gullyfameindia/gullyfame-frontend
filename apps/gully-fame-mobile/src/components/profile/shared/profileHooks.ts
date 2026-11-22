@@ -61,8 +61,8 @@ export function useOwnProfile() {
         ...EMPTY_PROFILE,
         ...(getOwnProfileSnapshot<ProfileData>() || {}),
     }));
-    // TEMP (testing skeletons): in dev, ignore the saved profile so the loading state shows.
-    const [isLoading, setIsLoading] = useState(() => __DEV__ || !getOwnProfileSnapshot());
+    // The saved profile shows at once; the skeleton only appears on a first-ever visit.
+    const [isLoading, setIsLoading] = useState(() => !getOwnProfileSnapshot());
     const [error, setError] = useState("");
 
     // Remember the latest profile for the next visit.

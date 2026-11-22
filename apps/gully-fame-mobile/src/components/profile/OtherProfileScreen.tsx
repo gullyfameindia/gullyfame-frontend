@@ -31,6 +31,15 @@ const profileTabs = [
 ];
 
 /** Another user's profile (fan or participant). */
+const headerHandleStyle = {
+  flex: 1,
+  color: "#fff",
+  fontSize: 16,
+  fontFamily: "Inter_600SemiBold",
+  textAlign: "center" as const,
+  marginHorizontal: 8,
+};
+
 export default function OtherProfileScreen() {
   const params = useLocalSearchParams();
   const { profileData, setProfileData, isLoading } = useOtherUserProfile();
@@ -139,6 +148,10 @@ export default function OtherProfileScreen() {
         <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.backButton} accessibilityLabel="Back">
           <BackIcon color="white" size={24} />
         </TouchableOpacity>
+        {/* Their @username, centred between Back and Share. */}
+        <Text style={headerHandleStyle} numberOfLines={1} testID="other-profile-username">
+          {profileData.username ? `@${String(profileData.username).replace(/^@+/, "")}` : ""}
+        </Text>
         <TouchableOpacity
           onPress={() => userId && Share.share({ message: getProfileShareMessage(userId, displayName) }).catch(() => {})}
           style={styles.shareButton}
