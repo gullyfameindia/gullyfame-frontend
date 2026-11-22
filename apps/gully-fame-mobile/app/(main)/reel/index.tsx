@@ -1350,6 +1350,7 @@ export default function GullyReelScreen() {
                   </TouchableOpacity>
                 ) : null}
 
+                {reel.caption ? (
                 <View style={styles.captionContainer}>
                   <Text
                     style={styles.caption}
@@ -1374,6 +1375,7 @@ export default function GullyReelScreen() {
                     </TouchableOpacity>
                   )}
                 </View>
+                ) : null}
 
                 <View style={styles.musicRow}>
                   <Music2 color="#fff" size={15} strokeWidth={2} />

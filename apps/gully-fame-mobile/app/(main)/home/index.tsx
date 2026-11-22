@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { displayCaption } from "@api/services/reelsService";
 import { Bell, MessageCircle } from "lucide-react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -65,7 +66,7 @@ interface FeedCard {
 
 const reelToCard = (reel: FeedReel): FeedCard => ({
   id: reel._id,
-  title: reel.caption || reel.author?.username || "",
+  title: displayCaption(reel.caption) || reel.author?.username || "",
   image: reel.thumbnail_url || "",
   votes: reel.stats?.votes || 0,
 });

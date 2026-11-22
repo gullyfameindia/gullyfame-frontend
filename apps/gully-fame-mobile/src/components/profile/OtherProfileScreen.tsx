@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Image, Share, StatusBar, Text, TouchableOpacity, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Alert, Image, Share, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ChevronLeft, Share2, Star } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { safeBack } from "@/utils/safeBack";
 import BottomNav from "@components/layout/BottomNav";
-import { UserIconSVG, HomeIconSVG, ReelIconSVG, SearchIconSVG, BackIcon, ShareIcon } from "@/icons";
+import { UserIconSVG, HomeIconSVG, ReelIconSVG, SearchIconSVG } from "@/icons";
 import { useOtherUserProfile } from "@/components/profile/shared/profileHooks";
 import ProfileView, { ProfileTab } from "@/components/profile/ProfileView";
 import { OtherProfileActions } from "@/components/profile/ProfileActions";
 import { ReelsTabIcon } from "@/components/profile/profileIcons";
 import { isPhotoItem } from "@/components/profile/ProfileMediaTile";
-import { StatsSection, UserInfoSection } from "@/components/profile/shared/ProfileComponents";
-import { otherProfileStyles as styles } from "@/styles/otherProfileStyles";
 import { getProfileShareMessage } from "@/api/services/profileExtrasService";
-import { resolveMediaUrl } from "@/utils/mediaUrl";
+import { formatCount, resolveMediaUrl } from "@/utils/mediaUrl";
 import SupportModal from "@/components/modals/SupportModal/SupportModal";
 import { TIPPING_ENABLED } from "@/config/features";
 import { useUserReels } from "@/hooks/useUserReels";
@@ -31,19 +30,34 @@ const profileTabs = [
 ];
 
 /** Another user's profile (fan or participant). */
-const headerHandleStyle = {
-  flex: 1,
-  color: "#fff",
-  fontSize: 16,
-  fontFamily: "Inter_600SemiBold",
-  textAlign: "center" as const,
-  marginHorizontal: 8,
-};
+const titleCase = (t: string) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+
+/* Mirrors OwnProfileScreen's header so both profiles look the same. */
+const otherStyles = StyleSheet.create({
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 8, paddingBottom: 4 },
+  topIcon: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  handle: { flex: 1, color: "#fff", fontSize: 16, fontFamily: "Inter_600SemiBold", textAlign: "center" },
+  identity: { paddingHorizontal: 16, paddingTop: 8 },
+  identityRow: { flexDirection: "row", alignItems: "center", gap: 20 },
+  avatarRing: { width: 86, height: 86, borderRadius: 43, padding: 3, borderWidth: 2, borderColor: "#EC9A15" },
+  avatarRingFan: { borderColor: "rgba(255, 255, 255, 0.35)" },
+  avatarImage: { width: "100%", height: "100%", borderRadius: 40, backgroundColor: "#5A3C1C" },
+  stats: { flex: 1, flexDirection: "row", justifyContent: "space-around" },
+  stat: { alignItems: "center", minWidth: 64, paddingVertical: 4 },
+  statNumber: { color: "#fff", fontSize: 18, fontFamily: "Inter_700Bold" },
+  statLabel: { color: "#CAD7D8", fontSize: 13, fontFamily: "Inter_400Regular", marginTop: 1 },
+  name: { color: "#fff", fontSize: 20, fontFamily: "PlayfairDisplay_700Bold", marginTop: 12 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
+  rank: { color: "#EC9A15", fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  rankFan: { color: "#C9C2B8" },
+  bio: { color: "rgba(255,255,255,0.92)", fontSize: 14, lineHeight: 20, marginTop: 10, fontFamily: "Inter_400Regular" },
+});
 
 export default function OtherProfileScreen() {
   const params = useLocalSearchParams();
   const { profileData, setProfileData, isLoading } = useOtherUserProfile();
-  const [activeTab, setActiveTab] = useState("MyFame");
+  // Someone else's profile: no bottom-nav tab is highlighted (MyFame is your own profile).
+  const [activeTab, setActiveTab] = useState("");
   const [supportVisible, setSupportVisible] = useState(false);
   const [isFollowing, setIsFollowing] = useState(String(params.isFollowing ?? "") === "true");
   // Follow state comes from GET /user/:userId once the profile loads.
@@ -55,6 +69,7 @@ export default function OtherProfileScreen() {
   const userId = String(params.userId || params.id || profileData.id || "");
   const reels = useUserReels(userId);
   const { followCounts } = useProfileExtras(userId, false);
+  const insets = useSafeAreaInsets();
   // The server's role wins once loaded; the opening screen's param (or a shared link's
   // default) only covers the first moment.
   const isFanProfile = String(profileData.role || params.role || "").toLowerCase().startsWith("fan");
@@ -125,96 +140,105 @@ export default function OtherProfileScreen() {
   const videos = useMemo(() => items.filter((p) => !isPhotoItem(p)), [items]);
   // Video-only platform: no photo grid.
   const tabs: ProfileTab[] = [
-    { key: "reels", label: "Reels", Icon: ReelsTabIcon, source: { ...posts, items: videos }, emptyTitle: "No reels yet" },
+    { key: "reels", label: "Videos", Icon: ReelsTabIcon, source: { ...posts, items: videos }, emptyTitle: "No reels yet" },
   ];
 
   const avatarPath = profileData.profileImage || (params.avatar ? String(params.avatar) : null);
   const avatarUri = resolveMediaUrl(avatarPath);
-  const avatarStyle = isFanProfile ? styles.fanProfileImage : styles.profileImage;
+  const avatarStyle = otherStyles.avatarImage;
   const avatar = avatarUri ? (
     <Image source={{ uri: avatarUri }} style={avatarStyle} />
   ) : (
     <View style={[avatarStyle, { backgroundColor: "#5A3C1C", alignItems: "center", justifyContent: "center" }]}>
-      <Text style={{ color: "#EC9A15", fontSize: 36, fontWeight: "700" }}>{(displayName || "?").charAt(0).toUpperCase()}</Text>
+      <Text style={{ color: "#EC9A15", fontSize: 34, fontFamily: "Inter_700Bold" }}>{(displayName || "?").charAt(0).toUpperCase()}</Text>
     </View>
   );
 
   // Level is shown only when the backend sends one (no default "Beginner").
   const levelLabel = (profileData as any).levelName || (profileData.currentRank ? String(profileData.currentRank) : "");
 
+  const countText = (n: number | null) => (typeof n === "number" ? formatCount(n) : "–");
+  const handle = profileData.username ? `@${String(profileData.username).replace(/^@+/, "")}` : "";
+
+  // Same layout as the signed-in user's own profile (OwnProfileScreen), with visitor actions.
   const top = (
     <View>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.backButton} accessibilityLabel="Back">
-          <BackIcon color="white" size={24} />
+      <View style={[otherStyles.topBar, { paddingTop: insets.top + 6 }]}>
+        <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={otherStyles.topIcon} accessibilityLabel="Back">
+          <ChevronLeft color="#fff" size={28} />
         </TouchableOpacity>
-        {/* Their @username, centred between Back and Share. */}
-        <Text style={headerHandleStyle} numberOfLines={1} testID="other-profile-username">
-          {profileData.username ? `@${String(profileData.username).replace(/^@+/, "")}` : ""}
+        <Text style={otherStyles.handle} numberOfLines={1} testID="other-profile-username">
+          {handle}
         </Text>
         <TouchableOpacity
           onPress={() => userId && Share.share({ message: getProfileShareMessage(userId, displayName) }).catch(() => {})}
-          style={styles.shareButton}
+          style={otherStyles.topIcon}
           accessibilityLabel="Share profile"
         >
-          <ShareIcon color="#fff" size={24} />
+          <Share2 color="#fff" size={22} strokeWidth={1.8} />
         </TouchableOpacity>
       </View>
 
-      {isFanProfile ? (
-        <View style={styles.fanCircleContainer}>
-          <View style={styles.fanCircleShape}>
-            {avatar}
-            <View style={styles.fanCircleFrame} />
-          </View>
-        </View>
-      ) : (
-        <View style={styles.starContainer}>
-          <View style={styles.starShape}>
-            {avatar}
-            <Image source={require("@assets/images/Starprofile.png")} style={styles.starImage} />
-          </View>
-        </View>
-      )}
-
-      <UserInfoSection profileData={{ ...profileData, firstName, lastName, bio }} role="other" showEditButton={false} />
-
-      {!unavailable ? (
-        <View style={{ marginBottom: 16 }}>
-        <OtherProfileActions
-          isFollowing={isFollowing}
-          followBusy={followBusy}
-          onToggleFollow={userId ? toggleFollow : undefined}
-          onMessage={userId ? openMessage : undefined}
-          // Tips go to a competition entry (POST reels/:id/tip), so Support needs at least one entry.
-          onSupport={TIPPING_ENABLED && latestReelId ? () => setSupportVisible(true) : undefined}
-        />
-        </View>
-      ) : null}
-
-      <LinearGradient colors={["rgba(41, 33, 24, 0.2)", "#3C2610"]} locations={[0.0, 0.4]} style={styles.contentContainer}>
-        <StatsSection
-          photos={typeof profileData.reelsCount === "number" ? profileData.reelsCount : reels.loading && items.length === 0 ? null : items.length}
-          followers={typeof profileData.followersCount === "number" ? profileData.followersCount : followCounts ? followCounts.followers : null}
-          following={typeof profileData.followingCount === "number" ? profileData.followingCount : followCounts ? followCounts.following : null}
-          onFollowersPress={() => userId && router.push({ pathname: "/(main)/followers", params: { userId, tab: "followers" } } as any)}
-          onFollowingPress={() => userId && router.push({ pathname: "/(main)/followers", params: { userId, tab: "following" } } as any)}
-        />
-        {levelLabel ? (
-          <View style={styles.levelDisplayContainer}>
-            <View style={styles.levelDisplayGradientWrapper}>
-              <LinearGradient
-                colors={["#EDD6AF", "#F0BA5D", "#EC9A15"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.levelDisplayGradient}
-              >
-                <Text style={styles.levelDisplayText}>Level: {levelLabel}</Text>
-              </LinearGradient>
+      <View style={otherStyles.identity}>
+        <View style={otherStyles.identityRow}>
+          <View style={[otherStyles.avatarRing, isFanProfile && otherStyles.avatarRingFan]}>{avatar}</View>
+          <View style={otherStyles.stats}>
+            <View style={otherStyles.stat}>
+              <Text style={otherStyles.statNumber}>{countText(typeof profileData.reelsCount === "number" ? profileData.reelsCount : reels.loading && items.length === 0 ? null : items.length)}</Text>
+              <Text style={otherStyles.statLabel}>Posts</Text>
             </View>
+            <TouchableOpacity
+              style={otherStyles.stat}
+              activeOpacity={0.7}
+              onPress={() => userId && router.push({ pathname: "/(main)/followers", params: { userId, tab: "followers" } } as any)}
+              accessibilityRole="button"
+            >
+              <Text style={otherStyles.statNumber}>{countText(typeof profileData.followersCount === "number" ? profileData.followersCount : followCounts ? followCounts.followers : null)}</Text>
+              <Text style={otherStyles.statLabel}>Followers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={otherStyles.stat}
+              activeOpacity={0.7}
+              onPress={() => userId && router.push({ pathname: "/(main)/followers", params: { userId, tab: "following" } } as any)}
+              accessibilityRole="button"
+            >
+              <Text style={otherStyles.statNumber}>{countText(typeof profileData.followingCount === "number" ? profileData.followingCount : followCounts ? followCounts.following : null)}</Text>
+              <Text style={otherStyles.statLabel}>Following</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={otherStyles.name} numberOfLines={1}>
+          {displayName || (unavailable ? "Account unavailable" : "")}
+        </Text>
+        {!unavailable ? (
+          <View style={otherStyles.metaRow}>
+            <Star
+              size={13}
+              strokeWidth={2}
+              color={isFanProfile ? "#C9C2B8" : "#EC9A15"}
+              fill={isFanProfile ? "transparent" : "#EC9A15"}
+            />
+            <Text style={[otherStyles.rank, isFanProfile && otherStyles.rankFan]}>
+              {isFanProfile ? "Fan" : levelLabel ? titleCase(levelLabel) : "Participant"}
+            </Text>
           </View>
         ) : null}
-      </LinearGradient>
+        {bio ? <Text style={otherStyles.bio}>{bio}</Text> : null}
+      </View>
+
+      {!unavailable ? (
+        <View style={{ marginTop: 12, marginBottom: 12 }}>
+          <OtherProfileActions
+            isFollowing={isFollowing}
+            followBusy={followBusy}
+            onToggleFollow={userId ? toggleFollow : undefined}
+            onMessage={userId ? openMessage : undefined}
+            // Tips go to a competition entry (POST reels/:id/tip), so Support needs at least one entry.
+            onSupport={TIPPING_ENABLED && latestReelId ? () => setSupportVisible(true) : undefined}
+          />
+        </View>
+      ) : null}
     </View>
   );
 
@@ -228,6 +252,7 @@ export default function OtherProfileScreen() {
         canCreatePost={false}
         unavailable={unavailable}
         ownerId={userId}
+        textTabs
       />
 
       {latestReelId ? (

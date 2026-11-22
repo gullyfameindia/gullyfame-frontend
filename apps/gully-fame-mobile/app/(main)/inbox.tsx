@@ -86,10 +86,15 @@ const sortChats = (list: ChatItem[]) =>
     return new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime();
   });
 
-const openChat = (c: { id: string; name: string; avatar: string | null }) =>
+const openChat = (c: { id: string; name: string; avatar: string | null; username?: string }) =>
   router.push({
     pathname: "/(main)/chat/[id]",
-    params: { id: c.id, name: c.name, ...(c.avatar ? { avatar: c.avatar } : {}) },
+    params: {
+      id: c.id,
+      name: c.name,
+      ...(c.avatar ? { avatar: c.avatar } : {}),
+      ...(c.username ? { username: c.username } : {}),
+    },
   });
 
 function Avatar({ uri, size = 52 }: { uri: string | null; size?: number }) {
@@ -456,7 +461,9 @@ export default function InboxScreen() {
             <Pressable
               key={m.message_id}
               style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-              onPress={() => openChat({ id: String(m.chatter_user_id), name, avatar: chat?.avatar ?? null })}
+              onPress={() =>
+                openChat({ id: String(m.chatter_user_id), name, avatar: chat?.avatar ?? null, username: chat?.username })
+              }
             >
               <Avatar uri={chat?.avatar ?? null} size={44} />
               <View style={styles.rowBody}>
@@ -685,7 +692,7 @@ function NewMessageSheet({ visible, onClose }: { visible: boolean; onClose: () =
     rememberChatContact(u._id, { name, avatar: avatar || "" });
     onClose();
     setQ("");
-    openChat({ id: u._id, name, avatar });
+    openChat({ id: u._id, name, avatar, username: u.username });
   };
 
   return (

@@ -57,6 +57,15 @@ export interface ReelActionResult {
   user_interactions: { has_voted: boolean; is_liked: boolean; is_saved: boolean };
 }
 
+/**
+ * Caption as shown to people. Older app versions saved "Untitled Reel" when the caption was
+ * left empty; that placeholder is shown as no caption.
+ */
+export function displayCaption(caption?: string | null): string {
+  const text = (caption || "").trim();
+  return /^untitled reel$/i.test(text) ? "" : text;
+}
+
 /** The shape the reel player screens render. */
 export interface UiReel {
   /** Stable numeric key derived from the backend id (the player keys maps by number). */
@@ -93,7 +102,7 @@ export function toUiReel(reel: FeedReel, index = 0): UiReel {
     userId: reel.author?._id || "",
     username: reel.author?.username || "Gully Fame Creator",
     profileImage: reel.author?.profile_picture_url || "",
-    caption: reel.caption || "",
+    caption: displayCaption(reel.caption),
     musicName: reel.music?.name || "Original Sound",
     // The API may send server-relative paths ("/videos/a.mp4"); the player needs a full URL.
     video: { uri: resolveMediaUrl(reel.video_url) || "" },

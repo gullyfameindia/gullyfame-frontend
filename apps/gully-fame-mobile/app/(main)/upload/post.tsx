@@ -1,4 +1,6 @@
 import React, { useState, useRef } from "react";
+import LocationPickerSheet, { currentPlaceIfAllowed, type PickedLocation } from "@/components/location/LocationPickerSheet";
+import { LocateFixed, MapPin, X } from "lucide-react-native";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   View,
@@ -21,7 +23,7 @@ import { safeBack } from "@/utils/safeBack";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Image as ExpoImage } from "expo-image";
 import Svg, { Path } from "react-native-svg";
-import { BackIcon, MusicIcon, InstagramIcon, TagIcon, ThreeDotsIcon, LocationIcon } from "@/icons";
+import { BackIcon, MusicIcon, InstagramIcon, TagIcon, ThreeDotsIcon } from "@/icons";
 import { useAudioPlayer } from "expo-audio";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { isMusicTrack, resetEditor, setMusic } from "@/store/slices/editorSlice";
@@ -157,7 +159,16 @@ export default function PostReelScreen() {
     setShowMusicModal(false);
   };
   const [taggedPeople, setTaggedPeople] = useState<any[]>([]);
-  const [location, setLocation] = useState<string | null>(null);
+  const [location, setLocation] = useState<PickedLocation | null>(null);
+  // Suggested place (only if location access is already allowed); the user taps it to add.
+  const [suggestedPlace, setSuggestedPlace] = useState<PickedLocation | null>(null);
+  React.useEffect(() => {
+    let alive = true;
+    currentPlaceIfAllowed().then((p) => alive && setSuggestedPlace(p));
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [privacy, setPrivacy] = useState("Everyone");
   const [allowShare, setAllowShare] = useState(true);
   const [allowSave, setAllowSave] = useState(true);
@@ -254,7 +265,8 @@ export default function PostReelScreen() {
         ? { url: musicTrack.url, volume: musicTrack.volume, startOffset: musicTrack.trimStart ?? 0 }
         : null,
     request: {
-      title: caption || "Untitled Reel",
+      // No placeholder: an empty caption stays empty (it used to become "Untitled Reel").
+      title: caption,
       description: caption,
       duration: isPhoto
         ? PHOTO_POST_SECONDS
@@ -264,6 +276,8 @@ export default function PostReelScreen() {
       tags: hashtags,
       music: musicForUpload ?? undefined,
       competitionId: competitionId || undefined,
+      // Sent with the post; the server stores it once it has a location field (see note in videoUploadService).
+      ...(location ? { location } : {}),
       ...(draftReelId ? { draftReelId } : {}),
     },
   });
@@ -455,11 +469,37 @@ export default function PostReelScreen() {
           </View>
         )}
 
-        <TouchableOpacity style={styles.optionRow} onPress={() => setShowLocationModal(true)}>
-          <LocationIcon />
-          <Text style={styles.optionText}>{location || "Add Location"}</Text>
-          <Text style={styles.chevron}>›</Text>
+        <TouchableOpacity
+          style={styles.optionRow}
+          onPress={() => setShowLocationModal(true)}
+          accessibilityRole="button"
+          testID="post-location"
+        >
+          <MapPin size={22} color={location ? "#EC9A15" : "#fff"} strokeWidth={1.8} />
+          <Text style={[styles.optionText, !location && styles.optionTextMuted]} numberOfLines={1}>
+            {location ? location.name : "Add location"}
+          </Text>
+          {location ? (
+            <TouchableOpacity onPress={() => setLocation(null)} hitSlop={10} accessibilityLabel="Remove location">
+              <X size={18} color="#999" />
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.chevron}>›</Text>
+          )}
         </TouchableOpacity>
+        {!location && suggestedPlace ? (
+          <View style={styles.placeSuggestRow}>
+            <TouchableOpacity
+              style={styles.placeChip}
+              onPress={() => setLocation(suggestedPlace)}
+              accessibilityRole="button"
+              accessibilityLabel={`Add location ${suggestedPlace.name}`}
+            >
+              <LocateFixed size={14} color="#EC9A15" />
+              <Text style={styles.placeChipText} numberOfLines={1}>{suggestedPlace.name}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Privacy & Sharing</Text>
@@ -733,46 +773,15 @@ export default function PostReelScreen() {
         </TouchableOpacity>
       </Modal>
 
-      <Modal
+      <LocationPickerSheet
         visible={showLocationModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowLocationModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowLocationModal(false)}
-        >
-          <View style={styles.simpleModal}>
-            <Text style={styles.simpleModalTitle}>Add Location</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search location..."
-              placeholderTextColor="#999"
-            />
-            {["Mumbai, India", "Delhi, India", "Bangalore, India"].map((loc) => (
-              <TouchableOpacity
-                key={loc}
-                style={styles.modalOption}
-                onPress={() => {
-                  setLocation(loc);
-                  setShowLocationModal(false);
-                }}
-              >
-                <Text style={styles.modalOptionText}>{loc}</Text>
-                {location === loc && <Text style={styles.checkmark}>✓</Text>}
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={styles.modalCancel}
-              onPress={() => setShowLocationModal(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        value={location}
+        onClose={() => setShowLocationModal(false)}
+        onSelect={(place) => {
+          setLocation(place);
+          if (place?.latitude !== undefined) setSuggestedPlace(null);
+        }}
+      />
     </SafeAreaView>
     </KeyboardAvoidingScreen>
   );
@@ -958,6 +967,21 @@ const styles = StyleSheet.create({
     color: "#999",
     fontSize: 24,
   },
+  optionTextMuted: { color: "#CAD7D8" },
+  placeSuggestRow: { flexDirection: "row", paddingHorizontal: 20, paddingVertical: 10, backgroundColor: "#0f0f0f" },
+  placeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    maxWidth: "100%",
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "rgba(236, 154, 21, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.4)",
+  },
+  placeChipText: { flexShrink: 1, color: "#EC9A15", fontSize: 13, fontFamily: "Inter_600SemiBold" },
   privacyValue: {
     flexDirection: "row",
     alignItems: "center",

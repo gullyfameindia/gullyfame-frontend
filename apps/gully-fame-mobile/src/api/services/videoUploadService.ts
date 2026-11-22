@@ -25,6 +25,8 @@ export interface VideoUploadRequest {
   ctaLink?: { label: string; url: string };
   /** Set when posting from a saved draft: the server promotes (or updates) that draft. */
   draftReelId?: string;
+  /** Place tagged on the post. */
+  location?: { name: string; latitude?: number; longitude?: number };
 }
 
 export interface PublishedReel {
@@ -95,6 +97,9 @@ const reelBody = (videoUrl: string, request: VideoUploadRequest) => ({
   music: request.music?.trackId ? { id: request.music.trackId, name: request.music.title } : { id: "", name: "" },
   ...(request.ctaLink?.url ? { ctaLink: request.ctaLink } : {}),
   ...(request.draftReelId ? { reelId: request.draftReelId } : {}),
+  // NOTE: the backend does not store this yet (Reel has no location field and /reels/publish
+  // ignores unknown fields), so it is sent ahead of that change and is harmless until then.
+  ...(request.location?.name ? { location: request.location } : {}),
 });
 
 /** POST /reels/publish */

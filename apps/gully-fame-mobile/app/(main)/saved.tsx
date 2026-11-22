@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { displayCaption } from "@api/services/reelsService";
 import {
   View,
   Text,
@@ -45,7 +46,7 @@ export default function SavedScreen() {
       saved.items
         .map((reel: any) => ({
           id: String(reel._id || reel.id),
-          title: reel.caption || "Reel",
+          title: displayCaption(reel.caption),
           author: reel.author?.username || "",
           thumbnail: reel.thumbnail_url || reel.thumbnail || "",
         }))

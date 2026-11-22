@@ -20,6 +20,8 @@ type Props = {
   onConfirm: () => void;
   onCancel: () => void;
   icon?: keyof typeof Ionicons.glyphMap;
+  /** Optional second choice between confirm and cancel, e.g. "Delete for everyone". */
+  extraAction?: { text: string; onPress: () => void };
 };
 
 /** In-app confirmation popup with a cancel and a confirm button. */
@@ -32,6 +34,7 @@ export default function ConfirmPopup({
   onConfirm,
   onCancel,
   icon = "help-circle-outline",
+  extraAction,
 }: Props) {
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onCancel}>
@@ -46,6 +49,11 @@ export default function ConfirmPopup({
           <TouchableOpacity style={styles.primaryButton} onPress={onConfirm} activeOpacity={0.8} accessibilityRole="button">
             <Text style={styles.primaryText}>{confirmText}</Text>
           </TouchableOpacity>
+          {extraAction ? (
+            <TouchableOpacity style={styles.outlineButton} onPress={extraAction.onPress} activeOpacity={0.8} accessibilityRole="button">
+              <Text style={styles.outlineText}>{extraAction.text}</Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity style={styles.secondaryButton} onPress={onCancel} activeOpacity={0.7} accessibilityRole="button">
             <Text style={styles.secondaryText}>{cancelText}</Text>
           </TouchableOpacity>
@@ -105,6 +113,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontFamily: "Inter_700Bold",
+  },
+  outlineButton: {
+    width: "100%",
+    paddingVertical: 13,
+    marginTop: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: "center",
+  },
+  outlineText: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: "Inter_600SemiBold",
   },
   secondaryButton: {
     width: "100%",
