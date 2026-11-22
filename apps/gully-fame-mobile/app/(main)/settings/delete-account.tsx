@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 20,
     paddingHorizontal: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Consequences card
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   bulletRow: {
     flexDirection: "row",
@@ -272,14 +272,14 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   note: {
     color: C.faint,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 4,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Buttons
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   dangerText: {
     color: "#fff",
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   keepButton: {
     borderRadius: 16,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   keepText: {
     color: C.accent,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   breakText: {
     color: C.faint,
@@ -317,11 +317,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 18,
     paddingHorizontal: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   breakLink: {
     color: C.accent,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   webLink: {
     alignItems: "center",
@@ -331,6 +331,6 @@ const styles = StyleSheet.create({
     color: C.accent,
     fontSize: 13,
     textDecorationLine: "underline",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

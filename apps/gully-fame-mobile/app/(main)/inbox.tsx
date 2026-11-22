@@ -1,73 +1,152 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
-  Platform,
-  Image,
-  Animated,
-  PanResponder,
-  Modal,
+  ActivityIndicator,
   Alert,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { router } from "expo-router";
-import { safeBack } from "@/utils/safeBack";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path, Circle } from "react-native-svg";
-import { ChatListItem, getChatList, setArchived, clearConversationForMe } from "@api/services/chatService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import {
+  Archive,
+  ArchiveRestore,
+  Ban,
+  BellOff,
+  Bell,
+  ChevronLeft,
+  CircleCheck,
+  CircleUserRound,
+  Ellipsis,
+  Flag,
+  MessageCircle,
+  Pin,
+  PinOff,
+  Search,
+  SquarePen,
+  Trash2,
+  X,
+  type LucideIcon,
+} from "lucide-react-native";
+import { safeBack } from "@/utils/safeBack";
+import {
+  type ChatListItem,
+  type ChatSearchResult,
+  getChatList,
+  setArchived,
+  setPinned,
+  setMuted,
+  searchMessages,
+  clearConversationForMe,
+} from "@api/services/chatService";
+import { searchUsersPage, type SearchUser } from "@api/services/searchService";
 import { socketChatService } from "@api/services/socketChatService";
 import { getErrorMessage } from "@api/client";
-import { getChatContacts, fallbackChatName } from "@utils/chatContacts";
+import { getChatContacts, fallbackChatName, rememberChatContact } from "@utils/chatContacts";
+import { resolveMediaUrl } from "@/utils/mediaUrl";
 import { toastError, toastSuccess } from "@components/ui/Toast";
 import { blockUser, getBlockedUserIds, reportContent } from "@/utils/moderation";
-import { BackIcon } from "@/icons";
 import { convertDateToChatTimePassed } from "@/utils/convertDateToChatTimePassed";
 import { SkeletonList } from "@/components/Skeleton/Skeleton";
+import { DEFAULT_ROLE, getProfileRoute } from "@/components/profile/shared/profileTypes";
+import { colors, font, radius, space } from "@/theme/tokens";
 
-const getDimensions = () => Dimensions.get("window");
+const DEFAULT_AVATAR = require("@assets/images/default-avatar.png");
 
 interface ChatItem {
   id: string;
   name: string;
+  username: string;
+  avatar: string | null;
   lastMessage: string;
-  timestamp: string;
-  unreadCount: number;
-  isOnline: boolean;
-  avatar: any;
-  chat_user_id: string;
+  lastAt: string;
+  unread: number;
+  pinned: boolean;
+  muted: boolean;
+  archived: boolean;
+}
+
+type Filter = "All" | "Unread" | "Archived";
+
+/** Pinned first, then newest message first (same order the server uses). */
+const sortChats = (list: ChatItem[]) =>
+  [...list].sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime();
+  });
+
+const openChat = (c: { id: string; name: string; avatar: string | null }) =>
+  router.push({
+    pathname: "/(main)/chat/[id]",
+    params: { id: c.id, name: c.name, ...(c.avatar ? { avatar: c.avatar } : {}) },
+  });
+
+function Avatar({ uri, size = 52 }: { uri: string | null; size?: number }) {
+  return (
+    <Image
+      source={uri ? { uri } : DEFAULT_AVATAR}
+      style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.card }}
+    />
+  );
+}
+
+function SideAction({ icon: Icon, label, onPress, tone }: { icon: LucideIcon; label: string; onPress: () => void; tone: string }) {
+  return (
+    <TouchableOpacity style={[styles.sideAction, { backgroundColor: tone }]} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      <Icon size={22} color="#FFFFFF" />
+      <Text style={styles.sideActionText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function BarAction({
+  icon: Icon,
+  label,
+  onPress,
+  danger,
+  disabled,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onPress: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <TouchableOpacity style={[styles.barAction, disabled && { opacity: 0.4 }]} onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityLabel={label}>
+      <Icon size={22} color={danger ? colors.danger : colors.text} />
+      <Text style={[styles.barActionText, danger && { color: colors.danger }]}>{label}</Text>
+    </TouchableOpacity>
+  );
 }
 
 export default function InboxScreen() {
-  const [activeTab, setActiveTab] = useState<"All" | "Archived">("All");
-  const [dimensions, setDimensions] = useState(getDimensions());
   const insets = useSafeAreaInsets();
-  const [slideAnim] = useState(() => new Animated.Value(0));
-  const [allChatsList, setAllChatsList] = useState<ChatItem[]>([]);
-  const [archivedChatsList, setArchivedChatsList] = useState<ChatItem[]>([]);
-  const swipeAnimations = useRef<{ [key: string]: Animated.Value }>({});
-  const [selectedChats, setSelectedChats] = useState<string[]>([]);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
+  const [chats, setChats] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener("change", ({ window }) => {
-      setDimensions(window);
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  
   const [loadError, setLoadError] = useState("");
+  const [filter, setFilter] = useState<Filter>("All");
+  const [query, setQuery] = useState("");
+  const [messageHits, setMessageHits] = useState<ChatSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [selecting, setSelecting] = useState(false);
+  const [menuChat, setMenuChat] = useState<ChatItem | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  // Both lists come from GET /chat/chatlist (view=archived for the archived tab).
+  // Both lists come from GET /chat/chatlist (view=archived for the archived ones).
   const loadChats = useCallback(async () => {
     setLoadError("");
     try {
@@ -77,22 +156,25 @@ export default function InboxScreen() {
         getChatContacts(),
         getBlockedUserIds(),
       ]);
-      const toItem = (chat: ChatListItem): ChatItem => {
-        const contact = contacts[chat.chatter_user_id];
+      const toItem = (c: ChatListItem): ChatItem => {
+        const id = String(c.chatter_user_id);
+        const contact = contacts[id];
         return {
-          id: chat.chatter_user_id,
-          chat_user_id: chat.chatter_user_id,
-          name: contact?.name || fallbackChatName(chat.chatter_user_id),
-          lastMessage: chat.latest_message,
-          timestamp: convertDateToChatTimePassed(chat.last_message_time),
-          unreadCount: 0,
-          isOnline: false,
-          avatar: contact?.avatar ? { uri: contact.avatar } : require("@assets/images/default-avatar.png"),
+          id,
+          name: c.name || contact?.name || fallbackChatName(id),
+          username: c.username || "",
+          avatar: resolveMediaUrl(c.profile_image) || contact?.avatar || null,
+          lastMessage: c.latest_message,
+          lastAt: c.last_message_time,
+          unread: c.unread_count || 0,
+          pinned: !!c.pinned,
+          muted: !!c.muted,
+          archived: !!c.archived,
         };
       };
       // Conversations with users the viewer has blocked are hidden.
-      setAllChatsList(all.chatlist.filter((c) => !blocked.has(c.chatter_user_id)).map(toItem));
-      setArchivedChatsList(archived.chatlist.filter((c) => !blocked.has(c.chatter_user_id)).map(toItem));
+      const visible = (list: ChatListItem[]) => list.filter((c) => !blocked.has(String(c.chatter_user_id))).map(toItem);
+      setChats(sortChats([...visible(all.chatlist), ...visible(archived.chatlist)]));
     } catch (error) {
       setLoadError(getErrorMessage(error));
     } finally {
@@ -100,1063 +182,713 @@ export default function InboxScreen() {
     }
   }, []);
 
-  // Deletes every message of these conversations for me (POST /chat/message/delete).
-  const [clearing, setClearing] = useState(false);
-  const clearChats = async (chatterIds: string[]) => {
-    if (clearing || chatterIds.length === 0) return;
-    setClearing(true);
-    try {
-      for (const id of chatterIds) await clearConversationForMe(id);
-      toastSuccess(chatterIds.length > 1 ? "Chats deleted" : "Chat deleted");
-    } catch (error) {
-      toastError(getErrorMessage(error));
-    } finally {
-      setClearing(false);
-      setSelectedChats([]);
-      setIsSelectionMode(false);
-      loadChats();
-    }
-  };
-
-  // A message arriving over the socket refreshes the list.
-  useEffect(() => socketChatService.onMessage(() => loadChats()), [loadChats]);
-
-  useEffect(() => {
-    Animated.spring(slideAnim, {
-      toValue: activeTab === "All" ? 0 : 1,
-      useNativeDriver: true,
-      tension: 50,
-      friction: 7,
-    }).start();
-  }, [activeTab, slideAnim]);
-
-  
-  const scale = (size: number) => (dimensions.width / 375) * size;
-  const scaleVertical = (size: number) => (dimensions.height / 812) * size;
-  const getFontSize = (size: number) => {
-    const scaled = scale(size);
-    return Math.max(scaled, size * 0.8);
-  };
-
-  
-  const isSmallScreen = dimensions.width < 375;
-  const tabMargin = isSmallScreen ? scale(20) : scale(50);
-
-  const currentChats = activeTab === "All" ? allChatsList : archivedChatsList;
-
-  
-  useEffect(() => {
-    currentChats.forEach((chat) => {
-      if (!swipeAnimations.current[chat.id]) {
-        swipeAnimations.current[chat.id] = new Animated.Value(0);
-      }
-    });
-  }, [currentChats]);
-
-  
   useFocusEffect(
     useCallback(() => {
       loadChats();
     }, [loadChats]),
   );
 
-  const handleArchive = (chatId: string) => {
-    const chat = allChatsList.find((c) => c.id === chatId);
-    if (chat) {
-      setArchived(chatId, true).catch((error) => {
-        toastError(getErrorMessage(error));
-        loadChats();
-      });
-      
-      Animated.timing(
-        swipeAnimations.current[chatId] || new Animated.Value(0),
-        {
-          toValue: dimensions.width,
-          duration: 300,
-          useNativeDriver: true,
-        },
-      ).start(() => {
-        setAllChatsList(allChatsList.filter((c) => c.id !== chatId));
-        setArchivedChatsList([...archivedChatsList, chat]);
-        
-        if (swipeAnimations.current[chatId]) {
-          swipeAnimations.current[chatId].setValue(0);
-        }
-      });
-    }
-  };
+  // A message arriving over the socket refreshes the list.
+  useEffect(() => socketChatService.onMessage(() => loadChats()), [loadChats]);
 
-  
-  const handleUnarchive = (chatId: string) => {
-    const chat = archivedChatsList.find((c) => c.id === chatId);
-    if (chat) {
-      setArchived(chatId, false).catch((error) => {
-        toastError(getErrorMessage(error));
-        loadChats();
-      });
-      
-      Animated.timing(
-        swipeAnimations.current[chatId] || new Animated.Value(0),
-        {
-          toValue: -dimensions.width,
-          duration: 300,
-          useNativeDriver: true,
-        },
-      ).start(() => {
-        setArchivedChatsList(archivedChatsList.filter((c) => c.id !== chatId));
-        setAllChatsList([...allChatsList, chat]);
-        
-        if (swipeAnimations.current[chatId]) {
-          swipeAnimations.current[chatId].setValue(0);
-        }
-      });
+  // Message search (server side) once the query has 2+ characters, debounced.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setMessageHits([]);
+      setSearching(false);
+      return;
     }
-  };
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        setMessageHits((await searchMessages(q)).results);
+      } catch {
+        setMessageHits([]); // Older servers have no /chat/search; chat-name matches still show.
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
 
-  
-  const createPanResponder = (chatId: string) => {
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderMove: (evt, gestureState) => {
-        const swipeThreshold = 150;
-        if (Math.abs(gestureState.dx) > Math.abs(gestureState.dy)) {
-          const dx = gestureState.dx;
-          
-          if (dx > -swipeThreshold && dx < swipeThreshold) {
-            
-            swipeAnimations.current[chatId]?.setValue(dx * 0.6);
-          }
-        }
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        const swipeThreshold = 80;
-        if (Math.abs(gestureState.dx) > swipeThreshold) {
-          if (activeTab === "All") {
-            
-            handleArchive(chatId);
-          } else {
-            
-            handleUnarchive(chatId);
-          }
-        } else {
-          
-          Animated.spring(
-            swipeAnimations.current[chatId] || new Animated.Value(0),
-            {
-              toValue: 0,
-              useNativeDriver: true,
-              tension: 50,
-              friction: 7,
-            },
-          ).start();
-        }
-      },
+  const byId = useMemo(() => new Map(chats.map((c) => [c.id, c])), [chats]);
+
+  const visibleChats = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return chats.filter((c) => {
+      if (filter === "Archived" ? !c.archived : c.archived) return false;
+      if (filter === "Unread" && c.unread === 0) return false;
+      if (!q) return true;
+      return (
+        c.name.toLowerCase().includes(q) ||
+        c.username.toLowerCase().includes(q) ||
+        c.lastMessage.toLowerCase().includes(q)
+      );
     });
+  }, [chats, filter, query]);
+
+  const unreadTotal = chats.filter((c) => !c.archived && c.unread > 0).length;
+
+  // ---------- actions ----------
+
+  const patch = (ids: string[], change: Partial<ChatItem>) =>
+    setChats((prev) => sortChats(prev.map((c) => (ids.includes(c.id) ? { ...c, ...change } : c))));
+
+  const endSelection = () => {
+    setSelecting(false);
+    setSelected([]);
   };
 
-  
-  const responsiveStyles = {
-    headerContainer: {
-      ...styles.headerContainer,
-      paddingTop: Math.max(insets.top, scale(20)),
-      paddingBottom: scaleVertical(20),
-      borderBottomLeftRadius: scale(30),
-      borderBottomRightRadius: scale(30),
-    },
-    header: {
-      ...styles.header,
-      paddingHorizontal: scale(12),
-      paddingTop: Platform.OS === "ios" ? scaleVertical(8) : scaleVertical(12),
-      paddingBottom: scaleVertical(12),
-      gap: scale(12),
-    },
-    headerButton: {
-      ...styles.headerButton,
-      width: scale(32),
-      height: scale(32),
-      minWidth: scale(32),
-      minHeight: scale(32),
-    },
-    headerTitle: {
-      ...styles.headerTitle,
-      fontSize: getFontSize(22),
-    },
-    tabsContainer: {
-      ...styles.tabsContainer,
-      marginHorizontal: tabMargin,
-      paddingHorizontal: scale(6),
-      gap: scale(8),
-      borderRadius: scale(12),
-      marginTop: scaleVertical(8),
-      marginBottom: scaleVertical(8),
-    },
-    tab: {
-      ...styles.tab,
-      paddingVertical: scaleVertical(10),
-      paddingHorizontal: scale(6),
-      borderRadius: scale(12),
-      minHeight: scale(36),
-    },
-    tabText: {
-      ...styles.tabText,
-      fontSize: getFontSize(13),
-    },
-    scrollContent: {
-      ...styles.scrollContent,
-      paddingHorizontal: scale(12),
-      paddingTop: scaleVertical(16),
-      paddingBottom: scaleVertical(30),
-    },
-    chatItem: {
-      ...styles.chatItem,
-      borderRadius: scale(12),
-      padding: scale(12),
-      backgroundColor: "#EFEFEF",
-      borderWidth: 1,
-      borderColor: "#E0E0E0",
-    },
-    avatarContainer: {
-      ...styles.avatarContainer,
-      width: scale(50),
-      height: scale(50),
-      borderRadius: scale(25),
-      marginRight: scale(12),
-    },
-    avatar: {
-      width: scale(50),
-      height: scale(50),
-      borderRadius: scale(25),
-    },
-    onlineIndicator: {
-      ...styles.onlineIndicator,
-      width: scale(12),
-      height: scale(12),
-      borderRadius: scale(6),
-      borderWidth: scale(2),
-      right: scale(0),
-      bottom: scale(0),
-    },
-    chatContent: {
-      ...styles.chatContent,
-      flex: 1,
-    },
-    chatName: {
-      ...styles.chatName,
-      fontSize: getFontSize(14),
-      marginBottom: scaleVertical(2),
-    },
-    chatMessage: {
-      ...styles.chatMessage,
-      fontSize: getFontSize(12),
-      lineHeight: scale(16),
-    },
-    chatTimestamp: {
-      ...styles.chatTimestamp,
-      fontSize: getFontSize(10),
-    },
-    unreadBadge: {
-      ...styles.unreadBadge,
-      minWidth: scale(18),
-      height: scale(18),
-      borderRadius: scale(9),
-      paddingHorizontal: scale(5),
-    },
-    unreadBadgeText: {
-      ...styles.unreadBadgeText,
-      fontSize: getFontSize(9),
-    },
+  const run = async (ids: string[], change: Partial<ChatItem>, call: (id: string) => Promise<unknown>, done: string) => {
+    if (busy || ids.length === 0) return;
+    setBusy(true);
+    patch(ids, change);
+    try {
+      for (const id of ids) await call(id);
+      toastSuccess(done);
+    } catch (error) {
+      toastError(getErrorMessage(error));
+      loadChats();
+    } finally {
+      setBusy(false);
+      endSelection();
+    }
   };
+
+  const pin = (ids: string[], value: boolean) =>
+    run(ids, { pinned: value }, (id) => setPinned(id, value), value ? "Pinned" : "Unpinned");
+  const mute = (ids: string[], value: boolean) =>
+    run(ids, { muted: value }, (id) => setMuted(id, value), value ? "Notifications muted" : "Notifications on");
+  const archive = (ids: string[], value: boolean) =>
+    run(ids, { archived: value }, (id) => setArchived(id, value), value ? "Archived" : "Moved to chats");
+
+  const confirmDelete = (ids: string[]) => {
+    if (ids.length === 0) return;
+    Alert.alert(
+      ids.length > 1 ? `Delete ${ids.length} chats?` : "Delete this chat?",
+      "Messages are removed for you only. The other person still has their copy.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setBusy(true);
+            try {
+              for (const id of ids) await clearConversationForMe(id);
+              setChats((prev) => prev.filter((c) => !ids.includes(c.id)));
+              toastSuccess(ids.length > 1 ? "Chats deleted" : "Chat deleted");
+            } catch (error) {
+              toastError(getErrorMessage(error));
+              loadChats();
+            } finally {
+              setBusy(false);
+              endSelection();
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const confirmBlock = (ids: string[]) => {
+    Alert.alert(
+      ids.length > 1 ? `Block ${ids.length} people?` : "Block this person?",
+      "You won't see their chats, reels or comments.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              for (const id of ids) await blockUser(id, byId.get(id)?.name || "User");
+              setChats((prev) => prev.filter((c) => !ids.includes(c.id)));
+              toastSuccess("Blocked");
+            } catch (error) {
+              toastError(getErrorMessage(error));
+            } finally {
+              endSelection();
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const startSelection = (id: string) => {
+    setMenuChat(null);
+    setSelecting(true);
+    setSelected([id]);
+  };
+
+  const toggleSelected = (id: string) =>
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const openOwnProfile = async () => {
+    let role: string | null = null;
+    try {
+      role = await AsyncStorage.getItem("userRole");
+    } catch {
+      /* falls back to the default role */
+    }
+    router.push(getProfileRoute((role as any) || DEFAULT_ROLE, true) as any);
+  };
+
+  // ---------- rendering ----------
+
+  const renderChat = ({ item: c }: { item: ChatItem }) => {
+    const isSelected = selected.includes(c.id);
+    const row = (
+      <Pressable
+        onPress={() => (selecting ? toggleSelected(c.id) : openChat(c))}
+        onLongPress={() => {
+          if (!selecting) setMenuChat(c);
+        }}
+        delayLongPress={300}
+        style={({ pressed }) => [styles.row, isSelected && styles.rowSelected, pressed && !selecting && styles.rowPressed]}
+        testID={`chat-${c.id}`}
+      >
+        {selecting ? (
+          <View style={[styles.check, isSelected && styles.checkOn]}>
+            {isSelected ? <CircleCheck size={22} color={colors.accent} /> : null}
+          </View>
+        ) : null}
+        <Avatar uri={c.avatar} />
+        <View style={styles.rowBody}>
+          <View style={styles.rowTop}>
+            <Text style={[styles.name, c.unread > 0 && styles.nameUnread]} numberOfLines={1}>
+              {c.name}
+            </Text>
+            {c.muted ? <BellOff size={14} color={colors.textMuted} /> : null}
+            {c.pinned ? <Pin size={14} color={colors.accent} /> : null}
+            <Text style={[styles.time, c.unread > 0 && styles.timeUnread]}>{convertDateToChatTimePassed(c.lastAt)}</Text>
+          </View>
+          <View style={styles.rowBottom}>
+            <Text style={[styles.preview, c.unread > 0 && styles.previewUnread]} numberOfLines={1}>
+              {c.lastMessage}
+            </Text>
+            {c.unread > 0 ? (
+              <View style={[styles.badge, c.muted && styles.badgeMuted]}>
+                <Text style={styles.badgeText}>{c.unread > 99 ? "99+" : c.unread}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </Pressable>
+    );
+    if (selecting) return row;
+    // Swipe either way to reveal an icon; tapping it opens selection mode with this chat picked.
+    return (
+      <Swipeable
+        friction={2}
+        leftThreshold={40}
+        rightThreshold={40}
+        overshootLeft={false}
+        overshootRight={false}
+        renderLeftActions={(_p, _t, methods) => (
+          <SideAction
+            icon={CircleCheck}
+            label="Select"
+            tone="#5B3A12"
+            onPress={() => {
+              methods.close();
+              startSelection(c.id);
+            }}
+          />
+        )}
+        renderRightActions={(_p, _t, methods) => (
+          <SideAction
+            icon={Ellipsis}
+            label="More"
+            tone={colors.card}
+            onPress={() => {
+              methods.close();
+              startSelection(c.id);
+            }}
+          />
+        )}
+      >
+        {row}
+      </Swipeable>
+    );
+  };
+
+  const selectedItems = selected.map((id) => byId.get(id)).filter(Boolean) as ChatItem[];
+  const allPinned = selectedItems.length > 0 && selectedItems.every((c) => c.pinned);
+  const allMuted = selectedItems.length > 0 && selectedItems.every((c) => c.muted);
+  const allArchived = selectedItems.length > 0 && selectedItems.every((c) => c.archived);
+
+  const q = query.trim();
+  const showMessageHits = q.length >= 2;
+
+  const listHeader = (
+    <>
+      {!selecting ? (
+        <View style={styles.filters}>
+          {(["All", "Unread", "Archived"] as Filter[]).map((f) => (
+            <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.chip, filter === f && styles.chipOn]}>
+              <Text style={[styles.chipText, filter === f && styles.chipTextOn]}>
+                {f}
+                {f === "Unread" && unreadTotal > 0 ? ` ${unreadTotal}` : ""}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
+      {showMessageHits && visibleChats.length > 0 ? <Text style={styles.sectionLabel}>Chats</Text> : null}
+    </>
+  );
+
+  const listFooter = showMessageHits ? (
+    <View>
+      <Text style={styles.sectionLabel}>Messages</Text>
+      {searching ? (
+        <ActivityIndicator color={colors.accent} style={{ marginVertical: space.lg }} />
+      ) : messageHits.length === 0 ? (
+        <Text style={styles.noHits}>No messages contain &ldquo;{q}&rdquo;.</Text>
+      ) : (
+        messageHits.map((m) => {
+          const chat = byId.get(String(m.chatter_user_id));
+          const name = chat?.name || fallbackChatName(String(m.chatter_user_id));
+          return (
+            <Pressable
+              key={m.message_id}
+              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+              onPress={() => openChat({ id: String(m.chatter_user_id), name, avatar: chat?.avatar ?? null })}
+            >
+              <Avatar uri={chat?.avatar ?? null} size={44} />
+              <View style={styles.rowBody}>
+                <View style={styles.rowTop}>
+                  <Text style={styles.name} numberOfLines={1}>{name}</Text>
+                  <Text style={styles.time}>{convertDateToChatTimePassed(m.createdAt)}</Text>
+                </View>
+                <Text style={styles.preview} numberOfLines={2}>
+                  {m.from_me ? "You: " : ""}
+                  {m.message}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })
+      )}
+    </View>
+  ) : (
+    <View style={{ height: space.xl }} />
+  );
+
+  const emptyText = loadError
+    ? loadError
+    : q
+      ? `No chats match "${q}".`
+      : filter === "Archived"
+        ? "Chats you archive show up here."
+        : filter === "Unread"
+          ? "You're all caught up."
+          : "Start a conversation with someone from GullyFame.";
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.page} />
 
-      {}
-      <View style={responsiveStyles.headerContainer}>
-        <View style={responsiveStyles.header}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-            onPress={() => safeBack("/(main)/home")}
-            style={responsiveStyles.headerButton}
-          >
-            <BackIcon color="#EC9A15" />
+      {selecting ? (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={endSelection} style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Cancel selection">
+            <X size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text
-            style={responsiveStyles.headerTitle}
-            numberOfLines={1}
-            adjustsFontSizeToFit
+          <Text style={styles.selectTitle}>{selected.length} selected</Text>
+          <TouchableOpacity
+            onPress={() => setSelected(selected.length === visibleChats.length ? [] : visibleChats.map((c) => c.id))}
+            style={styles.textButton}
           >
-            {isSelectionMode ? `${selectedChats.length} selected` : "Chats"}
-          </Text>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel={isSelectionMode ? "Cancel selection" : "More options"}
-            style={responsiveStyles.headerButton}
-            onPress={() => {
-              if (isSelectionMode) {
-                setIsSelectionMode(false);
-                setSelectedChats([]);
-              } else {
-                setShowMenu(true);
-              }
-            }}
-          >
-            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-              <Circle cx="12" cy="5" r="1.5" fill="#fff" />
-              <Circle cx="12" cy="12" r="1.5" fill="#fff" />
-              <Circle cx="12" cy="19" r="1.5" fill="#fff" />
-            </Svg>
+            <Text style={styles.textButtonText}>{selected.length === visibleChats.length ? "Clear" : "Select all"}</Text>
           </TouchableOpacity>
         </View>
-
-        {}
-        <View style={responsiveStyles.tabsContainer}>
-          {}
-          <Animated.View
-            style={[
-              styles.slidingIndicator,
-              {
-                top: 0,
-                left: scale(6),
-                borderRadius: scale(12),
-                height: "100%",
-                transform: [
-                  {
-                    translateX: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [
-                        0,
-                        (dimensions.width -
-                          tabMargin * 2 -
-                          scale(6) * 2 -
-                          scale(8)) /
-                          2 +
-                          scale(8),
-                      ],
-                    }),
-                  },
-                ],
-                width:
-                  (dimensions.width - tabMargin * 2 - scale(6) * 2 - scale(8)) /
-                  2,
-              },
-            ]}
-          />
-          <TouchableOpacity
-            style={responsiveStyles.tab}
-            onPress={() => setActiveTab("All")}
-          >
-            <Text
-              style={[
-                responsiveStyles.tabText,
-                activeTab === "All" && styles.tabTextActive,
-              ]}
-            >
-              All
-            </Text>
+      ) : (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Go back">
+            <ChevronLeft size={28} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={responsiveStyles.tab}
-            onPress={() => setActiveTab("Archived")}
-          >
-            <Text
-              style={[
-                responsiveStyles.tabText,
-                activeTab === "Archived" && styles.tabTextActive,
-              ]}
-            >
-              Archived
-            </Text>
+          <Text style={styles.title}>Messages</Text>
+          <TouchableOpacity onPress={openOwnProfile} style={styles.iconButton} accessibilityRole="button" accessibilityLabel="My profile" testID="inbox-profile">
+            <CircleUserRound size={24} color={colors.text} strokeWidth={1.8} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setComposeOpen(true)} style={styles.iconButton} accessibilityRole="button" accessibilityLabel="New message" testID="inbox-new-message">
+            <SquarePen size={23} color={colors.text} strokeWidth={1.8} />
           </TouchableOpacity>
         </View>
+      )}
+
+      <View style={styles.searchWrap}>
+        <Search size={18} color={colors.textMuted} />
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search chats and messages"
+          placeholderTextColor={colors.placeholder}
+          returnKeyType="search"
+          autoCorrect={false}
+          testID="inbox-search"
+        />
+        {query ? (
+          <TouchableOpacity onPress={() => setQuery("")} hitSlop={8} accessibilityLabel="Clear search">
+            <X size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
-      {}
       {loading ? (
-        <SkeletonList rows={8} trailing style={{ paddingHorizontal: 16 }} />
+        <SkeletonList rows={8} trailing style={{ paddingHorizontal: space.lg }} />
       ) : (
-        // FlatList draws only the rows on screen, so long chat lists stay smooth.
         <FlatList
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={responsiveStyles.scrollContent}
-          data={currentChats}
-          keyExtractor={(chat) => chat.id}
-          initialNumToRender={12}
-          windowSize={7}
-          ListFooterComponent={<View style={{ height: scaleVertical(40) }} />}
+          data={visibleChats}
+          keyExtractor={(c) => c.id}
+          renderItem={renderChat}
+          extraData={[selecting, selected]}
+          ListHeaderComponent={listHeader}
+          ListFooterComponent={listFooter}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {loadError || (activeTab === "Archived" ? "No archived chats." : "No chats yet. Start a conversation!")}
-              </Text>
-              {loadError ? (
-                <TouchableOpacity onPress={loadChats} style={{ marginTop: 12 }}>
-                  <Text style={[styles.emptyText, { color: "#EC9A15" }]}>Retry</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          }
-          renderItem={({ item: chat }) => {
-              const panResponder = createPanResponder(chat.id);
-              const swipeX =
-                swipeAnimations.current[chat.id] || new Animated.Value(0);
-
-              
-              
-              
-
-              
-              const rightArrowOpacity = swipeX.interpolate({
-                inputRange: [0, 30, 90],
-                outputRange: [0, 0.5, 1],
-                extrapolate: "clamp",
-              });
-
-              
-              const leftArrowOpacity = swipeX.interpolate({
-                inputRange: [-90, -30, 0],
-                outputRange: [1, 0.5, 0],
-                extrapolate: "clamp",
-              });
-
-              
-              const rightArrowTranslateX = swipeX.interpolate({
-                inputRange: [0, 30, 90],
-                outputRange: [20, 10, 0],
-                extrapolate: "clamp",
-              });
-
-              
-              const leftArrowTranslateX = swipeX.interpolate({
-                inputRange: [-90, -30, 0],
-                outputRange: [0, -10, -20],
-                extrapolate: "clamp",
-              });
-
-              return (
-                <View
-                  key={chat.id}
-                  style={{
-                    marginBottom: scaleVertical(10),
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  {}
-                  {activeTab === "All" && (
-                    <Animated.View
-                      style={[
-                        styles.archiveBackground,
-                        styles.archiveBackgroundLeft,
-                        {
-                          opacity: leftArrowOpacity,
-                          transform: [{ translateX: leftArrowTranslateX }],
-                        },
-                      ]}
-                      pointerEvents="none"
-                    >
-                      <Svg
-                        width={24}
-                        height={24}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <Path
-                          d="M19 12H5M12 5l-7 7 7 7"
-                          stroke="#FFFFFF"
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </Svg>
-                    </Animated.View>
-                  )}
-
-                  {}
-                  {activeTab === "All" && (
-                    <Animated.View
-                      style={[
-                        styles.archiveBackground,
-                        styles.archiveBackgroundRight,
-                        {
-                          opacity: rightArrowOpacity,
-                          transform: [{ translateX: rightArrowTranslateX }],
-                        },
-                      ]}
-                      pointerEvents="none"
-                    >
-                      <Svg
-                        width={24}
-                        height={24}
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <Path
-                          d="M5 12h14M12 5l7 7-7 7"
-                          stroke="#FFFFFF"
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </Svg>
-                    </Animated.View>
-                  )}
-
-                  {}
-                  {activeTab === "Archived" && (
-                    <>
-                      <Animated.View
-                        style={[
-                          styles.archiveBackground,
-                          styles.archiveBackgroundLeft,
-                          {
-                            opacity: leftArrowOpacity,
-                            transform: [{ translateX: leftArrowTranslateX }],
-                          },
-                        ]}
-                        pointerEvents="none"
-                      >
-                        <Svg
-                          width={24}
-                          height={24}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <Path
-                            d="M19 12H5M12 5l-7 7 7 7"
-                            stroke="#FFFFFF"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </Svg>
-                      </Animated.View>
-                      <Animated.View
-                        style={[
-                          styles.archiveBackground,
-                          styles.archiveBackgroundRight,
-                          {
-                            opacity: rightArrowOpacity,
-                            transform: [{ translateX: rightArrowTranslateX }],
-                          },
-                        ]}
-                        pointerEvents="none"
-                      >
-                        <Svg
-                          width={24}
-                          height={24}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <Path
-                            d="M5 12h14M12 5l7 7-7 7"
-                            stroke="#FFFFFF"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </Svg>
-                      </Animated.View>
-                    </>
-                  )}
-
-                  <Animated.View
-                    style={[
-                      {
-                        transform: [{ translateX: swipeX }],
-                      },
-                    ]}
-                    {...panResponder.panHandlers}
-                  >
-                    <TouchableOpacity
-                      style={[
-                        responsiveStyles.chatItem,
-                        isSelectionMode &&
-                          selectedChats.includes(chat.id) &&
-                          styles.chatItemSelected,
-                      ]}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        if (isSelectionMode) {
-                          if (selectedChats.includes(chat.id)) {
-                            setSelectedChats(
-                              selectedChats.filter((id) => id !== chat.id),
-                            );
-                          } else {
-                            setSelectedChats([...selectedChats, chat.id]);
-                          }
-                        } else {
-                          
-                          router.push({
-                            pathname: "/(main)/chat/[id]",
-                            params: {
-                              id: chat.chat_user_id || chat.id,
-                              name: chat.name,
-                            },
-                          });
-                        }
-                      }}
-                      onLongPress={() => {
-                        if (!isSelectionMode) {
-                          setIsSelectionMode(true);
-                          setSelectedChats([chat.id]);
-                        }
-                      }}
-                    >
-                      {isSelectionMode && (
-                        <View style={styles.selectionRadio}>
-                          <View
-                            style={[
-                              styles.radioButton,
-                              selectedChats.includes(chat.id) &&
-                                styles.radioButtonSelected,
-                            ]}
-                          >
-                            {selectedChats.includes(chat.id) && (
-                              <View style={styles.radioButtonInner} />
-                            )}
-                          </View>
-                        </View>
-                      )}
-                      <View style={responsiveStyles.avatarContainer}>
-                        <Image
-                          source={chat.avatar}
-                          style={responsiveStyles.avatar}
-                          resizeMode="cover"
-                        />
-                        {chat.isOnline && (
-                          <View style={responsiveStyles.onlineIndicator} />
-                        )}
-                      </View>
-                      <View style={responsiveStyles.chatContent}>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            marginBottom: scaleVertical(4),
-                          }}
-                        >
-                          <Text
-                            style={responsiveStyles.chatName}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {chat.name}
-                          </Text>
-                          <Text style={responsiveStyles.chatTimestamp}>
-                            {chat.timestamp}
-                          </Text>
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Text
-                            style={responsiveStyles.chatMessage}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {chat.lastMessage}
-                          </Text>
-                          {chat.unreadCount > 0 && (
-                            <View style={responsiveStyles.unreadBadge}>
-                              <Text style={responsiveStyles.unreadBadgeText}>
-                                {chat.unreadCount}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  </Animated.View>
+            showMessageHits ? null : (
+              <View style={styles.empty}>
+                <View style={styles.emptyIcon}>
+                  <MessageCircle size={22} color={colors.accent} strokeWidth={1.8} />
                 </View>
-              );
-          }}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{loadError ? "Couldn't load chats" : "Nothing here"}</Text>
+                  <Text style={styles.emptyText}>{emptyText}</Text>
+                  {loadError ? (
+                    <TouchableOpacity onPress={loadChats} style={styles.emptyButton}>
+                      <Text style={styles.emptyButtonText}>Try again</Text>
+                    </TouchableOpacity>
+                  ) : filter === "All" && !q ? (
+                    <TouchableOpacity onPress={() => setComposeOpen(true)} style={styles.emptyButton}>
+                      <Text style={styles.emptyButtonText}>New message</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
+            )
+          }
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: selecting ? 96 : insets.bottom + space.lg }}
         />
       )}
 
-      {}
-      <Modal
-        visible={showMenu}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowMenu(false)}
-      >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => setShowMenu(false)}
-        >
-          <View style={styles.menuContainer}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setShowMenu(false);
-                setIsSelectionMode(true);
-              }}
-            >
-              <Text style={styles.menuItemText}>Select Chats</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setShowMenu(false);
-                Alert.alert(
-                  "Delete All",
-                  "Are you sure you want to delete all chats?",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Delete",
-                      style: "destructive",
-                      onPress: () => clearChats([...allChatsList, ...archivedChatsList].map((c) => c.id)),
-                    },
-                  ],
-                );
-              }}
-            >
-              <Text style={[styles.menuItemText, styles.menuItemDanger]}>
-                Delete All
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                setShowMenu(false);
-                Alert.alert("Not available yet", "Reporting isn't available yet. Contact support@gullyfame.com.");
-              }}
-            >
-              <Text style={styles.menuItemText}>Report</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+      {selecting ? (
+        <View style={[styles.bar, { paddingBottom: insets.bottom + space.sm }]}>
+          <BarAction icon={allPinned ? PinOff : Pin} label={allPinned ? "Unpin" : "Pin"} onPress={() => pin(selected, !allPinned)} disabled={busy || !selected.length} />
+          <BarAction icon={allMuted ? Bell : BellOff} label={allMuted ? "Unmute" : "Mute"} onPress={() => mute(selected, !allMuted)} disabled={busy || !selected.length} />
+          <BarAction
+            icon={allArchived ? ArchiveRestore : Archive}
+            label={allArchived ? "Unarchive" : "Archive"}
+            onPress={() => archive(selected, !allArchived)}
+            disabled={busy || !selected.length}
+          />
+          <BarAction icon={Ban} label="Block" onPress={() => confirmBlock(selected)} disabled={busy || !selected.length} />
+          <BarAction
+            icon={Flag}
+            label="Report"
+            onPress={() => {
+              reportContent("chat", selected[0]);
+              endSelection();
+            }}
+            disabled={busy || selected.length !== 1}
+          />
+          <BarAction icon={Trash2} label="Delete" danger onPress={() => confirmDelete(selected)} disabled={busy || !selected.length} />
+        </View>
+      ) : null}
+
+      {/* Long-press popup */}
+      <Modal visible={!!menuChat} transparent animationType="fade" onRequestClose={() => setMenuChat(null)}>
+        <Pressable style={styles.popupBackdrop} onPress={() => setMenuChat(null)}>
+          {menuChat ? (
+            <Pressable style={styles.popup} onPress={() => undefined}>
+              <View style={styles.popupHead}>
+                <Avatar uri={menuChat.avatar} size={40} />
+                <Text style={[styles.name, { flex: 1 }]} numberOfLines={1}>{menuChat.name}</Text>
+              </View>
+              {[
+                {
+                  icon: menuChat.pinned ? PinOff : Pin,
+                  label: menuChat.pinned ? "Unpin chat" : "Pin chat",
+                  onPress: () => pin([menuChat.id], !menuChat.pinned),
+                },
+                {
+                  icon: menuChat.muted ? Bell : BellOff,
+                  label: menuChat.muted ? "Unmute notifications" : "Mute notifications",
+                  onPress: () => mute([menuChat.id], !menuChat.muted),
+                },
+                {
+                  icon: CircleCheck,
+                  label: "Select",
+                  onPress: () => startSelection(menuChat.id),
+                },
+                {
+                  icon: Trash2,
+                  label: "Delete chat",
+                  danger: true,
+                  onPress: () => confirmDelete([menuChat.id]),
+                },
+              ].map((o) => (
+                <TouchableOpacity
+                  key={o.label}
+                  style={styles.popupItem}
+                  onPress={() => {
+                    setMenuChat(null);
+                    o.onPress();
+                  }}
+                >
+                  <o.icon size={20} color={o.danger ? colors.danger : colors.text} />
+                  <Text style={[styles.popupText, o.danger && { color: colors.danger }]}>{o.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </Pressable>
+          ) : null}
+        </Pressable>
       </Modal>
 
-      {}
-      {isSelectionMode && selectedChats.length > 0 && (
-        <View style={styles.selectionActions}>
-          <TouchableOpacity
-            style={styles.selectionActionButton}
-            onPress={() => {
-              Alert.alert("Delete", `Delete ${selectedChats.length} chat(s)?`, [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Delete",
-                  style: "destructive",
-                  onPress: () => clearChats(selectedChats),
-                },
-              ]);
-            }}
-          >
-            <Text style={styles.selectionActionText}>Delete</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.selectionActionButton}
-            onPress={() => {
-              Alert.alert("Block", `Block ${selectedChats.length} user(s)? You won't see their chats, reels or comments.`, [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Block",
-                  style: "destructive",
-                  onPress: async () => {
-                    const all = [...allChatsList, ...archivedChatsList];
-                    try {
-                      for (const id of selectedChats) {
-                        const chat = all.find((c) => c.id === id);
-                        await blockUser(id, chat?.name || "User");
-                      }
-                    } catch (error) {
-                      toastError(getErrorMessage(error));
-                      return;
-                    }
-                    setAllChatsList((prev) => prev.filter((c) => !selectedChats.includes(c.id)));
-                    setArchivedChatsList((prev) => prev.filter((c) => !selectedChats.includes(c.id)));
-                    setSelectedChats([]);
-                    setIsSelectionMode(false);
-                    toastSuccess("Blocked");
-                  },
-                },
-              ]);
-            }}
-          >
-            <Text style={styles.selectionActionText}>Block</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.selectionActionButton}
-            onPress={() => {
-              // One conversation at a time: the report carries that person's recent messages.
-              if (selectedChats.length !== 1) {
-                Alert.alert("Report", "Select one chat to report.");
-                return;
-              }
-              reportContent("chat", selectedChats[0]);
-              setSelectedChats([]);
-              setIsSelectionMode(false);
-            }}
-          >
-            <Text style={styles.selectionActionText}>Report</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <NewMessageSheet visible={composeOpen} onClose={() => setComposeOpen(false)} />
     </View>
   );
 }
 
+/** Full-screen picker: search people on GullyFame and open a chat with them. */
+function NewMessageSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const [q, setQ] = useState("");
+  const [people, setPeople] = useState<SearchUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!visible) return;
+    setLoading(true);
+    setError("");
+    const t = setTimeout(async () => {
+      try {
+        setPeople((await searchUsersPage(q.trim(), 1, 30)).results);
+      } catch (e) {
+        setError(getErrorMessage(e));
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q, visible]);
+
+  const pick = (u: SearchUser) => {
+    const name = [u.first_name, u.last_name].filter(Boolean).join(" ").trim() || u.username;
+    const avatar = resolveMediaUrl(u.profile_picture_url);
+    rememberChatContact(u._id, { name, avatar: avatar || "" });
+    onClose();
+    setQ("");
+    openChat({ id: u._id, name, avatar });
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Close">
+            <X size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>New message</Text>
+        </View>
+        <View style={styles.searchWrap}>
+          <Search size={18} color={colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search people"
+            placeholderTextColor={colors.placeholder}
+            autoFocus
+            autoCorrect={false}
+            autoCapitalize="none"
+            testID="new-message-search"
+          />
+        </View>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: insets.bottom + space.lg }}>
+          <Text style={styles.sectionLabel}>{q.trim() ? "Results" : "Suggested"}</Text>
+          {loading ? (
+            <ActivityIndicator color={colors.accent} style={{ marginVertical: space.lg }} />
+          ) : error ? (
+            <Text style={styles.noHits}>{error}</Text>
+          ) : people.length === 0 ? (
+            <Text style={styles.noHits}>No one found.</Text>
+          ) : (
+            people.map((u) => {
+              const name = [u.first_name, u.last_name].filter(Boolean).join(" ").trim() || u.username;
+              return (
+                <Pressable key={u._id} style={({ pressed }) => [styles.row, pressed && styles.rowPressed]} onPress={() => pick(u)}>
+                  <Avatar uri={resolveMediaUrl(u.profile_picture_url)} size={44} />
+                  <View style={styles.rowBody}>
+                    <Text style={styles.name} numberOfLines={1}>{name}</Text>
+                    {u.username ? <Text style={styles.preview} numberOfLines={1}>@{u.username.replace(/^@+/, "")}</Text> : null}
+                  </View>
+                </Pressable>
+              );
+            })
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  headerContainer: {
-    backgroundColor: "#3C2610",
-    overflow: "hidden",
-  },
-  header: {
+  container: { flex: 1, backgroundColor: colors.page },
+
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: space.sm, paddingVertical: space.sm, gap: 2 },
+  iconButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
+  title: { flex: 1, marginLeft: space.xs, color: colors.text, fontSize: 22, fontFamily: font.title },
+  selectTitle: { flex: 1, marginLeft: space.xs, color: colors.text, fontSize: 18, fontFamily: font.semibold },
+  textButton: { paddingHorizontal: space.md, height: 44, justifyContent: "center" },
+  textButtonText: { color: colors.accent, fontSize: 14, fontFamily: font.semibold },
+
+  searchWrap: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  headerButton: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    textAlign: "left",
-    fontFamily: Platform.select({
-      ios: "Rubik_700Bold",
-      android: "Rubik_700Bold",
-      default: "Rubik_700Bold",
-    }),
-    flex: 1,
-    flexShrink: 1,
-  },
-  tabsContainer: {
-    flexDirection: "row",
-    backgroundColor: "rgba(234,176,75,38)",
-  },
-  tab: {
-    flex: 1,
-    borderWidth: 0,
-    borderColor: "#3C2610",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1,
-  },
-  slidingIndicator: {
-    position: "absolute",
-    backgroundColor: "#EC9A15",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    zIndex: 0,
-  },
-  tabText: {
-    color: "#FFFFFF",
-    fontFamily: Platform.select({
-      ios: "Rubik_500Medium",
-      android: "Rubik_500Medium",
-      default: "Rubik_500Medium",
-    }),
-    textAlign: "center",
-  },
-  tabTextActive: {
-    color: "#FFFFFF",
-    fontFamily: Platform.select({
-      ios: "Rubik_700Bold",
-      android: "Rubik_700Bold",
-      default: "Rubik_700Bold",
-    }),
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  scrollContent: {
-    
-  },
-  chatItem: {
-    flexDirection: "row",
-    backgroundColor: "#EFEFEF",
+    gap: space.sm,
+    marginHorizontal: space.lg,
+    marginBottom: space.sm,
+    paddingHorizontal: space.md,
+    height: 42,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: "#E0E0E0",
-    alignItems: "center",
-    width: "100%",
+    borderColor: colors.line,
   },
-  avatarContainer: {
-    position: "relative",
-    flexShrink: 0,
+  searchInput: { flex: 1, height: "100%", color: colors.text, fontSize: 15, fontFamily: font.regular, paddingVertical: 0 },
+
+  filters: { flexDirection: "row", gap: space.sm, paddingHorizontal: space.lg, paddingTop: space.xs, paddingBottom: space.sm },
+  chip: { paddingHorizontal: 14, height: 32, borderRadius: 16, justifyContent: "center", backgroundColor: "rgba(255,255,255,0.08)" },
+  chipOn: { backgroundColor: colors.accent },
+  chipText: { color: colors.textBody, fontSize: 13, fontFamily: font.semibold },
+  chipTextOn: { color: "#1A1A1A" },
+
+  sectionLabel: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: font.semibold,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    paddingHorizontal: space.lg,
+    paddingTop: space.md,
+    paddingBottom: space.xs,
   },
-  avatar: {
-    
-  },
-  onlineIndicator: {
-    position: "absolute",
-    backgroundColor: "#4CAF50",
-    borderColor: "#FFFFFF",
-  },
-  chatContent: {
-    
-  },
-  chatName: {
-    color: "#000000",
-    fontFamily: Platform.select({
-      ios: "Rubik_700Bold",
-      android: "Rubik_700Bold",
-      default: "Rubik_700Bold",
-    }),
-  },
-  chatMessage: {
-    color: "#828282",
-    fontFamily: Platform.select({
-      ios: "Rubik_400Regular",
-      android: "Rubik_400Regular",
-      default: "Rubik_400Regular",
-    }),
-    flex: 1,
-  },
-  chatTimestamp: {
-    color: "#828282",
-    fontFamily: Platform.select({
-      ios: "Rubik_400Regular",
-      android: "Rubik_400Regular",
-      default: "Rubik_400Regular",
-    }),
-  },
-  unreadBadge: {
-    backgroundColor: "#EC9A15",
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-  },
-  unreadBadgeText: {
-    color: "#FFFFFF",
-    fontFamily: Platform.select({
-      ios: "Rubik_700Bold",
-      android: "Rubik_700Bold",
-      default: "Rubik_700Bold",
-    }),
-    textAlign: "center",
-  },
-  archiveBackground: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: 100,
-    backgroundColor: "#EC9A15",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  archiveBackgroundLeft: {
-    left: 0,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-  archiveBackgroundRight: {
-    right: 0,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  chatItemSelected: {
-    backgroundColor: "#E8F4FD",
-    borderColor: "#EC9A15",
-    borderWidth: 2,
-  },
-  selectionRadio: {
-    marginRight: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  radioButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#72777A",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  radioButtonSelected: {
-    borderColor: "#EC9A15",
-    backgroundColor: "#EC9A15",
-  },
-  radioButtonInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#fff",
-  },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  menuContainer: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: Platform.OS === "ios" ? 34 : 20,
-  },
-  menuItem: {
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  menuItemText: {
-    fontSize: 16,
-    color: "#000",
-    fontWeight: "500",
-  },
-  menuItemDanger: {
-    color: "#FF3B30",
-  },
-  selectionActions: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+  noHits: { color: colors.textMuted, fontSize: 14, fontFamily: font.regular, paddingHorizontal: space.lg, paddingVertical: space.md },
+
+  row: {
     flexDirection: "row",
-    backgroundColor: "#EC9A15",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 12,
-    paddingBottom: Platform.OS === "ios" ? 34 : 20,
-  },
-  selectionActionButton: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    paddingVertical: 12,
-    borderRadius: 8,
     alignItems: "center",
+    gap: space.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: 10,
+    backgroundColor: colors.page,
   },
-  selectionActionText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  loadingContainer: {
-    flex: 1,
+  rowPressed: { backgroundColor: "#4A3116" },
+  rowSelected: { backgroundColor: "#4A3116" },
+  check: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: colors.textMuted,
     justifyContent: "center",
     alignItems: "center",
-    gap: 12,
-    paddingTop: 40,
   },
-  loadingText: {
-    color: "#72777A",
-    fontSize: 14,
-  },
-  emptyContainer: {
-    flex: 1,
+  checkOn: { borderWidth: 0 },
+  rowBody: { flex: 1, minWidth: 0 },
+  rowTop: { flexDirection: "row", alignItems: "center", gap: 6 },
+  rowBottom: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 3 },
+  name: { flexShrink: 1, color: colors.text, fontSize: 15, fontFamily: font.semibold },
+  nameUnread: { fontFamily: font.bold },
+  time: { marginLeft: "auto", color: colors.textMuted, fontSize: 12, fontFamily: font.regular },
+  timeUnread: { color: colors.accent, fontFamily: font.semibold },
+  preview: { flex: 1, color: colors.textMuted, fontSize: 13, fontFamily: font.regular },
+  previewUnread: { color: colors.textBody, fontFamily: font.medium },
+  badge: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    backgroundColor: colors.accent,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: 60,
   },
-  emptyText: {
-    color: "#72777A",
-    fontSize: 14,
-    textAlign: "center",
+  badgeMuted: { backgroundColor: colors.textMuted },
+  badgeText: { color: "#1A1A1A", fontSize: 11, fontFamily: font.bold },
+
+  sideAction: { width: 84, justifyContent: "center", alignItems: "center", gap: 4 },
+  sideActionText: { color: "#FFFFFF", fontSize: 12, fontFamily: font.semibold },
+
+  bar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingTop: space.sm,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
   },
+  barAction: { alignItems: "center", gap: 4, paddingVertical: 4, minWidth: 52 },
+  barActionText: { color: colors.text, fontSize: 11, fontFamily: font.medium },
+
+  popupBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", padding: space.xl },
+  popup: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingVertical: space.sm,
+  },
+  popupHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.sm,
+    marginBottom: space.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  popupItem: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: space.lg, height: 50 },
+  popupText: { color: colors.text, fontSize: 15, fontFamily: font.medium },
+
+  empty: {
+    flexDirection: "row",
+    gap: space.md,
+    margin: space.lg,
+    padding: 14,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.25)",
+  },
+  emptyIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: colors.accentSoft,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: { color: colors.textBody, fontSize: 13, lineHeight: 18, marginTop: 2, fontFamily: font.regular },
+  emptyButton: {
+    alignSelf: "flex-start",
+    marginTop: 10,
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: radius.sm,
+    backgroundColor: colors.accent,
+    justifyContent: "center",
+  },
+  emptyButtonText: { color: "#1A1A1A", fontSize: 13, fontFamily: font.semibold },
 });

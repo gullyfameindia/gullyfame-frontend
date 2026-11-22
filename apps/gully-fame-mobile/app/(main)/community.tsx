@@ -37,19 +37,13 @@ export default function CommunityScreen() {
           <Text style={styles.headerTitle}>Communities</Text>
         </View>
 
-        {}
-        <Text style={styles.subtitle}>
-          Where creators and fans connect, cheer, and collab.
-        </Text>
-
         {/* The API collection has no communities or community-posts endpoints yet, so nothing here can
             load or publish. Show one clear note instead of an empty list and a composer that does nothing. */}
         <View style={styles.comingSoonCard} testID="community-coming-soon">
           <CommunityIcon color="#EC9A15" />
           <Text style={styles.comingSoonTitle}>Communities are coming soon</Text>
           <Text style={styles.comingSoonText}>
-            You&apos;ll be able to join communities, follow their feeds and post updates here. Until then, share
-            your talent through reels and competitions.
+            Groups for each talent and city are on the way. For now, post reels and enter competitions.
           </Text>
           <TouchableOpacity
             style={styles.comingSoonButton}

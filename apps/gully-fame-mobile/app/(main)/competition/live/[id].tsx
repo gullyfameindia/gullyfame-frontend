@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { safeIdParam } from "@/utils/routeParams";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   View,
   Text,
@@ -216,7 +216,7 @@ export default function LiveCompetitionScreen() {
           {role === "fan" ? (
             <TouchableOpacity style={styles.fullWidthButton} onPress={pushToVoting} activeOpacity={0.8}>
               <LinearGradient colors={["#EC9A15", "#FFD700"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientFill}>
-                <Text style={styles.ctaText}>⭐ Watch & Vote Now</Text>
+                <Text style={styles.ctaText}>Watch & vote</Text>
               </LinearGradient>
             </TouchableOpacity>
           ) : (
@@ -224,11 +224,11 @@ export default function LiveCompetitionScreen() {
               {competitionData.is_current_user_entered ? (
                 <>
                   <View style={[styles.halfButton, styles.disabledButton]}>
-                    <Text style={styles.disabledText}>🔒 Voting Locked</Text>
+                    <Text style={styles.disabledText}>Voting locked</Text>
                   </View>
                   <TouchableOpacity style={styles.halfButton} onPress={pushToVoting} activeOpacity={0.8}>
                     <LinearGradient colors={["#22C55E", "#16A34A"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientFill}>
-                      <Text style={styles.ctaText}>👁️ View Entry</Text>
+                      <Text style={styles.ctaText}>View entry</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                 </>
@@ -236,7 +236,7 @@ export default function LiveCompetitionScreen() {
                 <>
                   <TouchableOpacity style={styles.halfButton} onPress={pushToVoting} activeOpacity={0.8}>
                     <LinearGradient colors={["#EC9A15", "#FFD700"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientFill}>
-                      <Text style={styles.ctaText}>⭐ Vote</Text>
+                      <Text style={styles.ctaText}>Vote</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.halfButton} onPress={startEntry} activeOpacity={0.8}>
@@ -306,7 +306,7 @@ export default function LiveCompetitionScreen() {
             <View style={styles.specsRow}>
               <View style={styles.specBox}>
                 <View style={styles.specHeader}>
-                  <Text style={styles.specIcon}>🎟️</Text>
+                  <Ionicons name="ticket-outline" size={16} color="#EC9A15" />
                   <Text style={styles.specLabel}>Entry</Text>
                 </View>
                 {competitionData.entryFee ? (
@@ -318,7 +318,7 @@ export default function LiveCompetitionScreen() {
               <View style={styles.specVerticalDivider} />
               <View style={styles.specBox}>
                 <View style={styles.specHeader}>
-                  <Text style={styles.specIcon}>📅</Text>
+                  <Ionicons name="calendar-outline" size={16} color="#EC9A15" />
                   <Text style={styles.specLabel}>Timeline</Text>
                 </View>
                 <Text style={styles.specValue}>{formatDateShort(competitionData.startDate)} - {formatDateShort(competitionData.endDate)}</Text>
@@ -338,7 +338,7 @@ export default function LiveCompetitionScreen() {
                   </Text>
                 </View>
                 <View style={styles.starFlexBox}>
-                  <Text style={styles.starFlexIcon}>⭐</Text>
+                  <Ionicons name="star" size={22} color="#EC9A15" />
                   <View>
                     <Text style={styles.starFlexValue}>
                       {formatNumber(
@@ -357,7 +357,7 @@ export default function LiveCompetitionScreen() {
           <TouchableOpacity style={styles.missionBriefingCard} activeOpacity={0.8} onPress={toggleRules}>
             <View style={styles.missionHeader}>
               <View style={styles.missionTitleRow}>
-                <Text style={styles.missionIcon}>📜</Text>
+                <Ionicons name="document-text-outline" size={16} color="#EC9A15" />
                 <Text style={styles.missionTitle}>Mission Briefing & Rules</Text>
               </View>
               <Text style={styles.chevron}>{isRulesExpanded ? "▲" : "▼"}</Text>
@@ -376,7 +376,7 @@ export default function LiveCompetitionScreen() {
 
         <View style={styles.section}>
           <View style={styles.leaderboardTitleContainer}>
-            <Text style={styles.leaderboardMainTitle}>🏆 LIVE LEADERBOARD</Text>
+            <Text style={styles.leaderboardMainTitle}>Live leaderboard</Text>
             <Text style={styles.leaderboardSubTitle}>Top 10 Participants</Text>
           </View>
           

@@ -146,7 +146,7 @@ export default function VerifiedScreen() {
           
           <View style={styles.verifiedContainer}>
             <VerifiedBadge size={100} />
-            <Text style={styles.verifiedTitle}>You're Verified! ✅</Text>
+            <Text style={styles.verifiedTitle}>You're verified</Text>
             <Text style={styles.verifiedSubtitle}>
               Congratulations! Your account is fully verified. You have access
               to all features.

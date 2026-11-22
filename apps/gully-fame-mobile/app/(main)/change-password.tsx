@@ -6,19 +6,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Dimensions,
   ScrollView,
-  Image,
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { safeBack } from "@/utils/safeBack";
-import Svg, { Path } from "react-native-svg";
+import OutlinedField, { darkFieldInputStyle } from "@/components/ui/OutlinedField";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { colors, font, radius, space, type } from "@/theme/tokens";
 import { EyeIcon, EyeOffIcon } from "@/icons";
 import { authService, AUTH_RULES } from "@api/services/authService";
 import { toastSuccess } from "@/components/ui/Toast";
-
-const { width, height } = Dimensions.get("window");
 
 export default function ChangePassword() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -27,6 +25,7 @@ export default function ChangePassword() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showRetypePassword, setShowRetypePassword] = useState(false);
+  const [focus, setFocus] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -83,9 +82,7 @@ export default function ChangePassword() {
     const passwordValidationErrors = validatePassword(newPassword);
     if (passwordValidationErrors.length > 0) {
       setPasswordErrors(passwordValidationErrors);
-      setErrorMessage(
-        "Password does not meet requirements. Please check the requirements below.",
-      );
+      setErrorMessage(`New password: ${passwordValidationErrors[0].toLowerCase()}.`);
       return;
     }
 
@@ -120,316 +117,188 @@ export default function ChangePassword() {
   };
 
   return (
-    <KeyboardAvoidingScreen style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container} statusBarColor={colors.page}>
+      <ScreenHeader title="Change Password" />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Header with Back Arrow */}
-        <View style={styles.header}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-            onPress={() => safeBack("/(main)/home")}
-            style={styles.backButton}
+        <View style={styles.card}>
+          <OutlinedField
+            dark
+            label="Current password"
+            required
+            icon="lock-closed-outline"
+            focused={focus === "cur"}
+            error={false}
           >
-            <Svg width={20} height={20} viewBox="0 0 16 16" fill="none">
-              <Path
-                d="M16 7H3.83L9.42 1.41L8 0L0 8L8 16L9.41 14.59L3.83 9H16V7Z"
-                fill="#EC9A15"
-              />
-            </Svg>
-          </TouchableOpacity>
-        </View>
-
-        {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("@assets/images/gfi.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Title */}
-        <Text style={[styles.title, { fontFamily: "PlayfairDisplay_700Bold" }]}>
-          Change Password
-        </Text>
-
-        {/* Current Password Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Current Password</Text>
-          <View style={styles.passwordContainer}>
             <TextInput
-              style={styles.input}
-              placeholder="Enter Current Password"
-              placeholderTextColor="#9CA3AF"
+              style={darkFieldInputStyle}
+              placeholder="Your current password"
+              placeholderTextColor={colors.placeholder}
               secureTextEntry={!showCurrentPassword}
               value={currentPassword}
               onChangeText={setCurrentPassword}
+              onFocus={() => setFocus("cur")}
+              onBlur={() => setFocus(null)}
+              autoCapitalize="none"
+              autoComplete="current-password"
             />
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={showCurrentPassword ? "Hide password" : "Show password"}
-              style={styles.eyeIcon}
-              onPress={() => setShowCurrentPassword(!showCurrentPassword)}
-            >
-              {showCurrentPassword ? (
-                <EyeOffIcon size={20} color="#9CA3AF" />
-              ) : (
-                <EyeIcon size={20} color="#9CA3AF" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* New Password Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>New Password</Text>
-          <View style={styles.passwordContainer}>
+            {currentPassword.length > 0 && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showCurrentPassword ? "Hide password" : "Show password"}
+                style={styles.eyeIcon}
+                hitSlop={10}
+                onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+              >
+                {showCurrentPassword ? <EyeOffIcon size={20} color={colors.accent} /> : <EyeIcon size={20} color={colors.accent} />}
+              </TouchableOpacity>
+            )}
+          </OutlinedField>
+          <OutlinedField
+            dark
+            label="New password"
+            required
+            icon="key-outline"
+            focused={focus === "new"}
+            error={newPassword.length > 0 && passwordErrors.length > 0 ? passwordErrors[0] : false}
+          >
             <TextInput
-              style={styles.input}
-              placeholder="Enter New Password"
-              placeholderTextColor="#9CA3AF"
+              style={darkFieldInputStyle}
+              placeholder="At least 6 characters"
+              placeholderTextColor={colors.placeholder}
               secureTextEntry={!showNewPassword}
               value={newPassword}
               onChangeText={handleNewPasswordChange}
+              onFocus={() => setFocus("new")}
+              onBlur={() => setFocus(null)}
+              autoCapitalize="none"
+              autoComplete="new-password"
             />
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={showNewPassword ? "Hide password" : "Show password"}
-              style={styles.eyeIcon}
-              onPress={() => setShowNewPassword(!showNewPassword)}
-            >
-              {showNewPassword ? (
-                <EyeOffIcon size={20} color="#9CA3AF" />
-              ) : (
-                <EyeIcon size={20} color="#9CA3AF" />
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Retype New Password Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Retype New Password</Text>
-          <View style={styles.passwordContainer}>
+            {newPassword.length > 0 && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showNewPassword ? "Hide password" : "Show password"}
+                style={styles.eyeIcon}
+                hitSlop={10}
+                onPress={() => setShowNewPassword(!showNewPassword)}
+              >
+                {showNewPassword ? <EyeOffIcon size={20} color={colors.accent} /> : <EyeIcon size={20} color={colors.accent} />}
+              </TouchableOpacity>
+            )}
+          </OutlinedField>
+          <OutlinedField
+            dark
+            label="Confirm new password"
+            required
+            icon="shield-checkmark-outline"
+            focused={focus === "re"}
+            error={confirmPasswordError || false}
+          >
             <TextInput
-              style={styles.input}
-              placeholder="Re-enter New Password"
-              placeholderTextColor="#9CA3AF"
+              style={darkFieldInputStyle}
+              placeholder="Re-enter the new password"
+              placeholderTextColor={colors.placeholder}
               secureTextEntry={!showRetypePassword}
               value={retypePassword}
               onChangeText={handleRetypePasswordChange}
+              onFocus={() => setFocus("re")}
+              onBlur={() => setFocus(null)}
+              autoCapitalize="none"
+              autoComplete="new-password"
             />
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={showRetypePassword ? "Hide password" : "Show password"}
-              style={styles.eyeIcon}
-              onPress={() => setShowRetypePassword(!showRetypePassword)}
-            >
-              {showRetypePassword ? (
-                <EyeOffIcon size={20} color="#9CA3AF" />
-              ) : (
-                <EyeIcon size={20} color="#9CA3AF" />
-              )}
-            </TouchableOpacity>
-          </View>
+            {retypePassword.length > 0 && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showRetypePassword ? "Hide password" : "Show password"}
+                style={styles.eyeIcon}
+                hitSlop={10}
+                onPress={() => setShowRetypePassword(!showRetypePassword)}
+              >
+                {showRetypePassword ? <EyeOffIcon size={20} color={colors.accent} /> : <EyeIcon size={20} color={colors.accent} />}
+              </TouchableOpacity>
+            )}
+          </OutlinedField>
+
+          <TouchableOpacity
+            style={styles.forgotPasswordContainer}
+            onPress={() => router.push("/auth/forgotpassword")}
+            hitSlop={8}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          {errorMessage ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
+          {successMessage ? (
+            <View style={styles.successContainer}>
+              <Text style={styles.successText}>{successMessage}</Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={[styles.primaryButton, isLoading && styles.primaryButtonDisabled]}
+            activeOpacity={0.85}
+            onPress={handleChangePassword}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryButtonText}>Update password</Text>
+            )}
+          </TouchableOpacity>
         </View>
-
-        {/* Password Requirements */}
-        {newPassword.length > 0 && passwordErrors.length > 0 && (
-          <View style={styles.requirementsContainer}>
-            <Text style={styles.requirementsTitle}>Password Requirements:</Text>
-            {passwordErrors.map((error, index) => (
-              <Text key={index} style={styles.requirementError}>
-                • {error}
-              </Text>
-            ))}
-          </View>
-        )}
-
-        {/* Confirm Password Error */}
-        {confirmPasswordError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{confirmPasswordError}</Text>
-          </View>
-        ) : null}
-
-        {/* Forgot Password Link */}
-        <TouchableOpacity
-          style={styles.forgotPasswordContainer}
-          onPress={() => router.push("/auth/forgotpassword")}
-        >
-          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-        </TouchableOpacity>
-
-        {errorMessage ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        ) : null}
-
-        {successMessage ? (
-          <View style={styles.successContainer}>
-            <Text style={styles.successText}>{successMessage}</Text>
-          </View>
-        ) : null}
-
-        {/* Change Password Button */}
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            isLoading && styles.primaryButtonDisabled,
-          ]}
-          activeOpacity={0.85}
-          onPress={handleChangePassword}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.primaryButtonText}>Change Password</Text>
-          )}
-        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#3C2610",
+  container: { flex: 1, backgroundColor: colors.page },
+  content: { paddingHorizontal: space.lg, paddingTop: space.sm, paddingBottom: space.xl },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    padding: space.lg,
+    paddingTop: space.xl,
   },
-  content: {
-    paddingHorizontal: 30,
-    paddingTop: height * 0.06,
-    paddingBottom: 20,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 0,
-  },
-  backButton: {
-    padding: 8,
-    marginTop: 10,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginTop: -50,
-    marginBottom: 60,
-  },
-  logo: {
-    width: width * 0.35,
-    height: height * 0.08,
-  },
-  title: {
-    color: "#FFFFFF",
-    fontSize: 25,
-    marginBottom: 30,
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    marginBottom: 8,
-    fontFamily: "Inter",
-  },
-  passwordContainer: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  input: {
-    backgroundColor: "#55402d",
-    borderRadius: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    paddingRight: 45,
-    color: "#c8c8c8",
-    fontSize: 14,
-    fontFamily: "Inter_400Regular",
-    borderWidth: 0,
-    borderColor: "rgba(255,255,255,0.2)",
-    flex: 1,
-  },
-  eyeIcon: {
-    position: "absolute",
-    right: 12,
-    padding: 4,
-  },
-  forgotPasswordContainer: {
-    alignSelf: "flex-end",
-    marginBottom: 20,
-    marginTop: -10,
-  },
-  forgotPasswordText: {
-    color: "#EC9A15",
-    fontSize: 13,
-    fontFamily: "Inter_500Medium",
-  },
+  eyeIcon: { paddingLeft: 10, paddingVertical: 4 },
+  forgotPasswordContainer: { alignSelf: "flex-end", marginTop: space.xs, marginBottom: space.lg },
+  forgotPasswordText: { color: colors.accent, fontSize: 13, fontFamily: font.semibold },
   primaryButton: {
-    backgroundColor: "#EC9A15",
-    paddingVertical: 18,
-    borderRadius: 30,
+    backgroundColor: colors.accent,
+    height: 44,
+    borderRadius: radius.md,
     alignItems: "center",
-    marginTop: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 4,
+    justifyContent: "center",
   },
-  primaryButtonDisabled: {
-    opacity: 0.6,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontFamily: "Inter_700Bold",
-  },
+  primaryButtonDisabled: { opacity: 0.6 },
+  primaryButtonText: { ...type.button, color: "#FFFFFF" },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
+    backgroundColor: colors.dangerSoft,
+    borderColor: "rgba(248, 113, 113, 0.45)",
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
+    borderRadius: radius.md,
+    padding: space.md,
+    marginBottom: space.md,
   },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    textAlign: "center",
-  },
+  errorText: { color: colors.danger, fontSize: 13, fontFamily: font.medium, textAlign: "center" },
   successContainer: {
-    backgroundColor: "#D1FAE5",
-    borderColor: "#10B981",
+    backgroundColor: colors.successSoft,
+    borderColor: "rgba(52, 211, 153, 0.45)",
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
+    borderRadius: radius.md,
+    padding: space.md,
+    marginBottom: space.md,
   },
-  successText: {
-    color: "#10B981",
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    textAlign: "center",
-  },
-  requirementsContainer: {
-    backgroundColor: "#2A1F0F",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#EC9A15",
-  },
-  requirementsTitle: {
-    color: "#EC9A15",
-    fontSize: 13,
-    fontFamily: "Inter_600SemiBold",
-    marginBottom: 8,
-  },
-  requirementError: {
-    color: "#DC2626",
-    fontSize: 12,
-    fontFamily: "Inter_400Regular",
-    marginBottom: 4,
-  },
+  successText: { color: colors.success, fontSize: 13, fontFamily: font.medium, textAlign: "center" },
 });

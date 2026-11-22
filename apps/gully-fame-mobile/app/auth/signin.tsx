@@ -7,7 +7,7 @@ import { showGuestModeUnavailable } from "@utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppleIcon, EyeIcon, EyeOffIcon } from "@/icons";
 import { Ionicons } from "@expo/vector-icons";
-import OutlinedField, { FIELD_COLORS, fieldInputStyle } from "@/components/ui/OutlinedField";
+import OutlinedField, { DARK_FIELD_COLORS, darkFieldInputStyle } from "@/components/ui/OutlinedField";
 import { authService, AUTH_RULES } from "@api/services/authService";
 import { getErrorMessage } from "@api/client";
 import { registerPushTokenWithBackend } from "@utils/pushToken";
@@ -100,12 +100,12 @@ export default function SignIn() {
           <Text style={styles.title}>Welcome back!</Text>
           <Text style={styles.subtitle}>Sign in to continue your journey</Text>
 
-          <OutlinedField label="Email / Mobile" required icon="person-outline" focused={focus === "id"}>
+          <OutlinedField dark label="Email / Mobile" required icon="person-outline" focused={focus === "id"}>
             <TextInput
-              style={fieldInputStyle}
+              style={darkFieldInputStyle}
               placeholder="you@example.com or 98765 43210"
               testID="signin-identifier"
-              placeholderTextColor={FIELD_COLORS.placeholder}
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
               value={emailOrMobile}
               onChangeText={setEmailOrMobile}
               onFocus={() => setFocus("id")}
@@ -116,12 +116,12 @@ export default function SignIn() {
             />
           </OutlinedField>
 
-          <OutlinedField label="Password" required icon="lock-closed-outline" focused={focus === "pw"}>
+          <OutlinedField dark label="Password" required icon="lock-closed-outline" focused={focus === "pw"}>
             <TextInput
-              style={fieldInputStyle}
+              style={darkFieldInputStyle}
               placeholder="Your password"
               testID="signin-password"
-              placeholderTextColor={FIELD_COLORS.placeholder}
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
               value={password}
               onChangeText={setPassword}
               onFocus={() => setFocus("pw")}
@@ -156,14 +156,14 @@ export default function SignIn() {
 
           {errorMessage ? (
             <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle" size={18} color="#DC2626" />
+              <Ionicons name="alert-circle" size={18} color="#F87171" />
               <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
           ) : null}
 
           {successMessage ? (
             <View style={styles.successContainer}>
-              <Ionicons name="checkmark-circle" size={18} color="#059669" />
+              <Ionicons name="checkmark-circle" size={18} color="#34D399" />
               <Text style={styles.successText}>{successMessage}</Text>
             </View>
           ) : null}
@@ -190,7 +190,7 @@ export default function SignIn() {
             testID="signin-otp-login"
             activeOpacity={0.8}
           >
-            <Ionicons name="phone-portrait-outline" size={20} color={C.brown} />
+            <Ionicons name="phone-portrait-outline" size={20} color={C.orange} />
             <Text style={styles.otpLoginText}>Login with OTP</Text>
           </TouchableOpacity>
 
@@ -221,9 +221,7 @@ export default function SignIn() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.flexSpacer} />
-
-          <TouchableOpacity style={styles.skipContainer} onPress={showGuestModeUnavailable} testID="signin-skip" activeOpacity={0.7}>
+                    <TouchableOpacity style={styles.skipContainer} onPress={showGuestModeUnavailable} testID="signin-skip" activeOpacity={0.7}>
             <Text style={styles.skipText}>Just browsing?</Text>
             <Text style={styles.skipLink}>Skip</Text>
             <Ionicons name="arrow-forward" size={16} color={C.orange} />
@@ -237,86 +235,73 @@ export default function SignIn() {
 const C = {
   brown: "#3C2610",
   orange: "#EC9A15",
-  card: "#FFF9F1",
-  text: "#1F2937",
-  muted: "#6B7280",
-  icon: "#9A7B55",
-  placeholder: "#A8A29E",
-  border: "#E7D9C4",
+  card: "#1A1A1A",
+  box: "#252525",
+  line: "#3A3A3A",
+  text: "#FFFFFF",
+  body: "#CAD7D8",
+  muted: "#8A8F90",
+  icon: "#EC9A15",
 };
 
+// Same dark card look as Create Account (app/auth/createaccount.tsx).
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.brown },
   scrollView: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
-  logoContainer: { alignItems: "center", paddingTop: height * 0.035, paddingBottom: 28 },
-  logo: { width: width * 0.3, height: height * 0.075 },
-  tagline: { marginTop: 10, color: "#F3D9B1", fontSize: 13, fontFamily: "Inter_500Medium", letterSpacing: 0.3 },
+  scrollContent: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 16, paddingTop: height * 0.025, paddingBottom: 12 },
+  logoContainer: { alignItems: "center", marginBottom: 16 },
+  logo: { width: width * 0.33, height: height * 0.065 },
+  tagline: { marginTop: 8, color: "#F3D9B1", fontSize: 13, fontFamily: "Inter_500Medium", letterSpacing: 0.3 },
   formContainer: {
-    flex: 1,
+    width: "100%",
     backgroundColor: C.card,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.35)",
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 6,
   },
-  title: { fontSize: 28, color: C.text, fontFamily: "PlayfairDisplay_800ExtraBold" },
-  subtitle: { fontSize: 15, color: C.muted, fontFamily: "Inter_400Regular", marginTop: 4, marginBottom: 26 },
-  inputGroup: { marginBottom: 16 },
-  label: { fontSize: 14, color: C.text, marginBottom: 8, fontFamily: "Inter_600SemiBold" },
-  required: { color: "#DC2626" },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 54,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 14,
-  },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, height: "100%", fontSize: 15, color: C.text, fontFamily: "Inter_400Regular", paddingVertical: 0 },
+  title: { fontSize: 24, color: C.text, fontFamily: "PlayfairDisplay_800ExtraBold", textAlign: "center" },
+  subtitle: { fontSize: 13, color: C.body, fontFamily: "Inter_400Regular", marginTop: 4, marginBottom: 14, textAlign: "center" },
   eyeIcon: { paddingLeft: 10, paddingVertical: 4 },
-  forgotContainer: { alignSelf: "flex-end", marginTop: -6, marginBottom: 20 },
-  forgotText: { fontSize: 14, color: C.orange, fontFamily: "Inter_600SemiBold" },
+  forgotContainer: { alignSelf: "flex-end", marginTop: 0, marginBottom: 14 },
+  forgotText: { fontSize: 13, color: C.orange, fontFamily: "Inter_600SemiBold" },
   signInButton: {
     backgroundColor: C.orange,
-    borderRadius: 14,
-    height: 56,
+    borderRadius: 12,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: C.orange,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  signInText: { color: "#FFFFFF", fontSize: 17, fontFamily: "Inter_700Bold", letterSpacing: 0.3 },
+  signInText: { color: "#FFFFFF", fontSize: 16, fontFamily: "Inter_700Bold" },
   signInButtonDisabled: { opacity: 0.6 },
-  continueWithContainer: { flexDirection: "row", alignItems: "center", marginVertical: 20 },
-  separatorLine: { flex: 1, height: 1, backgroundColor: C.border },
+  continueWithContainer: { flexDirection: "row", alignItems: "center", marginVertical: 16 },
+  separatorLine: { flex: 1, height: 1, backgroundColor: C.line },
   continueWithText: { marginHorizontal: 12, fontSize: 13, color: C.muted, fontFamily: "Inter_500Medium" },
   otpLoginButton: {
     flexDirection: "row",
     gap: 8,
-    height: 56,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: C.brown,
-    backgroundColor: "#FFFFFF",
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.line,
+    backgroundColor: C.box,
     justifyContent: "center",
     alignItems: "center",
   },
-  otpLoginText: { color: C.brown, fontSize: 16, fontFamily: "Inter_600SemiBold" },
-  createAccountContainer: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 22 },
-  createAccountText: { fontSize: 14, color: C.muted, fontFamily: "Inter_400Regular" },
-  createAccountLink: { color: C.orange, fontSize: 14, fontFamily: "Inter_700Bold" },
-  flexSpacer: { flex: 1, minHeight: 20 },
-  skipContainer: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10 },
-  skipText: { fontSize: 14, color: C.muted, fontFamily: "Inter_400Regular" },
-  skipLink: { color: C.orange, fontSize: 14, fontFamily: "Inter_700Bold" },
+  otpLoginText: { color: C.text, fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  createAccountContainer: { flexDirection: "row", justifyContent: "center", alignItems: "center", paddingVertical: 14 },
+  createAccountText: { fontSize: 13, color: C.body, fontFamily: "Inter_400Regular" },
+  createAccountLink: { color: C.orange, fontSize: 13, fontFamily: "Inter_700Bold" },
+  skipContainer: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 4, paddingBottom: 12 },
+  skipText: { fontSize: 13, color: C.muted, fontFamily: "Inter_400Regular" },
+  skipLink: { color: C.orange, fontSize: 13, fontFamily: "Inter_700Bold" },
   socialIconsContainer: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 20, marginTop: 16 },
   socialIconButton: { justifyContent: "center", alignItems: "center" },
   socialIconButtonDisabled: { opacity: 0.6 },
@@ -324,24 +309,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FCA5A5",
+    backgroundColor: "rgba(248, 113, 113, 0.12)",
+    borderColor: "rgba(248, 113, 113, 0.45)",
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  errorText: { flex: 1, color: "#B91C1C", fontSize: 14, fontFamily: "Inter_500Medium" },
+  errorText: { flex: 1, color: "#F87171", fontSize: 13, fontFamily: "Inter_500Medium" },
   successContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#ECFDF5",
-    borderColor: "#6EE7B7",
+    backgroundColor: "rgba(52, 211, 153, 0.12)",
+    borderColor: "rgba(52, 211, 153, 0.45)",
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  successText: { flex: 1, color: "#047857", fontSize: 14, fontFamily: "Inter_500Medium" },
+  successText: { flex: 1, color: "#34D399", fontSize: 13, fontFamily: "Inter_500Medium" },
 });

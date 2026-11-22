@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { safeIdParam } from "@/utils/routeParams";
 import { View, Text, ScrollView, Image, TouchableOpacity, StatusBar, LayoutAnimation } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
@@ -151,7 +152,7 @@ export default function UpcomingCompetitionScreen() {
       <View style={[styles.stickyBottomCTA, { paddingBottom: Math.max(insets.bottom, 20) }]}>
         {competitionData.is_current_user_joined ? (
           <View style={[styles.fullWidthButton, styles.disabledButton]}>
-            <Text style={styles.disabledText}>✅ You are Registered!</Text>
+            <Text style={styles.disabledText}>You're registered</Text>
           </View>
         ) : (
           <TouchableOpacity style={styles.fullWidthButton} onPress={handleJoinNow} activeOpacity={0.8} disabled={joining}>
@@ -190,7 +191,7 @@ export default function UpcomingCompetitionScreen() {
 
               <View style={styles.specsRow}>
                 <View style={styles.specBox}>
-                  <View style={styles.specHeader}><Text style={styles.specIcon}>🎟️</Text><Text style={styles.specLabel}>Entry</Text></View>
+                  <View style={styles.specHeader}><Ionicons name="ticket-outline" size={16} color="#EC9A15" /><Text style={styles.specLabel}>Entry</Text></View>
                   {competitionData.entryFee ? (
                     <Text style={styles.specValue}>{formatCurrency(competitionData.entryFee)}</Text>
                   ) : (
@@ -199,7 +200,7 @@ export default function UpcomingCompetitionScreen() {
                 </View>
                 <View style={styles.specVerticalDivider} />
                 <View style={styles.specBox}>
-                  <View style={styles.specHeader}><Text style={styles.specIcon}>📅</Text><Text style={styles.specLabel}>Starts On</Text></View>
+                  <View style={styles.specHeader}><Ionicons name="calendar-outline" size={16} color="#EC9A15" /><Text style={styles.specLabel}>Starts On</Text></View>
                   <Text style={styles.specValue}>{formatDateShort(competitionData.startDate)}</Text>
                 </View>
               </View>
@@ -209,7 +210,7 @@ export default function UpcomingCompetitionScreen() {
               {(competitionData.description || competitionData.rules) && (
                 <TouchableOpacity style={styles.missionBriefingCard} activeOpacity={0.8} onPress={toggleRules}>
                   <View style={styles.missionHeader}>
-                    <View style={styles.missionTitleRow}><Text style={styles.missionIcon}>📜</Text><Text style={styles.missionTitle}>Event Details</Text></View>
+                    <View style={styles.missionTitleRow}><Ionicons name="document-text-outline" size={16} color="#EC9A15" /><Text style={styles.missionTitle}>Event Details</Text></View>
                     <Text style={styles.chevron}>{isRulesExpanded ? "▲" : "▼"}</Text>
                   </View>
                   {isRulesExpanded && (

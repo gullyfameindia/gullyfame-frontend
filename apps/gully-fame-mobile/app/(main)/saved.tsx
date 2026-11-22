@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 18,
     paddingHorizontal: 24,
   },
@@ -237,11 +237,11 @@ const styles = StyleSheet.create({
   tabText: {
     color: C.faint,
     fontSize: 15,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   tabTextActive: {
     color: C.accent,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   tabUnderline: {
     position: "absolute",
@@ -283,12 +283,12 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 15,
     lineHeight: 20,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   rowMeta: {
     color: C.faint,
     fontSize: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 6,
   },
   bookmarkButton: {
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   footer: {
     alignItems: "center",
@@ -335,6 +335,6 @@ const styles = StyleSheet.create({
   footerNote: {
     color: C.faint,
     fontSize: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

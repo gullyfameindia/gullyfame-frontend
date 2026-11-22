@@ -51,7 +51,6 @@ export default function FaqScreen() {
           <SkeletonArticle />
         ) : (
         <>
-        <Text style={styles.subtitle}>Answers to the questions we get most often about GullyFame.</Text>
 
         {/* Search */}
         <View style={styles.searchBox}>
@@ -160,7 +159,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 18,
     paddingHorizontal: 12,
   },
@@ -182,7 +181,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     padding: 0,
   },
 
@@ -212,14 +211,14 @@ const styles = StyleSheet.create({
   numberText: {
     color: C.accent,
     fontSize: 13,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   question: {
     flex: 1,
     color: C.text,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   answer: {
     paddingHorizontal: 14,
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     marginTop: 10,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   bulletRow: {
     flexDirection: "row",
@@ -254,7 +253,7 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 13,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   noResults: {
@@ -269,13 +268,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   footerNote: {
     color: C.faint,
     fontSize: 12,
     textAlign: "center",
     marginTop: 16,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

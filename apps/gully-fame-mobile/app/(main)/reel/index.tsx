@@ -36,9 +36,8 @@ import Svg, { Path } from "react-native-svg";
 import BottomNav from "@components/layout/BottomNav";
 import DrawerMenu from "@components/layout/DrawerMenu";
 import SupportModal from "@/components/modals/SupportModal/SupportModal";
-import { COIN_PURCHASE_ENABLED, EARN_COINS_MESSAGE, TIPPING_ENABLED, XP_AND_MISSIONS_ENABLED } from "@/config/features";
+import { TIPPING_ENABLED, XP_AND_MISSIONS_ENABLED } from "@/config/features";
 import ReportReelModal from "@/components/modals/ReportReelModal/ReportReelModal";
-import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { scale, getFontSize, wp, spacing } from "@utils/responsive";
 import { toggleFollow } from "@api/services/userService";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -69,19 +68,25 @@ import {
   UserIconSVG,
   StarIcon,
   BlockIcon,
-  CoinIcon,
-  CommentIcon,
-  DownloadIcon,
-  SaveIcon,
   FlagIcon,
   HeartIcon,
-  MusicIcon,
-  PauseIcon,
-  PlayIcon,
-  ShareIcon,
-  ThreeDotsIcon,
 } from "@/icons";
 import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
+import { openCompetition } from "@/utils/openCompetition";
+import {
+  Bookmark,
+  Coins,
+  Download,
+  EllipsisVertical,
+  Heart,
+  MessageCircle,
+  Music2,
+  Pause,
+  Play,
+  Send,
+  Star,
+  Trophy,
+} from "lucide-react-native";
 import { saveDownload } from "@/services/downloadsStore";
 import UserAvatar from "@/components/UserAvatar";
 import { Skeleton, SkeletonList, SkeletonReel } from "@/components/Skeleton/Skeleton";
@@ -260,8 +265,6 @@ export default function GullyReelScreen() {
 
   const [threeDotsSlideAnim] = useState(() => new Animated.Value(height));
   const [tipModalVisible, setTipModalVisible] = useState(false);
-  const [isFetchingBalance, setIsFetchingBalance] = useState(false);
-  const walletBalance = useWalletBalance();
   const [downloadModalVisible, setDownloadModalVisible] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedReelForDownload, setSelectedReelForDownload] = useState<any>(null);
@@ -690,6 +693,53 @@ export default function GullyReelScreen() {
     }
   };
 
+  // Competition entries are voted on; every other reel is liked. Opening a competition's
+  // entries (params.competitionId) also counts, for servers that don't send `competition` yet.
+  const isEntry = useCallback(
+    (r: any) => !!r?.competition || !!params.competitionId,
+    [params.competitionId]
+  );
+  /** "open" while the competition is LIVE, otherwise why the vote button is disabled. */
+  const votingState = (r: any): "open" | "soon" | "closed" => {
+    const status = String(r?.competition?.status || "LIVE").toUpperCase();
+    if (status === "LIVE") return "open";
+    if (status === "UPCOMING") return "soon";
+    return "closed";
+  };
+
+  // Heart button on normal reels: POST /reels/:id/action { action_type: "like" } (a toggle).
+  const likeInFlight = useRef<Set<number>>(new Set());
+  const handleLikeReel = useCallback(
+    async (id: number) => {
+      const targetReel = reels.find((r) => r.id === id);
+      if (!targetReel || !targetReel._backendId || likeInFlight.current.has(id)) return;
+      likeInFlight.current.add(id);
+      setReels((prev) =>
+        prev.map((reel) =>
+          reel.id === id
+            ? { ...reel, isLiked: !reel.isLiked, likes: Math.max(0, (reel.likes || 0) + (reel.isLiked ? -1 : 1)) }
+            : reel
+        )
+      );
+      try {
+        const result = await toggleReelAction(targetReel._backendId, "like");
+        setReels((prev) =>
+          prev.map((reel) =>
+            reel.id === id
+              ? { ...reel, isLiked: result.user_interactions.is_liked, likes: result.updated_stats.likes }
+              : reel
+          )
+        );
+      } catch (error) {
+        setReels((prev) => prev.map((reel) => (reel.id === id ? targetReel : reel)));
+        toastError(getErrorMessage(error));
+      } finally {
+        likeInFlight.current.delete(id);
+      }
+    },
+    [reels]
+  );
+
   // The star button is "Vote": POST /reels/:id/action { action_type: "vote" }.
   // The backend only accepts votes on entries in a LIVE competition.
   const voteInFlight = useRef<Set<number>>(new Set());
@@ -822,8 +872,11 @@ export default function GullyReelScreen() {
       // Called by the tap handler once it has detected a double tap.
       {
         const targetReel = reels.find((r) => r.id === id);
+        const entry = isEntry(targetReel);
+        // Double tap votes on an open competition entry, and likes a normal reel. Never undoes.
+        const shouldAct = !!targetReel && (entry ? !targetReel.hasVoted && votingState(targetReel) === "open" : !targetReel.isLiked);
 
-        if (targetReel && !targetReel.hasVoted) {
+        if (shouldAct) {
           if (!starAnimations.current.has(id)) {
             starAnimations.current.set(id, {
               scale: new Animated.Value(0),
@@ -854,10 +907,13 @@ export default function GullyReelScreen() {
           });
         }
 
-        if (targetReel && !targetReel.hasVoted) handleLike(id);
+        if (shouldAct) {
+          if (entry) handleLike(id);
+          else handleLikeReel(id);
+        }
       }
     },
-    [reels, handleLike]
+    [reels, handleLike, handleLikeReel, isEntry]
   );
 
   // Synchronous lock: state alone would not stop two onEndReached events in the same frame.
@@ -1050,33 +1106,13 @@ export default function GullyReelScreen() {
     ]);
   };
 
-  const handleSupportPress = useCallback(async (reelId: number, creatorId: string | undefined) => {
-    try {
-      setIsFetchingBalance(true);
-      const balance = await walletBalance.fetchBalance();
-      if (balance === null) {
-        toastError(walletBalance.error || "Couldn't check your wallet balance.");
-        return;
-      }
-
-      if (balance < 1) {
-        if (COIN_PURCHASE_ENABLED) {
-          toastError("Insufficient balance. Please add coins to your wallet.");
-          router.push("/(main)/coins");
-        } else {
-          toastError(EARN_COINS_MESSAGE);
-        }
-      } else {
-        setCurrentTipReelId(reelId);
-        setCurrentTipCreatorId(creatorId);
-        setTipModalVisible(true);
-      }
-    } catch {
-      Alert.alert("Error", "Failed to check balance. Please try again.");
-    } finally {
-      setIsFetchingBalance(false);
-    }
-  }, [walletBalance]);
+  // Opens the support sheet right away; the sheet loads the balance and explains what to do
+  // when it's too low (before, a zero balance only flashed a toast and nothing opened).
+  const handleSupportPress = useCallback((reelId: number, creatorId: string | undefined) => {
+    setCurrentTipReelId(reelId);
+    setCurrentTipCreatorId(creatorId);
+    setTipModalVisible(true);
+  }, []);
 
   const tabs = [
     { name: "Home", icon: HomeIconSVG, label: "Home" },
@@ -1095,7 +1131,7 @@ export default function GullyReelScreen() {
         isFocused && currentVisibleIndex !== null && Math.abs(currentVisibleIndex - index) <= 1;
       return (
         <View style={styles.reelContainer}>
-          <TouchableOpacity accessibilityLabel="Reel video. Tap to play or pause, double tap to vote"
+          <TouchableOpacity accessibilityLabel={isEntry(reel) ? "Reel video. Tap to play or pause, double tap to vote" : "Reel video. Tap to play or pause, double tap to like"}
             activeOpacity={1}
             onPress={() => {
               const now = Date.now();
@@ -1136,7 +1172,11 @@ export default function GullyReelScreen() {
                 ]}
                 pointerEvents="none"
               >
-                <StarIcon filled={true} color={THEME_COLOR} size={80} themeColor={THEME_COLOR} />
+                {isEntry(reel) ? (
+                  <Star size={92} color={THEME_COLOR} fill={THEME_COLOR} strokeWidth={1.5} />
+                ) : (
+                  <Heart size={92} color="#FF3040" fill="#FF3040" strokeWidth={1.5} />
+                )}
               </Animated.View>
             )}
           </TouchableOpacity>
@@ -1156,12 +1196,32 @@ export default function GullyReelScreen() {
                 }).start();
               }}
             >
-              <ThreeDotsIcon color="#fff" size={24} />
+              <EllipsisVertical color="#fff" size={24} />
             </TouchableOpacity>
 
             <View style={styles.rightActionContainer}>
+              {!isEntry(reel) ? (
+                <TouchableOpacity
+                  style={styles.rightActionButton}
+                  onPress={() => handleLikeReel(reel.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={reel.isLiked ? "Unlike" : "Like"}
+                  testID="reel-like"
+                >
+                  <Heart
+                    size={30}
+                    strokeWidth={1.8}
+                    color={reel.isLiked ? "#FF3040" : "#fff"}
+                    fill={reel.isLiked ? "#FF3040" : "transparent"}
+                  />
+                  <Text style={styles.actionIconCount}>{reel.likes || 0}</Text>
+                </TouchableOpacity>
+              ) : null}
+
               <TouchableOpacity
                 style={styles.rightActionButton}
+                accessibilityRole="button"
+                accessibilityLabel="Comments"
                 onPress={() => {
                   setCurrentReelId(reel.id);
                   setCurrentReelBackendId(reel._backendId || String(reel.id));
@@ -1176,7 +1236,7 @@ export default function GullyReelScreen() {
                   }).start();
                 }}
               >
-                <CommentIcon color="#fff" size={32} />
+                <MessageCircle color="#fff" size={30} strokeWidth={1.8} />
                 <Text style={styles.actionIconCount}>{reel.comments}</Text>
               </TouchableOpacity>
 
@@ -1192,7 +1252,7 @@ export default function GullyReelScreen() {
                   }).start();
                 }}
               >
-                <ShareIcon color="#fff" size={32} />
+                <Send color="#fff" size={28} strokeWidth={1.8} />
                 <Text style={styles.actionIconCount}>{reel.shares || 0}</Text>
               </TouchableOpacity>
 
@@ -1203,7 +1263,7 @@ export default function GullyReelScreen() {
                   setDownloadModalVisible(true);
                 }}
               >
-                <DownloadIcon size={32} />
+                <Download color="#fff" size={28} strokeWidth={1.8} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1212,7 +1272,12 @@ export default function GullyReelScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={reel.isSaved ? "Remove from saved" : "Save reel"}
               >
-                <SaveIcon filled={!!reel.isSaved} color={reel.isSaved ? "#EC9A15" : "#fff"} size={32} />
+                <Bookmark
+                  size={28}
+                  strokeWidth={1.8}
+                  color={reel.isSaved ? THEME_COLOR : "#fff"}
+                  fill={reel.isSaved ? THEME_COLOR : "transparent"}
+                />
                 <Text style={styles.actionIconCount}>{reel.saves || 0}</Text>
               </TouchableOpacity>
             </View>
@@ -1223,9 +1288,9 @@ export default function GullyReelScreen() {
                   style={[styles.playPauseIconWrapper, { opacity: playPauseIconOpacity }]}
                 >
                   {showPlayPauseIcon.isPlaying ? (
-                    <PlayIcon size={scale(80)} color="#fff" />
+                    <Play size={26} color="#fff" fill="#fff" style={{ marginLeft: 3 }} />
                   ) : (
-                    <PauseIcon size={scale(80)} color="#fff" />
+                    <Pause size={26} color="#fff" fill="#fff" />
                   )}
                 </Animated.View>
               </View>
@@ -1271,6 +1336,20 @@ export default function GullyReelScreen() {
                   )}
                 </View>
 
+                {reel.competition ? (
+                  <TouchableOpacity
+                    style={styles.competitionTag}
+                    onPress={() => openCompetition(reel.competition.id, reel.competition.status)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Competition entry: ${reel.competition.title}`}
+                  >
+                    <Trophy size={13} color={THEME_COLOR} strokeWidth={2.2} />
+                    <Text style={styles.competitionTagText} numberOfLines={1}>
+                      {reel.competition.title || "Competition entry"}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
                 <View style={styles.captionContainer}>
                   <Text
                     style={styles.caption}
@@ -1297,7 +1376,7 @@ export default function GullyReelScreen() {
                 </View>
 
                 <View style={styles.musicRow}>
-                  <MusicIcon color="#fff" size={16} />
+                  <Music2 color="#fff" size={15} strokeWidth={2} />
                   <Text style={styles.musicName} numberOfLines={1}>
                     {reel.musicName}
                   </Text>
@@ -1305,29 +1384,23 @@ export default function GullyReelScreen() {
               </View>
 
               <View style={styles.bottomButtonsRow}>
-                {TIPPING_ENABLED ? (
+                {/* Support is for competition entries only (normal reels get likes), and never on your own reel. */}
+                {TIPPING_ENABLED && isEntry(reel) && !(myUserId && reel.userId === myUserId) ? (
                 <View style={styles.flexButtonWrapper}>
                   <TouchableOpacity
-                    style={[styles.tipButton, isFetchingBalance && { opacity: 0.6 }]}
-                    onPress={() => {
-                      if (!isFetchingBalance) {
-                        handleSupportPress(reel.id, reel.userId);
-                      }
-                    }}
-                    disabled={isFetchingBalance}
+                    style={styles.tipButton}
+                    onPress={() => handleSupportPress(reel.id, reel.userId)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Support @${reel.username} with coins`}
+                    testID="reel-support"
                   >
-                    {isFetchingBalance ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <>
-                        <CoinIcon size={16} color="#fff" />
-                        <Text style={styles.tipButtonText}>Support</Text>
-                      </>
-                    )}
+                    <Coins size={16} color="#fff" strokeWidth={2} />
+                    <Text style={styles.tipButtonText}>Support</Text>
                   </TouchableOpacity>
                 </View>
                 ) : null}
 
+                {isEntry(reel) ? (
                 <View style={styles.flexButtonWrapper}>
                   {showVotePopup === reel.id && (
                     <Animated.View
@@ -1356,35 +1429,41 @@ export default function GullyReelScreen() {
                       ]}
                       pointerEvents="none"
                     >
-                      <Text style={styles.floatingXPText}>{XP_AND_MISSIONS_ENABLED ? "+5 XP 🔥" : "Voted! 🔥"}</Text>
+                      <Text style={styles.floatingXPText}>{XP_AND_MISSIONS_ENABLED ? "+5 XP" : "Voted"}</Text>
                     </Animated.View>
                   )}
 
-                  <TouchableOpacity
-                    style={[
-                      styles.tipButton,
-                      reel.hasVoted ? styles.voteButtonActive : styles.voteButtonInactive,
-                    ]}
-                    onPress={() => handleLike(reel.id)}
-                  >
-                    <StarIcon
-                      filled={reel.hasVoted}
-                      size={18}
-                      color={reel.hasVoted ? "#fff" : THEME_COLOR}
-                      themeColor={reel.hasVoted ? "#fff" : THEME_COLOR}
-                    />
-                    <Text
+                  {votingState(reel) === "open" || reel.hasVoted ? (
+                    <TouchableOpacity
                       style={[
-                        styles.tipButtonText,
-                        {
-                          color: reel.hasVoted ? "#fff" : THEME_COLOR,
-                        },
+                        styles.tipButton,
+                        reel.hasVoted ? styles.voteButtonActive : styles.voteButtonInactive,
                       ]}
+                      onPress={() => handleLike(reel.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={reel.hasVoted ? `Voted, ${reel.votes} votes` : `Vote, ${reel.votes} votes`}
+                      testID="reel-vote"
                     >
-                      {reel.hasVoted ? "Voted" : "Vote"} • {reel.votes}
-                    </Text>
-                  </TouchableOpacity>
+                      <Star
+                        size={17}
+                        strokeWidth={2}
+                        color={reel.hasVoted ? "#fff" : THEME_COLOR}
+                        fill={reel.hasVoted ? "#fff" : "transparent"}
+                      />
+                      <Text style={[styles.tipButtonText, { color: reel.hasVoted ? "#fff" : THEME_COLOR }]}>
+                        {reel.hasVoted ? "Voted" : "Vote"} · {reel.votes}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={[styles.tipButton, styles.voteButtonInactive, { opacity: 0.6 }]}>
+                      <Star size={17} strokeWidth={2} color={THEME_COLOR} />
+                      <Text style={[styles.tipButtonText, { color: THEME_COLOR }]}>
+                        {votingState(reel) === "soon" ? "Voting opens soon" : "Voting closed"} · {reel.votes}
+                      </Text>
+                    </View>
+                  )}
                 </View>
+                ) : null}
               </View>
             </View>
           </View>
@@ -1397,6 +1476,8 @@ export default function GullyReelScreen() {
       showVotePopup,
       handleDoubleTap,
       handleLike,
+      handleLikeReel,
+      isEntry,
       handleSave,
       handleSupportPress,
       myUserId,
@@ -1408,7 +1489,6 @@ export default function GullyReelScreen() {
       handleFollowUser,
       handleUnfollowUser,
       handleVideoTap,
-      isFetchingBalance,
       isFocused,
       playPauseIconOpacity,
       showPlayPauseIcon,
@@ -2649,10 +2729,10 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   playPauseIconWrapper: {
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    borderRadius: scale(50),
-    width: scale(80),
-    height: scale(80),
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    borderRadius: 30,
+    width: 60,
+    height: 60,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -3347,6 +3427,21 @@ const styles = StyleSheet.create({
     width: "100%", 
   },
   
+  competitionTag: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    maxWidth: "85%",
+    paddingHorizontal: 8,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.5)",
+    marginBottom: 6,
+  },
+  competitionTagText: { color: "#FFFFFF", fontSize: 12, fontFamily: "Inter_600SemiBold", flexShrink: 1 },
   voteButtonActive: {
     backgroundColor: "#EC9A15",
   },

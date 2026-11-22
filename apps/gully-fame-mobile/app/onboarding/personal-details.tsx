@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { colors, font, radius, space, type } from "@/theme/tokens";
 import { safeDecode } from "@/utils/routeParams";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
@@ -6,7 +7,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
   TextInput,
   StatusBar,
@@ -20,7 +20,6 @@ import { updateProfile, toBackendGender, applyReferralCode } from "@api/services
 import { getErrorMessage } from "@api/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const { width } = Dimensions.get("window");
 
 const genders = ["Female", "Male", "Non-binary", "Prefer not to say"];
 
@@ -174,7 +173,7 @@ export default function OnboardingPersonalDetails() {
         </View>
 
         <View style={styles.welcomeCard}>
-          <Text style={styles.welcomeSubtitle}>Help us tailor contests and opportunities that match your age group and identity.</Text>
+          <Text style={styles.welcomeSubtitle}>We use this to put you in the right age group for contests.</Text>
         </View>
 
         <View style={styles.formCard}>
@@ -184,7 +183,7 @@ export default function OnboardingPersonalDetails() {
               <TextInput
                 style={styles.input}
                 placeholder="DD/MM/YYYY"
-                placeholderTextColor="#6B7280"
+                placeholderTextColor={colors.placeholder}
                 value={dob}
                 onChangeText={handleDobChange}
                 keyboardType="number-pad"
@@ -199,8 +198,8 @@ export default function OnboardingPersonalDetails() {
             <View style={styles.dobContainer}>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. GULLY123 (optional)"
-                placeholderTextColor="#6B7280"
+                placeholder="e.g. GULLY123"
+                placeholderTextColor={colors.placeholder}
                 value={referralCode}
                 onChangeText={(t) => setReferralCode(t.toUpperCase())}
                 autoCapitalize="characters"
@@ -208,7 +207,7 @@ export default function OnboardingPersonalDetails() {
                 maxLength={12}
               />
             </View>
-            <Text style={styles.helperText}>Got a code from a friend? You both get GFI coins once your profile is complete (name, username and photo) and your account is 3 days old.</Text>
+            <Text style={styles.helperText}>You and your friend both get GFI coins once your profile is complete and your account is 3 days old.</Text>
           </View>
 
           <View style={styles.fieldBlock}>
@@ -236,7 +235,7 @@ export default function OnboardingPersonalDetails() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.75} onPress={handleContinue}>
-          <Text style={styles.secondaryButtonText}>Skip (You can update later)</Text>
+          <Text style={styles.secondaryButtonText}>Skip for now</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingScreen>
@@ -244,144 +243,56 @@ export default function OnboardingPersonalDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#3C2610",
-  },
+  container: { flex: 1, backgroundColor: colors.page },
   scrollContent: {
     paddingTop: Platform.OS === "android" ? 50 : 60,
     paddingBottom: 48,
-    paddingHorizontal: width * 0.06,
+    paddingHorizontal: space.lg,
     flexGrow: 1,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 20,
+  headerRow: { flexDirection: "row", alignItems: "center", marginTop: 20 },
+  headerBackButton: { width: 24, height: 24, justifyContent: "center", alignItems: "center" },
+  headerTextBlock: { flex: 1, marginHorizontal: space.md },
+  headerEyebrow: { color: colors.textMuted, fontSize: 12, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 2, fontFamily: font.semibold },
+  headerEyebrowNumber: { fontFamily: font.semibold },
+  headerTitle: { ...type.screenTitle, fontSize: 24 },
+  welcomeCard: { paddingTop: space.md, paddingBottom: space.lg },
+  welcomeSubtitle: { ...type.body },
+  formCard: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: space.lg,
+    paddingBottom: space.lg,
   },
-  headerBackButton: {
-    width: 20,
-    height: 20,
+  fieldBlock: { marginTop: space.lg },
+  fieldLabel: { ...type.label, marginBottom: space.sm },
+  dobContainer: { backgroundColor: colors.field, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line },
+  input: { paddingHorizontal: 14, height: 46, fontSize: 14, color: colors.text, fontFamily: font.regular },
+  helperText: { ...type.caption, marginTop: 6 },
+  genderRow: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
+  genderChip: {
+    paddingHorizontal: 14,
+    height: 36,
+    justifyContent: "center",
+    borderRadius: radius.md,
+    backgroundColor: colors.field,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  genderChipActive: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  genderChipText: { color: colors.text, fontFamily: font.medium, fontSize: 14 },
+  genderChipTextActive: { color: colors.accent, fontFamily: font.semibold },
+  primaryButton: {
+    marginTop: space.xl,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
-  headerTextBlock: {
-    flex: 1,
-    marginHorizontal: 16,
-  },
-  headerEyebrow: {
-    color: "#C8C8C8",
-    fontSize: 14,
-    letterSpacing: 0,
-    textTransform: "uppercase",
-    marginBottom: 1,
-    fontFamily: "Inter_500Medium",
-  },
-  headerEyebrowNumber: {
-    fontFamily: "Inter_500Medium",
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 25,
-    fontFamily: "PlayfairDisplay_700Bold",
-  },
-  welcomeCard: {
-    borderRadius: 22,
-    paddingVertical: 20,
-    paddingLeft: 13,
-    paddingRight: 10,
-    marginTop: 5,
-  },
-  welcomeSubtitle: {
-    color: "#CAD7D8",
-    fontSize: 13.8,
-    lineHeight: 20,
-    letterSpacing: 0,
-    fontFamily: "Rubik_400Regular",
-  },
-  formCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 20,
-    marginTop: 20,
-  },
-  fieldBlock: {
-    marginBottom: 0,
-  },
-  fieldLabel: {
-    color: "#000",
-    fontSize: 16,
-    paddingVertical:15,
-    letterSpacing: 0,
-    fontFamily: "Rubik_500Medium",
-  },
-  dobContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#D9D9D9",
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: "#000",
-    fontFamily: "Rubik_400Regular",
-  },
-  helperText: {
-    color: "#6A6A6A",
-    fontSize: 11,
-    marginTop: 10,
-    lineHeight: 18,
-    fontFamily: "Rubik_400Regular",
-  },
-  genderRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  genderChip: {
-    paddingHorizontal: 18,
-    paddingVertical: 5,
-    borderRadius: 25,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
-  },
-  genderChipActive: {
-    backgroundColor: "rgba(234, 176, 75, 0.54)",
-    borderColor: "rgba(234, 176, 75, 0.54)",
-  },
-  genderChipText: {
-    color: "#000",
-    fontFamily: "Rubik_400Regular",
-    fontSize:16,
-  },
-  genderChipTextActive: {
-    color: "#EC9A15",
-    fontFamily: "Rubik_500Medium",
-  },
-  primaryButton: {
-    marginTop: 32,
-    backgroundColor: "#EC9A15",
-    borderRadius: 50,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "Rubik_700Bold",
-  },
-  secondaryButton: {
-    alignSelf: "center",
-    marginTop: 15,
-  },
-  secondaryButtonText: {
-    color: "#CAD7D8",
-    textDecorationLine: "underline",
-    fontSize: 14,
-    fontFamily: "Rubik_400Regular",
-  },
+  primaryButtonText: { ...type.button, color: "#FFFFFF" },
+  secondaryButton: { alignSelf: "center", marginTop: space.lg, padding: space.sm },
+  secondaryButtonText: { color: colors.textMuted, fontSize: 14, fontFamily: font.medium },
 });
-

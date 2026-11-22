@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 18,
     paddingHorizontal: 28,
   },
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   avatarText: {
     color: C.accent,
     fontSize: 17,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   info: {
     flex: 1,
@@ -176,13 +176,13 @@ const styles = StyleSheet.create({
   name: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   meta: {
     color: C.faint,
     fontSize: 12,
     marginTop: 2,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   unblockButton: {
     paddingHorizontal: 14,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   unblockText: {
     color: C.accent,
     fontSize: 13,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   empty: {
     alignItems: "center",
@@ -222,6 +222,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

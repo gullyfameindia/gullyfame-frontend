@@ -53,16 +53,17 @@ export const homeScreenStyles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#1a0a00",
   },
+  // Sits on the bell's top-right shoulder (24pt icon centred in a 40pt button).
   notificationDot: {
     position: "absolute",
-    top: 0,
-    right: 0,
-    width: scale(10),
-    height: scale(10),
-    borderRadius: scale(5),
-    backgroundColor: "#FF0000",
+    top: 8,
+    right: 9,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: "#FF3B30",
     borderWidth: 1.5,
-    borderColor: "#1a0a00",
+    borderColor: "#3C2610",
   },
   notificationBadgeText: {
     color: "#fff",
@@ -72,7 +73,8 @@ export const homeScreenStyles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: scaleVertical(20),
+    // Room for the floating bottom nav (absolutely positioned over the list, ~60pt tall).
+    paddingBottom: 36,
   },
   // Hero Section - Premium Design with Radial Gradient
   heroSection: {
@@ -82,8 +84,6 @@ export const homeScreenStyles = StyleSheet.create({
     marginBottom: scaleVertical(25),
     position: "relative",
     overflow: "hidden",
-    borderBottomLeftRadius: scale(20),
-    borderBottomRightRadius: scale(20),
   },
   radialGradientContainer: {
     position: "absolute",
@@ -145,7 +145,7 @@ export const homeScreenStyles = StyleSheet.create({
   // Section Styles - Enhanced
 
   sectionHeaderWithIcon: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   sectionTitleRow: {
     flexDirection: "row",
@@ -186,13 +186,13 @@ export const homeScreenStyles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: width * 0.05,
-    marginBottom: 30,
+    marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 10,
   },
   // Trending Reels - TOP Event Cards Design
   trendingScroll: {
@@ -606,11 +606,9 @@ export const homeScreenStyles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#3C2610",
+    backgroundColor: "transparent",
     zIndex: 1000,
     paddingBottom: scale(10),
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   stickyHeaderContent: {
     flexDirection: "row",

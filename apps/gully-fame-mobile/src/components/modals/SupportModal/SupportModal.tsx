@@ -1,28 +1,28 @@
-import { useState, useEffect, useRef } from "react";
-import { View, Text, Modal, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Check, Coins, UserPlus, Wallet, X } from "lucide-react-native";
 import { getWallet, tipReel } from "@/api/services/walletService";
-import { ApiError, getErrorMessage } from "@/api/client";
-import { toastError, toastSuccess } from "@/components/ui/Toast";
+import { getErrorMessage } from "@/api/client";
+import { toastSuccess } from "@/components/ui/Toast";
 import { COIN_PURCHASE_ENABLED } from "@/config/features";
-import { showCoinsComingSoon } from "@/utils/coinPurchase";
+import { colors, font, radius, space } from "@/theme/tokens";
 
-interface SupportPackage {
-  id: string;
-  coins: number;
-  label: string;
-  price: number;
-}
-
-// Support amounts already used in the app (not from the backend, which has no amount list).
-const SUPPORT_PACKAGES: SupportPackage[] = [
-  { id: "1", coins: 5, label: "5 Coins", price: 5 },
-  { id: "2", coins: 10, label: "10 Coins", price: 10 },
-  { id: "3", coins: 25, label: "25 Coins", price: 25 },
-  { id: "4", coins: 50, label: "50 Coins", price: 50 },
-];
+// Quick amounts (the backend has no list; any whole number is accepted).
+const QUICK_AMOUNTS = [5, 10, 25, 50];
+/** Largest amount accepted in the custom field; the server also enforces a daily limit. */
+const MAX_AMOUNT = 100000;
 
 interface SupportModalProps {
   visible: boolean;
@@ -33,260 +33,217 @@ interface SupportModalProps {
   onSupportSent?: () => void;
 }
 
-export default function SupportModal({
-  visible,
-  onClose,
-  creatorName,
-  creatorId,
-  reelId,
-  onSupportSent,
-}: SupportModalProps) {
+export default function SupportModal({ visible, onClose, creatorName, reelId, onSupportSent }: SupportModalProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [selectedPackage, setSelectedPackage] = useState<SupportPackage | null>(SUPPORT_PACKAGES[0]);
-  const [customAmount, setCustomAmount] = useState("");
-  const [agreed, setAgreed] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [amount, setAmount] = useState<number>(QUICK_AMOUNTS[0]);
+  const [custom, setCustom] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [balanceError, setBalanceError] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
   // Synchronous lock so a fast double tap cannot send twice.
   const sendLock = useRef(false);
 
-  // Reset the form and fetch a fresh balance every time the sheet opens.
+  const loadBalance = async () => {
+    setBalance(null);
+    setBalanceError("");
+    try {
+      setBalance((await getWallet(1, 1)).balance);
+    } catch (error) {
+      setBalanceError(getErrorMessage(error));
+    }
+  };
+
+  // Fresh form and balance every time the sheet opens.
   useEffect(() => {
     if (!visible) return;
-    setSelectedPackage(SUPPORT_PACKAGES[0]);
-    setCustomAmount("");
-    setAgreed(false);
-    fetchWalletBalance();
+    setAmount(QUICK_AMOUNTS[0]);
+    setCustom("");
+    setConfirmed(false);
+    setSendError("");
+    loadBalance();
   }, [visible]);
 
-  const fetchWalletBalance = async () => {
-    setLoading(true);
-    try {
-      const wallet = await getWallet(1, 1);
-      setWalletBalance(wallet.balance);
-    } catch (error) {
-      toastError(getErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
+  const value = custom ? Math.min(parseInt(custom, 10) || 0, MAX_AMOUNT) : amount;
+  const loadingBalance = balance === null && !balanceError;
+  const noCoins = balance !== null && balance < 1;
+  const tooMuch = balance !== null && value > balance;
+  const canSend = !sending && balance !== null && value > 0 && !tooMuch && confirmed;
+
+  const handle = creatorName.replace(/^@+/, "");
+
+  const pick = (n: number) => {
+    setAmount(n);
+    setCustom("");
+    setConfirmed(false);
+    setSendError("");
   };
 
-  const supportAmount = customAmount
-    ? parseInt(customAmount, 10) || 0
-    : selectedPackage?.coins || 0;
-
-  const insufficient = !loading && supportAmount > 0 && supportAmount > walletBalance;
-  const canSend = !loading && !sending && agreed && supportAmount > 0 && !insufficient;
-
-  const goToWallet = () => {
-    if (!COIN_PURCHASE_ENABLED) {
-      showCoinsComingSoon();
-      return;
-    }
-    toastError("Insufficient balance. Please add coins to your wallet.");
+  const goEarn = () => {
     onClose();
-    router.push("/(main)/coins" as any);
+    router.push((COIN_PURCHASE_ENABLED ? "/(main)/coins" : "/(main)/invite-friend") as any);
   };
 
-  const handleSend = async () => {
+  const send = async () => {
     if (sendLock.current || !canSend) return;
     sendLock.current = true;
     setSending(true);
+    setSendError("");
     try {
-      // POST /reels/:reelId/tip. The API result is the final check on balance.
-      const result = await tipReel(reelId, supportAmount);
-      setWalletBalance(result.remainingBalance);
-      toastSuccess(`You sent ${supportAmount} coins to ${creatorName}! 🎉`);
+      // POST /reels/:reelId/tip. The server is the final check on balance and limits.
+      const result = await tipReel(reelId, value);
+      setBalance(result.remainingBalance);
+      toastSuccess(`You sent ${value} coins to @${handle}`);
       onClose();
       onSupportSent?.();
     } catch (error) {
-      const err = error as ApiError;
-      toastError(err?.message || getErrorMessage(error));
+      // Daily limit, new-account wait, low balance...: shown here so the sheet stays open.
+      setSendError(getErrorMessage(error));
+      setConfirmed(false);
     } finally {
       sendLock.current = false;
       setSending(false);
     }
   };
 
-  const sendLabel = `Send ${supportAmount} Coins`;
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Support @{creatorName}</Text>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" hitSlop={10} onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={sending ? undefined : onClose} />
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>
+        <View style={styles.grabber} />
+
+        <View style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title} numberOfLines={1}>Support @{handle}</Text>
+            <Text style={styles.subtitle}>Send coins from your wallet to this creator.</Text>
           </View>
+          <TouchableOpacity onPress={onClose} disabled={sending} hitSlop={10} accessibilityRole="button" accessibilityLabel="Close">
+            <X size={22} color={colors.text} />
+          </TouchableOpacity>
+        </View>
 
-          <ScrollView
-            style={styles.content}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.contentContainer}
-          >
-            {/* Wallet Balance Card */}
-            <View style={styles.balanceCard}>
-              <View style={styles.balanceRow}>
-                <Text style={styles.balanceLabel}>Your Wallet Balance</Text>
-                {loading ? (
-                  <ActivityIndicator color="#EC9A15" />
-                ) : (
-                  <Text style={styles.balanceAmount}>{walletBalance.toLocaleString()}</Text>
-                )}
-              </View>
-              <Text style={styles.coinLabel}>GFI Coins</Text>
-            </View>
-
-            {/* Quick Packages */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Quick Support Options</Text>
-              <View style={styles.packagesGrid}>
-                {SUPPORT_PACKAGES.map((pkg) => (
-                  <TouchableOpacity
-                    key={pkg.id}
-                    style={[
-                      styles.packageButton,
-                      selectedPackage?.id === pkg.id && styles.packageButtonActive,
-                      !!customAmount && styles.packageButtonDisabled,
-                    ]}
-                    onPress={() => {
-                      setSelectedPackage(pkg);
-                      setCustomAmount("");
-                    }}
-                    disabled={!!customAmount}
-                  >
-                    <Text
-                      style={[
-                        styles.packageCoins,
-                        selectedPackage?.id === pkg.id && styles.packageCoinsActive,
-                      ]}
-                    >
-                      {pkg.coins}
-                    </Text>
-                    <Text style={styles.packageLabel}>Coins</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Custom Amount */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Custom Amount</Text>
-              <View style={styles.customInputContainer}>
-                <TextInput
-                  style={styles.customInput}
-                  placeholder="Enter coin amount"
-                  placeholderTextColor="#999"
-                  keyboardType="number-pad"
-                  value={customAmount}
-                  onChangeText={(text) => {
-                    setCustomAmount(text.replace(/\D/g, ""));
-                    setSelectedPackage(null);
-                    setAgreed(false);
-                  }}
-                />
-              </View>
-            </View>
-
-            {/* Summary */}
-            {supportAmount > 0 && (
-              <View style={styles.summaryCard}>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Support Amount</Text>
-                  <Text style={styles.summaryValue}>{supportAmount}</Text>
-                </View>
-                <View style={styles.summaryRow}>
-                  <Text style={styles.summaryLabel}>Your Balance After</Text>
-                  <Text
-                    style={[
-                      styles.summaryValue,
-                      { color: walletBalance - supportAmount >= 0 ? "#22C55E" : "#FF4444" },
-                    ]}
-                  >
-                    {(walletBalance - supportAmount).toLocaleString()}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Warning + confirmation (only when the amount can be sent) */}
-            {supportAmount > 0 && !insufficient && (
-              <>
-                <View style={styles.warningCard}>
-                  <Ionicons name="warning-outline" size={20} color="#EC9A15" />
-                  <Text style={styles.warningText}>
-                    Coins will be deducted from your wallet and sent to @{creatorName}. This action cannot be undone.
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.checkboxRow}
-                  onPress={() => setAgreed((v) => !v)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: agreed }}
-                >
-                  <Ionicons
-                    name={agreed ? "checkbox" : "square-outline"}
-                    size={22}
-                    color="#EC9A15"
-                  />
-                  <Text style={styles.checkboxText}>
-                    I understand and want to send {supportAmount} coins
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-
-            {insufficient && (
-              <Text style={styles.insufficientText}>
-                {COIN_PURCHASE_ENABLED
-                  ? `Insufficient balance. You need ${supportAmount} coins, you have ${walletBalance}.`
-                  : `You need ${supportAmount} coins, you have ${walletBalance}. Earn coins by winning competitions and inviting friends.`}
-              </Text>
-            )}
-          </ScrollView>
-
-          {/* Footer */}
-          <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-            {insufficient ? (
-              <TouchableOpacity style={styles.sendButton} onPress={goToWallet}>
-                <Ionicons name="wallet-outline" size={20} color="#fff" />
-                <Text style={styles.sendButtonText}>Add Coins</Text>
+        <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+          <View style={styles.balanceRow}>
+            <Wallet size={18} color={colors.accent} strokeWidth={2} />
+            <Text style={styles.balanceLabel}>Your balance</Text>
+            {loadingBalance ? (
+              <ActivityIndicator color={colors.accent} />
+            ) : balanceError ? (
+              <TouchableOpacity onPress={loadBalance}>
+                <Text style={styles.retry}>Retry</Text>
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity
-                style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
-                onPress={handleSend}
-                disabled={!canSend}
-              >
-                {sending ? (
-                  <>
-                    <ActivityIndicator size="small" color="#fff" />
-                    <Text style={styles.sendButtonText}>Sending...</Text>
-                  </>
-                ) : (
-                  <>
-                    <Ionicons name="heart" size={20} color="#fff" />
-                    <Text style={styles.sendButtonText}>{sendLabel}</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              <Text style={styles.balanceValue}>{balance!.toLocaleString("en-IN")} coins</Text>
             )}
-
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={sending}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
           </View>
+          {balanceError ? <Text style={styles.errorText}>{balanceError}</Text> : null}
+
+          {noCoins ? (
+            // Nothing to send yet: say why and where coins come from.
+            <View style={styles.notice}>
+              <Text style={styles.noticeTitle}>You don&apos;t have any coins yet</Text>
+              <Text style={styles.noticeText}>
+                {COIN_PURCHASE_ENABLED
+                  ? "Add coins to your wallet to support creators."
+                  : "Earn coins by inviting friends and winning competitions, then come back to support creators."}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.label}>Amount</Text>
+              <View style={styles.amounts}>
+                {QUICK_AMOUNTS.map((n) => {
+                  const on = !custom && amount === n;
+                  const disabled = balance !== null && n > balance;
+                  return (
+                    <TouchableOpacity
+                      key={n}
+                      style={[styles.amount, on && styles.amountOn, disabled && styles.amountDisabled]}
+                      onPress={() => pick(n)}
+                      disabled={disabled}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: on, disabled }}
+                    >
+                      <Coins size={14} color={on ? colors.accent : colors.textMuted} strokeWidth={2} />
+                      <Text style={[styles.amountText, on && styles.amountTextOn]}>{n}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={[styles.customWrap, !!custom && styles.customWrapOn]}>
+                <TextInput
+                  style={styles.customInput}
+                  value={custom}
+                  onChangeText={(t) => {
+                    setCustom(t.replace(/\D/g, "").slice(0, 6));
+                    setConfirmed(false);
+                    setSendError("");
+                  }}
+                  placeholder="Other amount"
+                  placeholderTextColor={colors.placeholder}
+                  keyboardType="number-pad"
+                  testID="support-custom-amount"
+                />
+                <Text style={styles.customSuffix}>coins</Text>
+              </View>
+
+              {tooMuch ? (
+                <Text style={styles.errorText}>
+                  You have {balance} coins. Choose {balance} or less.
+                </Text>
+              ) : value > 0 && balance !== null ? (
+                <Text style={styles.after}>Balance after: {(balance - value).toLocaleString("en-IN")} coins</Text>
+              ) : null}
+
+              {value > 0 && !tooMuch && balance !== null ? (
+                <TouchableOpacity
+                  style={styles.confirmRow}
+                  onPress={() => setConfirmed((v) => !v)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: confirmed }}
+                  testID="support-confirm"
+                >
+                  <View style={[styles.box, confirmed && styles.boxOn]}>
+                    {confirmed ? <Check size={14} color="#1A1A1A" strokeWidth={3} /> : null}
+                  </View>
+                  <Text style={styles.confirmText}>
+                    Send {value} coins to @{handle}. This can&apos;t be undone.
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+
+              {sendError ? <Text style={[styles.errorText, { marginTop: space.md }]}>{sendError}</Text> : null}
+            </>
+          )}
+        </ScrollView>
+
+        <View style={styles.footer}>
+          {noCoins ? (
+            <TouchableOpacity style={styles.primary} onPress={goEarn} accessibilityRole="button">
+              {COIN_PURCHASE_ENABLED ? <Wallet size={18} color="#1A1A1A" /> : <UserPlus size={18} color="#1A1A1A" />}
+              <Text style={styles.primaryText}>{COIN_PURCHASE_ENABLED ? "Add coins" : "Invite friends to earn coins"}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.primary, !canSend && styles.primaryDisabled]}
+              onPress={send}
+              disabled={!canSend}
+              accessibilityRole="button"
+              testID="support-send"
+            >
+              {sending ? (
+                <ActivityIndicator color="#1A1A1A" />
+              ) : (
+                <>
+                  <Coins size={18} color="#1A1A1A" strokeWidth={2} />
+                  <Text style={styles.primaryText}>{value > 0 ? `Send ${value} coins` : "Send coins"}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
@@ -294,212 +251,99 @@ export default function SupportModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "flex-end",
+  backdrop: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.6)" },
+  sheet: {
+    maxHeight: "88%",
+    backgroundColor: colors.card,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    borderTopWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingTop: space.sm,
   },
-  container: {
-    backgroundColor: "#3C2610",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: "90%",
-    paddingTop: 20,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#444",
-  },
-  headerTitle: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  closeButton: {
-    padding: 8,
-  },
-  content: {
-    flexShrink: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  balanceCard: {
-    backgroundColor: "rgba(236, 154, 21, 0.15)",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderLeftWidth: 3,
-    borderLeftColor: "#EC9A15",
-  },
+  grabber: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: space.md },
+  header: { flexDirection: "row", alignItems: "flex-start", gap: space.md, paddingHorizontal: space.xl, paddingBottom: space.md },
+  title: { color: colors.text, fontSize: 20, fontFamily: font.titleMedium },
+  subtitle: { color: colors.textMuted, fontSize: 13, fontFamily: font.regular, marginTop: 2 },
+
+  body: { paddingHorizontal: space.xl, paddingBottom: space.md },
   balanceRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    gap: space.sm,
+    paddingHorizontal: 14,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.field,
   },
-  balanceLabel: {
-    color: "#999",
-    fontSize: 14,
-  },
-  balanceAmount: {
-    color: "#EC9A15",
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  coinLabel: {
-    color: "#999",
-    fontSize: 12,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
-  packagesGrid: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  packageButton: {
+  balanceLabel: { flex: 1, color: colors.textBody, fontSize: 14, fontFamily: font.medium },
+  balanceValue: { color: colors.accent, fontSize: 15, fontFamily: font.bold },
+  retry: { color: colors.accent, fontSize: 14, fontFamily: font.semibold },
+
+  label: { color: colors.textBody, fontSize: 13, fontFamily: font.semibold, marginTop: space.xl, marginBottom: space.sm },
+  amounts: { flexDirection: "row", gap: space.sm },
+  amount: {
     flex: 1,
-    backgroundColor: "#252525",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 2,
-    borderColor: "#444",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  packageButtonActive: {
-    borderColor: "#EC9A15",
-    backgroundColor: "rgba(236, 154, 21, 0.1)",
-  },
-  packageButtonDisabled: {
-    opacity: 0.5,
-  },
-  packageCoins: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  packageCoinsActive: {
-    color: "#EC9A15",
-  },
-  packageLabel: {
-    color: "#999",
-    fontSize: 12,
-  },
-  customInputContainer: {
-    backgroundColor: "#252525",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#444",
-    overflow: "hidden",
-  },
-  customInput: {
-    color: "#fff",
-    padding: 12,
-    fontSize: 14,
-  },
-  summaryCard: {
-    backgroundColor: "#252525",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#444",
-    marginBottom: 16,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  summaryLabel: {
-    color: "#999",
-    fontSize: 14,
-  },
-  summaryValue: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  warningCard: {
-    backgroundColor: "rgba(236, 154, 21, 0.1)",
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    marginBottom: 12,
-  },
-  warningText: {
-    color: "#E5DCD0",
-    fontSize: 13,
-    lineHeight: 19,
-    flex: 1,
-  },
-  checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 4,
-  },
-  checkboxText: {
-    color: "#fff",
-    fontSize: 14,
-    flex: 1,
-  },
-  insufficientText: {
-    color: "#FF6B6B",
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#444",
-    gap: 12,
-  },
-  sendButton: {
-    backgroundColor: "#EC9A15",
-    borderRadius: 12,
-    paddingVertical: 14,
+    height: 44,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 5,
+    borderRadius: radius.md,
+    backgroundColor: colors.field,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
-  sendButtonDisabled: {
-    opacity: 0.5,
+  amountOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  amountDisabled: { opacity: 0.35 },
+  amountText: { color: colors.text, fontSize: 15, fontFamily: font.semibold },
+  amountTextOn: { color: colors.accent },
+
+  customWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: space.sm,
+    paddingHorizontal: 14,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.field,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
-  sendButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  cancelButton: {
-    backgroundColor: "#444",
-    borderRadius: 12,
-    paddingVertical: 12,
+  customWrapOn: { borderColor: colors.accent },
+  customInput: { flex: 1, height: "100%", color: colors.text, fontSize: 15, fontFamily: font.regular, paddingVertical: 0 },
+  customSuffix: { color: colors.textMuted, fontSize: 13, fontFamily: font.regular },
+
+  after: { color: colors.textMuted, fontSize: 12, fontFamily: font.regular, marginTop: space.sm },
+  errorText: { color: colors.danger, fontSize: 13, lineHeight: 18, fontFamily: font.medium, marginTop: space.sm },
+
+  confirmRow: { flexDirection: "row", alignItems: "center", gap: space.md, marginTop: space.lg },
+  box: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.textMuted,
+    justifyContent: "center",
     alignItems: "center",
   },
-  cancelButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
+  boxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  confirmText: { flex: 1, color: colors.textBody, fontSize: 13, lineHeight: 18, fontFamily: font.regular },
+
+  notice: { marginTop: space.lg, padding: 14, borderRadius: radius.md, backgroundColor: colors.accentSoft },
+  noticeTitle: { color: colors.text, fontSize: 15, fontFamily: font.semibold },
+  noticeText: { color: colors.textBody, fontSize: 13, lineHeight: 19, fontFamily: font.regular, marginTop: 4 },
+
+  footer: { paddingHorizontal: space.xl, paddingTop: space.md },
+  primary: {
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.sm,
   },
+  primaryDisabled: { opacity: 0.45 },
+  primaryText: { color: "#1A1A1A", fontSize: 16, fontFamily: font.bold },
 });

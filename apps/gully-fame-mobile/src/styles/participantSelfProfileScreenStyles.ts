@@ -31,7 +31,7 @@ export const participantSelfProfileScreenStyles = StyleSheet.create({
         color: "#EC9A15",
         fontSize: 12,
         fontWeight: "700",
-        fontFamily: "Rubik_500Medium", // Adjust if you use a different font family name
+        fontFamily: "Inter_500Medium", // Adjust if you use a different font family name
     },
     progressFraction: {
         color: "#9CA3AF",
@@ -353,7 +353,7 @@ export const participantSelfProfileScreenStyles = StyleSheet.create({
         color: "#fff",
         fontSize: 14,
         marginBottom: 8,
-        fontFamily: "Rubik_500Medium",
+        fontFamily: "Inter_500Medium",
     },
     threeWordsEditContainer: {
         flexDirection: "row",
@@ -376,7 +376,7 @@ export const participantSelfProfileScreenStyles = StyleSheet.create({
         color: "#EC9A15",
         fontSize: 16,
         paddingHorizontal: 4,
-        fontFamily: "Rubik_500Medium",
+        fontFamily: "Inter_500Medium",
     },
     editBioButtons: {
         flexDirection: "row",

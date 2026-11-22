@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ScrollView,
   Image,
@@ -12,6 +13,7 @@ import { styles } from "./styles";
 import { wp } from "@/utils/responsive";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { TALENT_CATEGORIES } from "@/constants/talentCategories";
+import { useScreenActive } from "@/hooks/useScreenActive";
 
 const HERO_IMAGE = require("@assets/images/carousel1.png");
 /** The hero always shows the talent categories; admin-panel banners are not used here. */
@@ -56,7 +58,10 @@ const HeroBannerCarousel = () => {
     });
     return () => subscription.remove();
   }, []);
+  // Auto-advance only while Home is on screen (tabs stay mounted in the background).
+  const active = useScreenActive();
   useEffect(() => {
+    if (!active) return;
     const interval = setInterval(() => {
       const next = indexRef.current + 1;
       indexRef.current = next;
@@ -73,11 +78,24 @@ const HeroBannerCarousel = () => {
       clearInterval(interval);
       if (jumpTimer.current) clearTimeout(jumpTimer.current);
     };
-  }, []);
+  }, [active]);
   return (
     <>
       {/* One fixed background; only the text and icon change between slides. */}
       <Image source={HERO_IMAGE} style={styles.heroBackgroundImage} />
+      {/* Soft fades instead of a hard edge: darken the top for the status bar/icons, and melt the
+          bottom into the page colour so the banner flows into the sections below. */}
+      <LinearGradient
+        colors={["rgba(30, 17, 6, 0.55)", "rgba(30, 17, 6, 0)"]}
+        style={styles.heroFadeTop}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["rgba(60, 38, 16, 0)", "rgba(60, 38, 16, 0.75)", "#3C2610"]}
+        locations={[0, 0.6, 1]}
+        style={styles.heroFadeBottom}
+        pointerEvents="none"
+      />
       <ScrollView
         ref={carouselRef}
         horizontal

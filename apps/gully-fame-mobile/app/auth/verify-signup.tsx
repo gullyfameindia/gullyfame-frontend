@@ -20,14 +20,16 @@ import { saveUserSession } from "@utils/userSession";
 import { registerPushTokenWithBackend } from "@utils/pushToken";
 import { useUserRole } from "@/contexts/UserRoleContext";
 
+// Same dark card look as Create Account (app/auth/createaccount.tsx).
 const C = {
   brown: "#3C2610",
   orange: "#EC9A15",
-  card: "#FFF9F1",
-  text: "#1F2937",
-  muted: "#6B7280",
-  border: "#E7D9C4",
-  green: "#059669",
+  card: "#1A1A1A",
+  box: "#252525",
+  text: "#FFFFFF",
+  muted: "#CAD7D8",
+  border: "#3A3A3A",
+  green: "#34D399",
 };
 
 type Channel = "mobile" | "email";
@@ -200,6 +202,7 @@ export default function VerifySignup() {
           hasError={fieldError[channel]}
           autoFocus={isMobile}
           source={isMobile ? "sms" : "email"}
+          theme="dark"
           testID={`signup-${channel}-otp`}
         />
 
@@ -255,7 +258,7 @@ export default function VerifySignup() {
 
         {errorMessage ? (
           <View style={styles.errorBox}>
-            <Ionicons name="alert-circle" size={18} color="#DC2626" />
+            <Ionicons name="alert-circle" size={18} color="#F87171" />
             <Text style={styles.errorText}>{errorMessage}</Text>
           </View>
         ) : null}
@@ -298,12 +301,22 @@ const styles = StyleSheet.create({
   },
   headerSide: { width: 44, height: 44, justifyContent: "center", alignItems: "center" },
   headerTitle: { color: "#FFFFFF", fontSize: 20, fontFamily: "PlayfairDisplay_700Bold" },
-  card: { flex: 1, backgroundColor: C.card, borderTopLeftRadius: 32, borderTopRightRadius: 32 },
-  cardContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 40 },
-  title: { fontSize: 28, color: C.text, fontFamily: "PlayfairDisplay_800ExtraBold" },
-  subtitle: { fontSize: 15, lineHeight: 22, color: C.muted, fontFamily: "Inter_400Regular", marginTop: 6, marginBottom: 22 },
+  card: { flex: 1 },
+  cardContent: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: C.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.35)",
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  title: { fontSize: 24, color: C.text, textAlign: "center", fontFamily: "PlayfairDisplay_800ExtraBold" },
+  subtitle: { fontSize: 13, lineHeight: 20, color: C.muted, textAlign: "center", fontFamily: "Inter_400Regular", marginTop: 6, marginBottom: 18 },
   section: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: C.box,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: C.border,
@@ -319,50 +332,50 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  sectionIconDone: { backgroundColor: C.green },
+  sectionIconDone: { backgroundColor: "#059669" },
   sectionTitle: { fontSize: 16, color: C.text, fontFamily: "Inter_600SemiBold" },
-  sectionSub: { fontSize: 13, color: C.muted, fontFamily: "Inter_400Regular", marginTop: 2 },
+  sectionSub: { fontSize: 13, color: "#8A8F90", fontFamily: "Inter_400Regular", marginTop: 2 },
   resend: { alignSelf: "flex-end", marginTop: 12, minHeight: 20, justifyContent: "center" },
   resendText: { fontSize: 14, color: C.orange, fontFamily: "Inter_600SemiBold" },
-  resendTextDisabled: { color: "#B8A992" },
+  resendTextDisabled: { color: "#7C8283" },
   errorBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FCA5A5",
+    backgroundColor: "rgba(248, 113, 113, 0.12)",
+    borderColor: "rgba(248, 113, 113, 0.45)",
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
     marginBottom: 14,
   },
-  errorText: { flex: 1, color: "#B91C1C", fontSize: 14, fontFamily: "Inter_500Medium" },
+  errorText: { flex: 1, color: "#F87171", fontSize: 13, fontFamily: "Inter_500Medium" },
   infoBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#ECFDF5",
-    borderColor: "#6EE7B7",
+    backgroundColor: "rgba(52, 211, 153, 0.12)",
+    borderColor: "rgba(52, 211, 153, 0.45)",
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
     marginBottom: 14,
   },
-  infoText: { flex: 1, color: "#047857", fontSize: 14, fontFamily: "Inter_500Medium" },
+  infoText: { flex: 1, color: "#34D399", fontSize: 13, fontFamily: "Inter_500Medium" },
   primaryButton: {
     backgroundColor: C.orange,
-    borderRadius: 14,
-    height: 56,
+    borderRadius: 12,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 6,
     shadowColor: C.orange,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   primaryButtonDisabled: { opacity: 0.6 },
-  primaryButtonText: { color: "#FFFFFF", fontSize: 17, fontFamily: "Inter_700Bold" },
-  footnote: { textAlign: "center", color: C.muted, fontSize: 13, marginTop: 16, fontFamily: "Inter_400Regular" },
+  primaryButtonText: { color: "#FFFFFF", fontSize: 16, fontFamily: "Inter_700Bold" },
+  footnote: { textAlign: "center", color: "#8A8F90", fontSize: 13, marginTop: 16, fontFamily: "Inter_400Regular" },
 });

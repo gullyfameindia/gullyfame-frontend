@@ -135,7 +135,6 @@ export default function DownloadsScreen() {
         <View style={styles.headerSide} />
       </View>
 
-      <Text style={styles.subtitle}>Manage the videos you've saved for offline viewing.</Text>
 
       {loading ? (
         <SkeletonList rows={5} avatarSize={72} avatarRadius={10} trailing style={{ padding: 16 }} />
@@ -252,7 +251,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 16,
     paddingHorizontal: 24,
   },
@@ -276,12 +275,12 @@ const styles = StyleSheet.create({
   storageTitle: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   clearText: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   barTrack: {
     height: 6,
@@ -298,7 +297,7 @@ const styles = StyleSheet.create({
     color: C.faint,
     fontSize: 12,
     marginTop: 10,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // List
@@ -352,13 +351,13 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 15,
     lineHeight: 20,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   meta: {
     color: C.muted,
     fontSize: 12,
     marginTop: 4,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   statusRow: {
     flexDirection: "row",
@@ -369,7 +368,7 @@ const styles = StyleSheet.create({
   statusText: {
     color: C.success,
     fontSize: 12,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   deleteButton: {
     width: 36,
@@ -385,7 +384,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
     lineHeight: 17,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Empty state
@@ -414,7 +413,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Player

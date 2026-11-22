@@ -93,6 +93,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     textAlign: "center",
     marginTop: 8,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

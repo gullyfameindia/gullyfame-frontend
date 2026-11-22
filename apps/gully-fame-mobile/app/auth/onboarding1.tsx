@@ -151,13 +151,13 @@ const styles = StyleSheet.create({
     color: "white",
     lineHeight: height * 0.05,
     marginBottom: height * 0.03,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   subtitle: {
     fontSize: width * 0.04,
     color: "white",
     lineHeight: height * 0.03,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   footer: {
     flexDirection: "row",
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     width: "100%",
     marginLeft:width * 0.05,
   },
-  skip: { color: "white", fontSize: width * 0.035, fontWeight: "400", fontFamily: "Rubik_400Regular" },
+  skip: { color: "white", fontSize: width * 0.035, fontWeight: "400", fontFamily: "Inter_400Regular" },
   skipButton: {
     paddingVertical: 8,
 

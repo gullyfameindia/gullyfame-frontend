@@ -1,6 +1,6 @@
 import { useState, useEffect,  useCallback } from "react";
 import { safeIdParam } from "@/utils/routeParams";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
     View,
     Text,
@@ -243,7 +243,7 @@ export default function PastCompetitionScreen() {
                             <View style={styles.specsRow}>
                                 <View style={styles.specBoxCenter}>
                                     <View style={styles.specHeaderCenter}>
-                                        <Text style={styles.specIcon}>👥</Text>
+                                        <Ionicons name="people-outline" size={16} color="#EC9A15" />
                                         <Text style={styles.specLabel}>Participants</Text>
                                     </View>
                                     <Text style={styles.specValueLarge}>
@@ -253,7 +253,7 @@ export default function PastCompetitionScreen() {
                                 <View style={styles.specVerticalDivider} />
                                 <View style={styles.specBoxCenter}>
                                     <View style={styles.specHeaderCenter}>
-                                        <Text style={styles.specIcon}>📅</Text>
+                                        <Ionicons name="calendar-outline" size={16} color="#EC9A15" />
                                         <Text style={styles.specLabel}>Timeline</Text>
                                     </View>
                                     <Text style={styles.specValue}>
@@ -266,7 +266,7 @@ export default function PastCompetitionScreen() {
                                 <TouchableOpacity style={styles.missionBriefingCard} activeOpacity={0.8} onPress={toggleRules}>
                                     <View style={styles.missionHeader}>
                                         <View style={styles.missionTitleRow}>
-                                            <Text style={styles.missionIcon}>📜</Text>
+                                            <Ionicons name="document-text-outline" size={16} color="#EC9A15" />
                                             <Text style={styles.missionTitle}>Event Details & Rules</Text>
                                         </View>
                                         <Text style={styles.chevron}>{isRulesExpanded ? "▲" : "▼"}</Text>
@@ -305,7 +305,7 @@ export default function PastCompetitionScreen() {
                     <View style={styles.section}>
                         <View style={styles.finalResultsSection}>
                             <View style={styles.leaderboardTitleContainer}>
-                                <Text style={styles.leaderboardMainTitle}>🏆 FINAL STANDINGS</Text>
+                                <Text style={styles.leaderboardMainTitle}>Final standings</Text>
                                 <Text style={styles.leaderboardSubTitle}>Top 10 Champions</Text>
                             </View>
                             <View style={styles.finalResultsContainer}>

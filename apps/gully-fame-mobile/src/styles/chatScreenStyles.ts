@@ -36,9 +36,9 @@ export const chatScreenStyles = StyleSheet.create({
   },
   headerName: {
     fontFamily: Platform.select({
-      ios: "Rubik_700Bold",
-      android: "Rubik_700Bold",
-      default: "Rubik_700Bold",
+      ios: "Inter_700Bold",
+      android: "Inter_700Bold",
+      default: "Inter_700Bold",
     }),
     color: "#000000",
     fontSize: 16,
@@ -79,9 +79,9 @@ export const chatScreenStyles = StyleSheet.create({
   },
   statusText: {
     fontFamily: Platform.select({
-      ios: "Rubik_400Regular",
-      android: "Rubik_400Regular",
-      default: "Rubik_400Regular",
+      ios: "Inter_400Regular",
+      android: "Inter_400Regular",
+      default: "Inter_400Regular",
     }),
     color: "#4CAF50",
     fontSize: 12,
@@ -159,9 +159,9 @@ export const chatScreenStyles = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: Platform.select({
-      ios: "Rubik_400Regular",
-      android: "Rubik_400Regular",
-      default: "Rubik_400Regular",
+      ios: "Inter_400Regular",
+      android: "Inter_400Regular",
+      default: "Inter_400Regular",
     }),
     color: "#000000",
     paddingVertical: 8,
@@ -203,9 +203,9 @@ export const chatScreenStyles = StyleSheet.create({
   },
   menuItemText: {
     fontFamily: Platform.select({
-      ios: "Rubik_400Regular",
-      android: "Rubik_400Regular",
-      default: "Rubik_400Regular",
+      ios: "Inter_400Regular",
+      android: "Inter_400Regular",
+      default: "Inter_400Regular",
     }),
     color: "#000000",
     fontSize: 14,

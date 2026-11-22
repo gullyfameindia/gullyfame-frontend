@@ -59,9 +59,9 @@ export const chatMessageStyles = StyleSheet.create({
   },
   messageText: {
     fontFamily: Platform.select({
-      ios: "Rubik_400Regular",
-      android: "Rubik_400Regular",
-      default: "Rubik_400Regular",
+      ios: "Inter_400Regular",
+      android: "Inter_400Regular",
+      default: "Inter_400Regular",
     }),
     fontSize: 14,
     lineHeight: 20,

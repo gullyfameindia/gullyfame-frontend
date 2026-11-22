@@ -12,6 +12,20 @@ export const styles = StyleSheet.create({
     height: "100%",
     resizeMode: "cover",
   },
+  heroFadeTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "30%",
+  },
+  heroFadeBottom: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "45%",
+  },
   heroContent: {
     width: "100%",
     height: hp(45),

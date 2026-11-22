@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
-import OutlinedField, { FIELD_COLORS, fieldInputStyle } from "@/components/ui/OutlinedField";
+import OutlinedField, { DARK_FIELD_COLORS, darkFieldInputStyle } from "@/components/ui/OutlinedField";
 import { safeBack } from "@/utils/safeBack";
 import Svg, { Path } from "react-native-svg";
 import { authService, AUTH_RULES } from "@api/services/authService";
@@ -90,11 +90,11 @@ export default function ForgotPassword() {
         </Text>
 
         {}
-        <OutlinedField label="Email / Mobile Number" required icon="person-outline" focused={focus === "id"}>
+        <OutlinedField dark label="Email / Mobile Number" required icon="person-outline" focused={focus === "id"}>
           <TextInput
-            style={fieldInputStyle}
+            style={darkFieldInputStyle}
             placeholder="you@example.com or 98765 43210"
-            placeholderTextColor={FIELD_COLORS.placeholder}
+            placeholderTextColor={DARK_FIELD_COLORS.placeholder}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -137,15 +137,17 @@ export default function ForgotPassword() {
   );
 }
 
+// Same dark card look as Create Account (app/auth/createaccount.tsx).
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
-    backgroundColor: "#FFF9F1",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 30,
+    width: "100%",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.35)",
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   headerSide: {
     width: 44,
@@ -159,70 +161,52 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    paddingTop: height * 0.015,
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingTop: height * 0.025,
+    paddingBottom: 12,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 28,
+    marginBottom: 16,
   },
   logo: {
-    width: width * 0.35,
-    height: height * 0.08,
+    width: width * 0.33,
+    height: height * 0.065,
   },
   title: {
-    color: "#1F2937",
-    fontSize: 28,
+    color: "#FFFFFF",
+    fontSize: 24,
     fontFamily: "PlayfairDisplay_800ExtraBold",
+    textAlign: "center",
     marginBottom: 10,
   },
   subtitle: {
-    color: "#6B7280",
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 26,
+    color: "#CAD7D8",
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+    marginBottom: 14,
     fontFamily: "Inter_400Regular",
-  },
-  inputGroup: {
-    marginBottom: 24,
-  },
-  label: {
-    color: "#1F2937",
-    fontSize: 14,
-    marginBottom: 8,
-    fontFamily: "Inter_600SemiBold",
-  },
-  input: {
-    paddingVertical: 14,
-    color: "#1F2937",
-    fontFamily: "Inter_400Regular",
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#E7D9C4",
-    backgroundColor: "#FFFFFF",
-    minHeight: 54,
-    paddingHorizontal: 14,
-    fontSize: 15,
   },
   primaryButton: {
-    paddingVertical: 18,
-    marginTop: 12,
+    marginTop: 10,
     backgroundColor: "#EC9A15",
-    borderRadius: 14,
-    minHeight: 56,
+    borderRadius: 12,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#EC9A15",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   primaryButtonText: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 16,
     fontFamily: "Inter_700Bold",
   },
   primaryButtonDisabled: {
@@ -231,30 +215,31 @@ const styles = StyleSheet.create({
   errorContainer: {
     borderWidth: 1,
     padding: 12,
-    marginBottom: 15,
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FCA5A5",
+    marginTop: 6,
+    marginBottom: 6,
+    backgroundColor: "rgba(248, 113, 113, 0.12)",
+    borderColor: "rgba(248, 113, 113, 0.45)",
     borderRadius: 12,
   },
   errorText: {
-    color: "#DC2626",
-    fontSize: 14,
+    color: "#F87171",
+    fontSize: 13,
     fontFamily: "Inter_500Medium",
     textAlign: "center",
   },
   successContainer: {
-    backgroundColor: "#D1FAE5",
-    borderColor: "#10B981",
+    backgroundColor: "rgba(52, 211, 153, 0.12)",
+    borderColor: "rgba(52, 211, 153, 0.45)",
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 15,
+    marginTop: 6,
+    marginBottom: 6,
   },
   successText: {
-    color: "#10B981",
-    fontSize: 14,
+    color: "#34D399",
+    fontSize: 13,
     fontFamily: "Inter_500Medium",
     textAlign: "center",
   },
 });
-

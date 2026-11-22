@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     fontSize: 13.8,
     lineHeight: 20,
     letterSpacing: 0,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 15,
     marginTop: 16,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   checklist: {
     marginTop: 20,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     letterSpacing: 0,
   },
   primaryButton: {
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   secondaryButton: {
     alignSelf: "center",
@@ -331,6 +331,6 @@ const styles = StyleSheet.create({
     color: "#CAD7D8",
     textDecorationLine: "underline",
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   versionText: {
     color: C.accent,
     fontSize: 12,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Cards
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 14,
     lineHeight: 22,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   featureRow: {
     flexDirection: "row",
@@ -206,6 +206,6 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

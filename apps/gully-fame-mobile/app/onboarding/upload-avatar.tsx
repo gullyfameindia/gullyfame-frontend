@@ -7,7 +7,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
   StatusBar,
   Platform,
@@ -21,12 +20,12 @@ import { router, useLocalSearchParams } from "expo-router";
 import { updateProfile } from "@api/services/userService";
 import { getErrorMessage } from "@api/client";
 import Svg, { Path } from "react-native-svg";
+import { colors, font, radius, space, type } from "@/theme/tokens";
 import { UserProfileIcon } from "@/icons";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
 
-const { width } = Dimensions.get("window");
 
 export default function OnboardingUploadAvatar() {
   const params = useLocalSearchParams();
@@ -240,8 +239,7 @@ export default function OnboardingUploadAvatar() {
 
         <View style={styles.welcomeCard}>
           <Text style={styles.welcomeSubtitle}>
-            Add a friendly face and a short bio so the community knows who's
-            stepping on stage.
+            A photo and a short bio help people recognise you.
           </Text>
         </View>
 
@@ -270,7 +268,7 @@ export default function OnboardingUploadAvatar() {
           </View>
 
           <View style={styles.bioBlock}>
-            <Text style={styles.bioLabel}>Bio *</Text>
+            <Text style={styles.bioLabel}>Bio <Text style={{ color: colors.danger }}>*</Text></Text>
             <TextInput
               style={[
                 styles.bioInput,
@@ -279,7 +277,7 @@ export default function OnboardingUploadAvatar() {
                   styles.bioInputError,
               ]}
               placeholder="e.g. Street dancer from Delhi who loves hip-hop"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.placeholder}
               multiline
               numberOfLines={4}
               value={bio}
@@ -289,7 +287,7 @@ export default function OnboardingUploadAvatar() {
               }}
             />
             <Text style={styles.bioHelper}>
-              Share your crew, wins or vibe. You can always edit this later.
+              You can change this later.
             </Text>
           </View>
 
@@ -301,7 +299,7 @@ export default function OnboardingUploadAvatar() {
               <TextInput
                 style={styles.threeWordsInput}
                 placeholder="e.g. Bold"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.placeholder}
                 value={threeWords[0]}
                 onChangeText={(text) => {
                   const newWords = [...threeWords];
@@ -313,7 +311,7 @@ export default function OnboardingUploadAvatar() {
               <TextInput
                 style={styles.threeWordsInput}
                 placeholder="e.g. Creative"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.placeholder}
                 value={threeWords[1]}
                 onChangeText={(text) => {
                   const newWords = [...threeWords];
@@ -325,7 +323,7 @@ export default function OnboardingUploadAvatar() {
               <TextInput
                 style={styles.threeWordsInput}
                 placeholder="e.g. Fearless"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.placeholder}
                 value={threeWords[2]}
                 onChangeText={(text) => {
                   const newWords = [...threeWords];
@@ -335,7 +333,7 @@ export default function OnboardingUploadAvatar() {
               />
             </View>
             <Text style={styles.threeWordsHelper}>
-              Example: MusicLover | DanceFreak | VibeCreator
+              Optional. Shown on your profile.
             </Text>
           </View>
 
@@ -365,7 +363,7 @@ export default function OnboardingUploadAvatar() {
           onPress={() => goToFaceScan(true)}
         >
           <Text style={styles.secondaryButtonText}>
-            Skip (Add details later)
+            Skip for now
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -374,198 +372,91 @@ export default function OnboardingUploadAvatar() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#3C2610",
-  },
+  container: { flex: 1, backgroundColor: colors.page },
   scrollContent: {
     paddingTop: Platform.OS === "android" ? 50 : 60,
     paddingBottom: 48,
-    paddingHorizontal: width * 0.06,
+    paddingHorizontal: space.lg,
     flexGrow: 1,
   },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  headerBackButton: {
-    width: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTextBlock: {
-    flex: 1,
-    marginHorizontal: 16,
-  },
-  headerEyebrow: {
-    color: "#C8C8C8",
-    fontSize: 14,
-    letterSpacing: 0,
-    textTransform: "uppercase",
-    marginBottom: 1,
-    fontFamily: "Inter_500Medium",
-  },
-  headerEyebrowNumber: {
-    fontFamily: "Inter_500Medium",
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 25,
-    fontFamily: "PlayfairDisplay_700Bold",
-  },
-  welcomeCard: {
-    borderRadius: 22,
-    paddingVertical: 20,
-    paddingLeft: 13,
-    paddingRight: 10,
-    marginTop: 5,
-  },
-  welcomeSubtitle: {
-    color: "#CAD7D8",
-    fontSize: 13.8,
-    lineHeight: 20,
-    letterSpacing: 0,
-    fontFamily: "Rubik_400Regular",
-  },
+  headerRow: { flexDirection: "row", alignItems: "center", marginTop: 20 },
+  headerBackButton: { width: 24, height: 24, justifyContent: "center", alignItems: "center" },
+  headerTextBlock: { flex: 1, marginHorizontal: space.md },
+  headerEyebrow: { color: colors.textMuted, fontSize: 12, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 2, fontFamily: font.semibold },
+  headerEyebrowNumber: { fontFamily: font.semibold },
+  headerTitle: { ...type.screenTitle, fontSize: 24 },
+  welcomeCard: { paddingTop: space.md, paddingBottom: space.lg },
+  welcomeSubtitle: { ...type.body },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 20,
-    marginTop: 20,
-  },
-  avatarPlaceholder: {
-    alignItems: "center",
-  },
-  avatarImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 16,
-  },
-  avatarText: {
-    color: "#000",
-    fontSize: 16,
-    marginTop: 16,
-    fontFamily: "Rubik_500Medium",
-  },
-  avatarButton: {
-    marginTop: 18,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 25,
-    backgroundColor: "#EC9A15",
-  },
-  avatarButtonText: {
-    color: "#FFFFFF",
-    fontFamily: "Rubik_500Medium",
-  },
-  bioBlock: {
-    marginTop: 20,
-  },
-  bioLabel: {
-    color: "#000",
-    fontSize: 16,
-    paddingVertical: 12,
-    letterSpacing: 0,
-    fontFamily: "Rubik_500Medium",
-  },
-  bioInput: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 5,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#D9D9D9",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderColor: colors.cardBorder,
+    padding: space.lg,
+  },
+  avatarPlaceholder: { alignItems: "center", paddingTop: space.sm },
+  avatarImage: { width: 112, height: 112, borderRadius: 56 },
+  avatarText: { color: colors.text, fontSize: 15, marginTop: space.md, fontFamily: font.semibold },
+  avatarButton: {
+    marginTop: space.md,
+    paddingHorizontal: space.lg,
+    height: 38,
+    justifyContent: "center",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
+  },
+  avatarButtonText: { color: colors.accent, fontFamily: font.semibold, fontSize: 14 },
+  bioBlock: { marginTop: space.xl },
+  bioLabel: { ...type.label, marginBottom: space.sm },
+  bioInput: {
+    backgroundColor: colors.field,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 14,
+    paddingVertical: space.md,
+    minHeight: 96,
     fontSize: 14,
-    color: "#000",
+    color: colors.text,
     textAlignVertical: "top",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: font.regular,
   },
-  bioHelper: {
-    color: "#6A6A6A",
-    fontSize: 12,
-    marginTop: 10,
-    lineHeight: 18,
-    fontFamily: "Rubik_400Regular",
-  },
-  bioInputError: {
-    borderColor: "#EF4444",
-    borderWidth: 1.5,
-  },
-  threeWordsBlock: {
-    marginTop: 20,
-  },
-  threeWordsLabel: {
-    color: "#000",
-    fontSize: 16,
-    paddingVertical: 12,
-    letterSpacing: 0,
-    fontFamily: "Rubik_500Medium",
-  },
+  bioHelper: { ...type.caption, marginTop: 6 },
+  bioInputError: { borderColor: colors.danger, borderWidth: 1.5 },
+  threeWordsBlock: { marginTop: space.lg },
+  threeWordsLabel: { ...type.label, marginBottom: space.sm },
   threeWordsInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 5,
+    backgroundColor: colors.field,
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#D9D9D9",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderColor: colors.line,
+    paddingHorizontal: space.xs,
   },
-  threeWordsInput: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: "#000",
-    fontFamily: "Rubik_400Regular",
-  },
-  threeWordsSeparator: {
-    color: "#6B7280",
-    fontSize: 16,
-    paddingHorizontal: 4,
-    fontFamily: "Rubik_500Medium",
-  },
-  threeWordsHelper: {
-    color: "#6A6A6A",
-    fontSize: 12,
-    marginTop: 10,
-    lineHeight: 18,
-    fontFamily: "Rubik_400Regular",
-  },
+  threeWordsInput: { flex: 1, paddingHorizontal: 10, height: 46, fontSize: 14, color: colors.text, fontFamily: font.regular },
+  threeWordsSeparator: { width: 1, height: 20, backgroundColor: colors.line, color: "transparent" },
+  threeWordsHelper: { ...type.caption, marginTop: 6 },
   errorContainer: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: "#FEE2E2",
-    borderRadius: 8,
+    marginTop: space.md,
+    padding: space.md,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: "rgba(248, 113, 113, 0.45)",
   },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 14,
-    fontFamily: "Rubik_400Regular",
-  },
+  errorText: { color: colors.danger, fontSize: 13, fontFamily: font.medium },
   primaryButton: {
-    marginTop: 32,
-    backgroundColor: "#EC9A15",
-    borderRadius: 50,
-    paddingVertical: 16,
+    marginTop: space.xl,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    height: 48,
+    justifyContent: "center",
     alignItems: "center",
   },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "Rubik_700Bold",
-  },
-  secondaryButton: {
-    alignSelf: "center",
-    marginTop: 15,
-  },
-  secondaryButtonText: {
-    color: "#CAD7D8",
-    textDecorationLine: "underline",
-    fontSize: 14,
-    fontFamily: "Rubik_400Regular",
-  },
+  primaryButtonText: { ...type.button, color: "#FFFFFF" },
+  secondaryButton: { alignSelf: "center", marginTop: space.lg, padding: space.sm },
+  secondaryButtonText: { color: colors.textMuted, fontSize: 14, fontFamily: font.medium },
 });

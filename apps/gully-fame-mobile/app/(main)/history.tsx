@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 20,
     paddingHorizontal: 12,
   },
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   balanceLabel: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   balanceRow: {
     flexDirection: "row",
@@ -356,12 +356,12 @@ const styles = StyleSheet.create({
   balanceAmount: {
     color: C.text,
     fontSize: 36,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   balanceUnit: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 15,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   balanceActions: {
     flexDirection: "row",
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   addMoneyText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   withdrawButton: {
     flex: 1,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   withdrawText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   earnLink: {
     flexDirection: "row",
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   earnLinkText: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
 
   // Payment methods
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   emptyMethodsText: {
     color: C.faint,
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   addMethodButton: {
     flexDirection: "row",
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   addMethodText: {
     color: C.accent,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // History card (top piece, rows, bottom piece)
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   historyCount: {
     color: C.faint,
     fontSize: 13,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   filterContainer: {
     flexDirection: "row",
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   filterText: {
     color: C.faint,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   activeFilterText: {
     color: C.accent,
@@ -525,18 +525,18 @@ const styles = StyleSheet.create({
   txTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   txDesc: {
     color: C.muted,
     fontSize: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
   txDate: {
     color: C.faint,
     fontSize: 11,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 4,
   },
   txAmountContainer: {
@@ -544,12 +544,12 @@ const styles = StyleSheet.create({
   },
   txAmount: {
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   txCoinText: {
     color: C.faint,
     fontSize: 11,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
   emptyState: {
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     color: C.faint,
     fontSize: 15,
     marginTop: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   historyBottom: {
     backgroundColor: C.card,
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
   loadMoreText: {
     color: C.accent,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Error state
@@ -598,11 +598,11 @@ const styles = StyleSheet.create({
     color: C.muted,
     marginTop: 12,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   retryText: {
     color: C.accent,
     fontSize: 16,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 });

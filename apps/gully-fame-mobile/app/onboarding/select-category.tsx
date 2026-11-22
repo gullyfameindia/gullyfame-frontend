@@ -15,6 +15,8 @@ import {
 import { safeBack } from "@/utils/safeBack";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
+import { colors, font, radius, space, type } from "@/theme/tokens";
 import { getCategories, updateProfile, Category } from "@api/services/userService";
 import { getErrorMessage } from "@api/client";
 import { SkeletonGrid } from "@/components/Skeleton/Skeleton";
@@ -126,7 +128,7 @@ export default function OnboardingSelectCategory() {
               Step <Text style={styles.headerEyebrowNumber}>3</Text> of <Text style={styles.headerEyebrowNumber}>5</Text>
             </Text>
             <Text style={styles.headerTitle}>
-              {role === "participant" ? "What's your vibe?" : "What do you love watching?"}
+              {role === "participant" ? "What do you perform?" : "What do you like to watch?"}
             </Text>
           </View>
         </View>
@@ -134,8 +136,8 @@ export default function OnboardingSelectCategory() {
         <View style={styles.welcomeCard}>
           <Text style={styles.welcomeSubtitle}>
             {role === "participant"
-              ? "Pick the categories you want to shine in. We'll surface contests and audiences tailored to your craft."
-              : "Choose the moments you never want to miss. We'll tune your feed around them."}
+              ? "Pick one or more. We'll show you contests in these categories."
+              : "Pick one or more. Your feed will show more of these."}
           </Text>
         </View>
 
@@ -162,10 +164,8 @@ export default function OnboardingSelectCategory() {
                 onPress={() => toggleOption(item.id)}
                 activeOpacity={0.85}
               >
-                <Text style={[styles.cardText, isActive && styles.cardTextActive]}>{item.label}</Text>
-                <Text style={[styles.cardHelper, isActive && styles.cardHelperActive]}>
-                  {role === "participant" ? "Category" : "Interest"}
-                </Text>
+                <Text style={[styles.cardText, isActive && styles.cardTextActive]} numberOfLines={2}>{item.label}</Text>
+                {isActive ? <Ionicons name="checkmark-circle" size={18} color={colors.accent} /> : null}
               </TouchableOpacity>
             );
           })}
@@ -187,7 +187,7 @@ export default function OnboardingSelectCategory() {
             handleContinue(selected, true);
           }}
         >
-          <Text style={styles.secondaryButtonText}>Skip (We&apos;ll guess for now)</Text>
+          <Text style={styles.secondaryButtonText}>Skip for now</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -195,122 +195,50 @@ export default function OnboardingSelectCategory() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#3C2610",
-  },
+  container: { flex: 1, backgroundColor: colors.page },
   scrollContent: {
     paddingTop: Platform.OS === "android" ? 50 : 60,
     paddingBottom: 48,
-    paddingHorizontal: width * 0.06,
+    paddingHorizontal: space.lg,
     flexGrow: 1,
   },
-  headerRow: {
+  headerRow: { flexDirection: "row", alignItems: "center", marginTop: 20 },
+  headerBackButton: { width: 24, height: 24, justifyContent: "center", alignItems: "center" },
+  headerTextBlock: { flex: 1, marginHorizontal: space.md },
+  headerEyebrow: { color: colors.textMuted, fontSize: 12, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 2, fontFamily: font.semibold },
+  headerEyebrowNumber: { fontFamily: font.semibold },
+  headerTitle: { ...type.screenTitle, fontSize: 24 },
+  welcomeCard: { paddingTop: space.md, paddingBottom: space.sm },
+  welcomeSubtitle: { ...type.body },
+  grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: space.md },
+  card: {
+    width: (width - space.lg * 2 - space.md) / 2,
+    minHeight: 64,
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
+    justifyContent: "space-between",
+    gap: space.sm,
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: space.md,
+    marginBottom: space.md,
+    borderWidth: 1,
+    borderColor: colors.line,
   },
-  headerBackButton: {
-    width: 20,
-    height: 20,
+  cardActive: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+  cardText: { flex: 1, color: colors.text, fontSize: 15, fontFamily: font.medium },
+  cardTextActive: { color: colors.accent, fontFamily: font.semibold },
+  cardHelper: { ...type.caption },
+  primaryButton: {
+    marginTop: space.xl,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
-  headerTextBlock: {
-    flex: 1,
-    marginHorizontal: 16,
-  },
-  headerEyebrow: {
-    color: "#C8C8C8",
-    fontSize: 14,
-    letterSpacing: 0,
-    textTransform: "uppercase",
-    marginBottom: 1,
-    fontFamily: "Inter_500Medium",
-  },
-  headerEyebrowNumber: {
-    fontFamily: "Inter_500Medium",
-  },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 25,
-    fontFamily: "PlayfairDisplay_700Bold",
-  },
-  welcomeCard: {
-    borderRadius: 22,
-    paddingVertical: 20,
-    paddingLeft: 13,
-    paddingRight: 10,
-    marginTop: 5,
-  },
-  welcomeSubtitle: {
-    color: "#CAD7D8",
-    fontSize: 14,
-    lineHeight: 20,
-    letterSpacing: 0,
-    textAlign: "left",
-    fontFamily: "Rubik_400Regular",
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-  card: {
-    width: (width - width * 0.12 - 16) / 2,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    paddingVertical: 20,
-    paddingHorizontal: 25,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  cardActive: {
-    borderColor: "#EC9A15",
-    backgroundColor: "rgba(234, 176, 75, 0.54)",
-  },
-  cardText: {
-    color: "#000",
-    fontSize: 15,
-    fontFamily: "Rubik_500Medium",
-  },
-  cardTextActive: {
-    color: "#EC9A15",
-    fontFamily: "Rubik_500Medium",
-  },
-  cardHelper: {
-    color: "#6B7280",
-    fontSize: 12,
-    marginTop: 2,
-    fontFamily: "Rubik_400Regular",
-  },
-  cardHelperActive: {
-    color: "#EC9A15",
-    fontFamily: "Rubik_400Regular",
-  },
-  primaryButton: {
-    marginTop: 32,
-    backgroundColor: "#EC9A15",
-    borderRadius: 50,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "Rubik_700Bold",
-  },
-  secondaryButton: {
-    alignSelf: "center",
-    marginTop: 15,
-  },
-  secondaryButtonText: {
-    color: "#CAD7D8",
-    textDecorationLine: "underline",
-    fontSize: 14,
-    fontFamily: "Rubik_400Regular",
-  },
+  primaryButtonText: { ...type.button, color: "#FFFFFF" },
+  secondaryButton: { alignSelf: "center", marginTop: space.lg, padding: space.sm },
+  secondaryButtonText: { color: colors.textMuted, fontSize: 14, fontFamily: font.medium },
 });
-

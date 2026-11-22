@@ -396,20 +396,20 @@ const styles = StyleSheet.create({
   muted: {
     color: C.muted,
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     textAlign: "center",
   },
   small: {
     color: C.faint,
     fontSize: 12,
     lineHeight: 17,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 6,
   },
   link: {
     color: C.accent,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   balanceBox: {
     backgroundColor: C.inner,
@@ -420,13 +420,13 @@ const styles = StyleSheet.create({
   balanceNumber: {
     color: C.text,
     fontSize: 34,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
     marginTop: 4,
   },
   balanceValue: {
     color: C.accent,
     fontSize: 16,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     marginTop: 2,
   },
   infoBox: {
@@ -438,14 +438,14 @@ const styles = StyleSheet.create({
   infoTitle: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     marginBottom: 4,
   },
   infoText: {
     color: C.text,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   kycButton: {
     alignSelf: "flex-start",
@@ -458,12 +458,12 @@ const styles = StyleSheet.create({
   kycText: {
     color: "#fff",
     fontSize: 13,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   label: {
     color: C.muted,
     fontSize: 13,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     marginTop: 14,
     marginBottom: 8,
   },
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     borderWidth: 1,
     borderColor: C.inputBorder,
   },
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   maxText: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   segment: {
     flexDirection: "row",
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   segmentText: {
     color: C.faint,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   segmentTextActive: {
     color: C.accent,
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
   error: {
     color: C.danger,
     fontSize: 13,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     marginTop: 12,
   },
   primaryButton: {
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   primaryText: {
     color: "#fff",
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   secondaryButton: {
     alignItems: "center",
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: C.muted,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   disabled: {
     opacity: 0.6,
@@ -562,12 +562,12 @@ const styles = StyleSheet.create({
   rowLabel: {
     color: C.faint,
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   rowValue: {
     color: C.text,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     flexShrink: 1,
     textAlign: "right",
   },

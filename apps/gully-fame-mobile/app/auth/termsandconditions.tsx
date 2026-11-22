@@ -105,11 +105,11 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     textAlign: "center",
     marginBottom: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   footerHintStrong: {
     color: C.accent,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   agreeButton: {
     flexDirection: "row",

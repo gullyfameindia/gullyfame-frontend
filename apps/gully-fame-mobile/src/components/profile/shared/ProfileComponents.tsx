@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
         color: "white",
         opacity: 0.9,
         textAlign: "center",
-        fontFamily: "Rubik_500Medium",
+        fontFamily: "Inter_500Medium",
         flexDirection: "row",
         flexWrap: "nowrap",
     },
@@ -510,6 +510,6 @@ const styles = StyleSheet.create({
     threeWordsSeparator: {
         color: "white",
         opacity: 0.6,
-        fontFamily: "Rubik_500Medium",
+        fontFamily: "Inter_500Medium",
     },
 });

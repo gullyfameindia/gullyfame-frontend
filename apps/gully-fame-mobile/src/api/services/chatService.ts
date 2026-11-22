@@ -2,14 +2,17 @@ import { apiGet, apiPost, apiPut, toResult } from "../client";
 
 /**
  * One-to-one chat.
- * GET  /chat/chatlist?view=archived          -> { chatlist: [{ chatter_user_id, latest_message, last_message_time, archived }] }
+ * GET  /chat/chatlist?view=archived          -> { chatlist: [{ chatter_user_id, latest_message, last_message_time,
+ *                                                 unread_count, name, username, profile_image, archived, pinned, muted }] }
+ *                                                (pinned chats first; servers before pin/mute support omit those fields)
  * GET  /chat/chatDetails?chatterId&page&limit -> newest first
  * POST /chat/sendChat { receiver_id, message, reply_to?, is_forwarded? }
  * POST /chat/message/:messageId/react { emoji }
  * POST /chat/message/delete { message_ids[], delete_type: "for_me" | "for_everyone" }
  * PUT  /chat/read { sender_id }
  * POST /chat/archive { chatterId, archived }
- * The chat list has no names or avatars for the other person.
+ * POST /chat/pin { chatterId, pinned }  ·  POST /chat/mute { chatterId, muted }
+ * GET  /chat/search?q                         -> { results: [{ message_id, chatter_user_id, from_me, message, createdAt }] }
  */
 
 export interface ChatListItem {
@@ -17,6 +20,20 @@ export interface ChatListItem {
   latest_message: string;
   last_message_time: string;
   archived: boolean;
+  unread_count?: number;
+  name?: string;
+  username?: string;
+  profile_image?: string;
+  pinned?: boolean;
+  muted?: boolean;
+}
+
+export interface ChatSearchResult {
+  message_id: string;
+  chatter_user_id: string;
+  from_me: boolean;
+  message: string;
+  createdAt: string;
 }
 
 export interface ChatReaction {
@@ -78,6 +95,16 @@ export const markConversationRead = (senderId: string) => apiPut<{ read_at: stri
 export const setArchived = (chatterId: string, archived: boolean) =>
   apiPost<{ chatterId: string; archived: boolean }>("chat/archive", { chatterId, archived });
 
+export const setPinned = (chatterId: string, pinned: boolean) =>
+  apiPost<{ chatterId: string; pinned: boolean }>("chat/pin", { chatterId, pinned });
+
+export const setMuted = (chatterId: string, muted: boolean) =>
+  apiPost<{ chatterId: string; muted: boolean }>("chat/mute", { chatterId, muted });
+
+/** Messages (sent or received) containing `q`; the server needs 2+ characters. */
+export const searchMessages = (q: string) =>
+  apiGet<{ results: ChatSearchResult[] }>("chat/search", { params: { q } });
+
 /**
  * Clears a whole conversation for the signed-in user only. There is no
  * conversation-delete endpoint, so every message is deleted "for_me".
@@ -102,6 +129,9 @@ export const chatService = {
   deleteMessages,
   markConversationRead,
   setArchived,
+  setPinned,
+  setMuted,
+  searchMessages,
 };
 
 export default chatService;

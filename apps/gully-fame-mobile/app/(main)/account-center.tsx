@@ -1314,7 +1314,7 @@ const styles = StyleSheet.create({
   headerAction: {
     color: C.accent,
     fontSize: 16,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 20,
     paddingHorizontal: 12,
   },
@@ -1384,12 +1384,12 @@ const styles = StyleSheet.create({
   summaryName: {
     color: C.text,
     fontSize: 18,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   summarySub: {
     color: C.muted,
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
   rolePill: {
@@ -1403,7 +1403,7 @@ const styles = StyleSheet.create({
   rolePillText: {
     color: C.accent,
     fontSize: 12,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
 
   // Grouped rows
@@ -1415,7 +1415,7 @@ const styles = StyleSheet.create({
   groupLabel: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     marginBottom: 2,
   },
   row: {
@@ -1440,7 +1440,7 @@ const styles = StyleSheet.create({
   rowLabel: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   rowRight: {
     flex: 1,
@@ -1452,7 +1452,7 @@ const styles = StyleSheet.create({
   rowValue: {
     color: C.muted,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     flexShrink: 1,
     textAlign: "right",
   },
@@ -1467,7 +1467,7 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 15,
     lineHeight: 21,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 6,
   },
   captionRow: {
@@ -1480,13 +1480,13 @@ const styles = StyleSheet.create({
     color: C.faint,
     fontSize: 12,
     lineHeight: 16,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     flexShrink: 1,
   },
   editLabel: {
     color: C.muted,
     fontSize: 13,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     marginBottom: 8,
   },
   input: {
@@ -1496,7 +1496,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     borderWidth: 1,
     borderColor: C.inputBorder,
     width: "100%",
@@ -1534,11 +1534,11 @@ const styles = StyleSheet.create({
   chipText: {
     color: C.muted,
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   chipTextActive: {
     color: C.accent,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Security action cards
@@ -1564,12 +1564,12 @@ const styles = StyleSheet.create({
   actionTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   actionSubtitle: {
     color: C.faint,
     fontSize: 13,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
 
@@ -1597,7 +1597,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   saveButtonTextDisabled: {
     color: "#BBB",
@@ -1625,7 +1625,7 @@ const styles = StyleSheet.create({
   },
   privacyText: {
     fontSize: 11,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   privacyTextPublic: {
     color: C.accent,
@@ -1649,7 +1649,7 @@ const styles = StyleSheet.create({
   dropdownText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   dropdownPlaceholder: {
     color: C.placeholder,
@@ -1670,7 +1670,7 @@ const styles = StyleSheet.create({
   dropdownTitle: {
     color: C.muted,
     fontSize: 13,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
@@ -1688,16 +1688,16 @@ const styles = StyleSheet.create({
   dropdownOptionText: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   dropdownOptionTextActive: {
     color: C.accent,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   dropdownCheck: {
     color: C.accent,
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
 
   // Photo picker sheet + processing overlay (unchanged)

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ImageBackground, StatusBar, Modal, Animated } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { safeBack } from "@/utils/safeBack";
@@ -823,7 +824,8 @@ export default function CategoryDetailScreen() {
                   >
                     <View style={styles.reelStats}>
                       <View style={styles.reelStat}>
-                        <Text style={styles.reelStatText}>🔥 {reel.votes.toLocaleString("en-IN")}</Text>
+                        <Ionicons name="flame" size={13} color="#EC9A15" />
+                        <Text style={styles.reelStatText}>{reel.votes.toLocaleString("en-IN")}</Text>
                       </View>
                     </View>
                   </LinearGradient>

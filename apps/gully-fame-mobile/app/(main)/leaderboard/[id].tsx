@@ -149,7 +149,7 @@ export default function MyFameScreen() {
       </View>
 
       <Text style={styles.subtitle}>
-        🔥 Who's ruling the gullies right now?
+        Top creators right now
       </Text>
 
       {leaderboardData.length === 0 ? (

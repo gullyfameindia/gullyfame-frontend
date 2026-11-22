@@ -6,6 +6,7 @@ import { resolveMediaUrl } from "@/utils/mediaUrl";
  * GET  /reels?cursor&limit             -> newest-first, cursor paginated
  * POST /reels/:reelId/action           -> toggles vote | like | save
  * Votes only count on entries in a LIVE competition; the backend rejects others.
+ * `competition` is set on competition entries (vote) and null on normal reels (like).
  */
 
 export interface FeedReelAuthor {
@@ -23,6 +24,8 @@ export interface FeedReel {
   createdAt: string;
   author: FeedReelAuthor;
   music: { id: string; name: string };
+  /** Missing on servers older than the competition flag. */
+  competition?: { _id: string; title: string; status: string } | null;
   stats: {
     votes: number;
     comments: number;
@@ -33,6 +36,7 @@ export interface FeedReel {
   };
   user_interactions: {
     has_voted: boolean;
+    is_liked?: boolean;
     is_saved: boolean;
     has_tipped: boolean;
   };
@@ -71,8 +75,9 @@ export interface UiReel {
   shares: number;
   saves: number;
   tips: number;
-  /** The feed does not report whether the viewer liked a reel; only the toggle response does. */
   isLiked: boolean;
+  /** Set when the reel is a competition entry: it gets a Vote button instead of Like. */
+  competition: { id: string; title: string; status: string } | null;
   isSaved: boolean;
   hasVoted: boolean;
   hasTipped: boolean;
@@ -99,7 +104,10 @@ export function toUiReel(reel: FeedReel, index = 0): UiReel {
     shares: reel.stats?.shares || 0,
     saves: reel.stats?.saves || 0,
     tips: reel.stats?.tips || 0,
-    isLiked: false,
+    isLiked: !!reel.user_interactions?.is_liked,
+    competition: reel.competition
+      ? { id: String(reel.competition._id), title: reel.competition.title || "", status: reel.competition.status || "" }
+      : null,
     isSaved: !!reel.user_interactions?.is_saved,
     hasVoted: !!reel.user_interactions?.has_voted,
     hasTipped: !!reel.user_interactions?.has_tipped,

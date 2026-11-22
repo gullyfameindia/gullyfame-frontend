@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     color: C.accent,
     fontSize: 26,
     lineHeight: 28,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   titleBtn: {
     flex: 1,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   title: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   weekRow: {
     flexDirection: "row",
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: C.faint,
     fontSize: 12,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     paddingVertical: 4,
   },
   grid: {
@@ -283,11 +283,11 @@ const styles = StyleSheet.create({
   dayText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   selectedText: {
     color: "#fff",
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   disabledText: {
     color: C.disabled,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   yearText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   actions: {
     flexDirection: "row",
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   cancelText: {
     color: C.muted,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   okBtn: {
     flex: 1,
@@ -346,6 +346,6 @@ const styles = StyleSheet.create({
   okText: {
     color: "#fff",
     fontSize: 15,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
 });

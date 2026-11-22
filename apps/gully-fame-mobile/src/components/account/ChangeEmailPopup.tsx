@@ -240,12 +240,12 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   label: {
     color: C.muted,
     fontSize: 13,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     marginTop: 16,
     marginBottom: 8,
   },
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   ccText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   input: {
     backgroundColor: C.inner,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   linkRow: {
     flexDirection: "row",
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   link: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   linkDisabled: {
     color: C.faint,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     color: C.danger,
     fontSize: 13,
     marginTop: 12,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   primaryButton: {
     backgroundColor: C.accent,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   primaryText: {
     color: "#fff",
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   disabled: {
     opacity: 0.6,

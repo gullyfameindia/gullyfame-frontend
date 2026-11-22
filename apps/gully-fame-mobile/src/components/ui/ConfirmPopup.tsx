@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 20,
   },
   primaryButton: {
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   primaryText: {
     color: "#fff",
     fontSize: 15,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   secondaryButton: {
     width: "100%",
@@ -115,6 +115,6 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: C.muted,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 });

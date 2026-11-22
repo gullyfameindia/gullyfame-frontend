@@ -417,7 +417,7 @@ export const fanSelfProfileScreenStyles = StyleSheet.create({
         color: "#fff",
         fontSize: 14,
         marginBottom: 8,
-        fontFamily: "Rubik_500Medium",
+        fontFamily: "Inter_500Medium",
     },
     threeWordsEditContainer: {
         flexDirection: "row",
@@ -440,7 +440,7 @@ export const fanSelfProfileScreenStyles = StyleSheet.create({
         color: "#EC9A15",
         fontSize: 16,
         paddingHorizontal: 4,
-        fontFamily: "Rubik_500Medium",
+        fontFamily: "Inter_500Medium",
     },
     editBioButtons: {
         flexDirection: "row",

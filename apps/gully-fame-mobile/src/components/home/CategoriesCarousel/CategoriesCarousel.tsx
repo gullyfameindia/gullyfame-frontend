@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { router } from "expo-router";
 import { TALENT_CATEGORIES } from "@/constants/talentCategories";
 import CategoryItem from "@/components/CategoryItem/CategoryItem";
+import { useScreenActive } from "@/hooks/useScreenActive";
 interface CategoriesCarouselProps {
     categories: categoriesFullData[];
 }
@@ -44,8 +45,10 @@ function CategoriesCarousel({ categories }: CategoriesCarouselProps) {
         }, 100);
         return () => clearTimeout(t);
     }, [n]);
+    // Auto-scroll only while Home is on screen: each tick re-renders this row.
+    const active = useScreenActive();
     useEffect(() => {
-        if (n === 0) return;
+        if (n === 0 || !active) return;
         const intervalId = setInterval(() => {
             setPos((p) => {
                 const next = p + 1;
@@ -60,7 +63,7 @@ function CategoriesCarousel({ categories }: CategoriesCarouselProps) {
             });
         }, 3500);
         return () => clearInterval(intervalId);
-    }, [n]);
+    }, [n, active]);
     if (displayCategories.length === 0) return null;
 
     return (

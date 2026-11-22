@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     width: 64,
     textAlign: "right",
     paddingRight: 12,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -444,7 +444,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 18,
     paddingHorizontal: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Status
@@ -463,14 +463,14 @@ const styles = StyleSheet.create({
   statusTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   statusDesc: {
     color: C.muted,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 2,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   errorBox: {
     alignItems: "center",
@@ -480,20 +480,20 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 14,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   retryText: {
     color: C.accent,
     fontSize: 14,
     marginTop: 8,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Sections and option cards
   sectionTitle: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
     marginTop: 18,
     marginBottom: 10,
   },
@@ -521,14 +521,14 @@ const styles = StyleSheet.create({
   optionTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   optionDesc: {
     color: C.faint,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 3,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   selfieThumb: {
     width: 46,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   soonText: {
     color: C.accent,
     fontSize: 11,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Upload form
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   formLabel: {
     color: C.muted,
     fontSize: 13,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     marginBottom: 8,
   },
   chipRow: {
@@ -583,11 +583,11 @@ const styles = StyleSheet.create({
   chipText: {
     color: C.muted,
     fontSize: 13,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   chipTextActive: {
     color: C.accent,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   imageRow: {
     flexDirection: "row",
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 6,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Details card
@@ -629,14 +629,14 @@ const styles = StyleSheet.create({
   detailsTitle: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
     marginBottom: 8,
   },
   detailsText: {
     color: C.muted,
     fontSize: 13,
     lineHeight: 19,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   tipRow: {
     flexDirection: "row",
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     color: C.faint,
     fontSize: 12,
     lineHeight: 17,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Buttons
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   primaryText: {
     color: "#fff",
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   disabled: {
     opacity: 0.6,
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   secondaryText: {
     color: C.accent,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   footerNote: {
     color: C.faint,
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 16,
     paddingHorizontal: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   supportLink: {
     alignItems: "center",
@@ -697,11 +697,11 @@ const styles = StyleSheet.create({
   supportText: {
     color: C.faint,
     fontSize: 13,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   supportHighlight: {
     color: C.accent,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     textDecorationLine: "underline",
   },
 });

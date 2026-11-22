@@ -222,7 +222,7 @@ function AddMoneyScreen() {
               <Text style={styles.paymentInfoValue}>{userInfo.phone || "Not provided"}</Text>
             </View>
             <Text style={styles.paymentNote}>
-              💳 Payments are processed securely through Razorpay. Your payment information is encrypted and safe.
+              Payments are processed by Razorpay.
             </Text>
           </View>
 

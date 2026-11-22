@@ -442,13 +442,13 @@ const styles = StyleSheet.create({
   statValue: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   statLabel: {
     color: C.faint,
     fontSize: 11,
     marginTop: 4,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
 
   // Sections and items
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1,
     textTransform: "uppercase",
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     marginTop: 18,
     marginBottom: 8,
     paddingHorizontal: 4,
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   itemTextDanger: {
     color: C.danger,
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   itemHint: {
     color: C.accent,
     fontSize: 13,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Logout
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
   logoutText: {
     color: C.danger,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 });
 

@@ -13,7 +13,7 @@ const RoleBasedBanner = ({ onLayout }: { onLayout?: (event: any) => void }) => {
   return (
     <View style={styles.communityBannerSection} onLayout={onLayout}>
       <LinearGradient
-        colors={["#2a2a2a", "#1a1a1a"]}
+        colors={["#1A1A1A", "#1A1A1A"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.communityBanner}

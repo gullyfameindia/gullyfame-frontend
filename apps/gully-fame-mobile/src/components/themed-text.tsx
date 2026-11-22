@@ -16,9 +16,9 @@ export function ThemedText({
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
 
-  // Map fontWeight to appropriate Rubik font family
+  // Map fontWeight to the matching Inter font file
   const getFontFamily = (weight: string | undefined) => {
-    if (!weight) return "Rubik_400Regular";
+    if (!weight) return "Inter_400Regular";
     const weightNum =
       weight === "normal" || weight === "400"
         ? 400
@@ -28,9 +28,9 @@ export function ThemedText({
         ? 700
         : 400;
 
-    if (weightNum >= 700) return "Rubik_700Bold";
-    if (weightNum >= 500) return "Rubik_500Medium";
-    return "Rubik_400Regular";
+    if (weightNum >= 700) return "Inter_700Bold";
+    if (weightNum >= 500) return "Inter_500Medium";
+    return "Inter_400Regular";
   };
 
   // Extract fontWeight from style prop or type

@@ -63,11 +63,11 @@ export default function OnboardingAllDone() {
             />
           </View>
 
-          <Text style={styles.mainTitle}>You're all set!</Text>
-          <Text style={styles.subtitle}>Start exploring and connect with others.</Text>
+          <Text style={styles.mainTitle}>You're all set</Text>
+          <Text style={styles.subtitle}>Your profile is ready. Find a competition to enter or start watching.</Text>
 
           <TouchableOpacity style={styles.exploreButton} onPress={handleExplore} activeOpacity={0.85}>
-            <Text style={styles.exploreButtonText}>Explore</Text>
+            <Text style={styles.exploreButtonText}>Go to home</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -133,16 +133,15 @@ const styles = StyleSheet.create({
     color: "#C8C8C8",
     fontFamily: "Inter_400Regular",
     textAlign: "center",
-    marginBottom: 60,
+    marginBottom: 40,
     paddingHorizontal: 20,
+    lineHeight: 22,
   },
   exploreButton: {
     backgroundColor: "#EC9A15",
-    borderRadius: 50,
-    paddingVertical: 18,
-    paddingHorizontal: 60,
+    borderRadius: 12,
+    height: 48,
     width: "100%",
-    maxWidth: 300,
     alignItems: "center",
     justifyContent: "center",
   },

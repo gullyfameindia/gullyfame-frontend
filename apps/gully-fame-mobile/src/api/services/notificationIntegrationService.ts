@@ -8,7 +8,7 @@ import { registerPushTokenWithBackend } from "@/utils/pushToken";
  *   time=1 today, time=2 before today, time=0 everything.
  *   Returns { totalNotifications, unreadCount, notifications } for that window.
  * PUT /notification/:id/read, PUT /notification/read-all
- * The list only carries id, title, description, status and createdAt.
+ * Each item carries id, title, description, status, type, data (deep-link ids) and createdAt.
  */
 
 export type NotificationWindow = 0 | 1 | 2;
@@ -18,7 +18,29 @@ interface BackendNotification {
   title: string;
   description: string;
   status: "read" | "unRead";
+  type?: NotificationType;
+  data?: NotificationData;
   createdAt: string;
+}
+
+export type NotificationType =
+  | "RANK_BOOST"
+  | "LEVEL_UP"
+  | "DAILY_CHALLENGE_READY"
+  | "DAILY_CHALLENGE_COMPLETE"
+  | "RAP_BATTLE_INVITE"
+  | "UPCOMING_EVENT"
+  | "PROFILE_UPDATE"
+  | "SUPPORT_RECEIVED"
+  | "REFERRAL_REWARD"
+  | "GENERAL";
+
+/** Ids the client can open: a competition, a reel or the user who triggered it. */
+export interface NotificationData {
+  competitionId?: string;
+  reelId?: string;
+  fromUserId?: string;
+  [key: string]: unknown;
 }
 
 interface NotificationsPage {
@@ -35,6 +57,8 @@ export interface Notification {
   title: string;
   message: string;
   read: boolean;
+  type: NotificationType;
+  data: NotificationData;
   createdAt: string;
 }
 
@@ -43,6 +67,8 @@ const toNotification = (n: BackendNotification): Notification => ({
   title: n.title,
   message: n.description || "",
   read: n.status === "read",
+  type: n.type || "GENERAL",
+  data: n.data && typeof n.data === "object" ? n.data : {},
   createdAt: n.createdAt,
 });
 

@@ -111,7 +111,6 @@ export default function HelpSupportScreen() {
           <SkeletonArticle />
         ) : (
         <>
-        <Text style={styles.subtitle}>How can we help you today? Find answers or get in touch with our team.</Text>
 
         {/* Search */}
         <View style={styles.searchBox}>
@@ -172,7 +171,6 @@ export default function HelpSupportScreen() {
         <View style={styles.faqHeader}>
           <View>
             <Text style={styles.sectionTitle}>{query.trim() ? "Search results" : "Help & support FAQs"}</Text>
-            <Text style={styles.faqSub}>Account, reports, privacy and support</Text>
           </View>
           <TouchableOpacity onPress={() => router.push("/(main)/faq" as any)} accessibilityRole="button">
             <Text style={styles.viewAll}>View all</Text>
@@ -260,7 +258,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 18,
     paddingHorizontal: 12,
   },
@@ -282,7 +280,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     padding: 0,
   },
 
@@ -311,12 +309,12 @@ const styles = StyleSheet.create({
   contactTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   contactSub: {
     color: C.faint,
     fontSize: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 3,
   },
 
@@ -358,7 +356,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
     textAlign: "center",
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // FAQs
@@ -371,13 +369,13 @@ const styles = StyleSheet.create({
   faqSub: {
     color: C.faint,
     fontSize: 13,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: -6,
   },
   viewAll: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     marginBottom: 2,
   },
   faqItem: {
@@ -400,7 +398,7 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   faqAnswer: {
     paddingHorizontal: 14,
@@ -414,7 +412,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     marginTop: 8,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   noResults: {
     backgroundColor: C.card,
@@ -429,7 +427,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Footer
@@ -443,11 +441,11 @@ const styles = StyleSheet.create({
   footerText: {
     color: C.faint,
     fontSize: 13,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   footerLink: {
     color: C.accent,
     fontSize: 13,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 });

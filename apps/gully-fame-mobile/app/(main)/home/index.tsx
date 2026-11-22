@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { Bell, MessageCircle } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import {
   Dimensions,
   ImageBackground,
@@ -7,7 +9,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Platform,
   Animated,
   Alert,
   StyleSheet,
@@ -20,13 +21,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BottomNav from "@components/layout/BottomNav";
 import DrawerMenu from "@components/layout/DrawerMenu";
-import { hp } from "@utils/responsive";
+import { hp, wp } from "@utils/responsive";
 import RoleBasedBanner from "@/components/home/RoleBasedBanner/RoleBasedBanner";
 import Svg, { Rect, Defs, RadialGradient, Stop } from "react-native-svg";
 import { getUnreadNotificationCount } from "@/api/services/notificationIntegrationService";
 import {
-  NotificationIcon,
-  ChatIcon,
   HomeIconSVG,
   ReelIconSVG,
   PeopleIcon,
@@ -99,7 +98,9 @@ export default function GullyFameHome() {
   const [liveDotBlink] = useState(() => new Animated.Value(1));
   const [pulseAnim] = useState(() => new Animated.Value(1));
   // True once the banner has scrolled away; only this flip re-renders, not every scroll frame.
-  const [headerStuck, setHeaderStuck] = useState(false);
+  // Drives the fixed header's gradient: hidden at the top, fully shown after ~120pt of scroll.
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerFade = scrollY.interpolate({ inputRange: [40, 160], outputRange: [0, 1], extrapolate: "clamp" });
 
   const [homeError, setHomeError] = useState("");
   // False until the first home data (saved copy or server) arrives; sections show skeletons meanwhile.
@@ -373,7 +374,7 @@ export default function GullyFameHome() {
     switch (item.id) {
       case "hero":
         return (
-          <View style={[styles.heroSection, { height: hp(45), marginBottom: 16 }]}>
+          <View style={[styles.heroSection, { height: hp(45), marginBottom: 8 }]}>
             <View style={styles.radialGradientContainer} pointerEvents="none">
               <Svg width={dimensions.width} height={hp(45)} style={styles.radialGradientSvg}>
                 <Defs>
@@ -395,39 +396,6 @@ export default function GullyFameHome() {
                 <Skeleton width="80%" height={14} radius={4} />
               </SkeletonRoot>
             )}
-            {/* Hidden while the sticky header shows the same icons, so they never appear twice. */}
-            <View
-              style={[
-                styles.heroHeaderIcons,
-                {
-                  paddingTop: Platform.OS === "ios" ? insets.top + 40 : insets.top + 40,
-                  opacity: headerStuck ? 0 : 1,
-                },
-              ]}
-              pointerEvents={headerStuck ? "none" : "auto"}
-            >
-              <TouchableOpacity
-                style={styles.heroIconButton}
-                onPress={() => checkAuthAndNavigate("/(main)/settings/notifications")}
-                testID="home-notifications"
-                accessibilityRole="button"
-                accessibilityLabel={unreadCount > 0 ? "Notifications, unread" : "Notifications"}
-                hitSlop={4}
-              >
-                <NotificationIcon />
-                {unreadCount > 0 && <View style={styles.notificationDot} />}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.heroIconButton}
-                onPress={() => checkAuthAndNavigate("/(main)/inbox")}
-                testID="home-inbox"
-                accessibilityRole="button"
-                accessibilityLabel="Messages"
-                hitSlop={4}
-              >
-                <ChatIcon />
-              </TouchableOpacity>
-            </View>
           </View>
         );
 
@@ -446,7 +414,7 @@ export default function GullyFameHome() {
             <View style={styles.sectionHeaderWithIcon}>
               <View style={styles.sectionTitleRow}>
                 {homeReady ? (
-                  <Text style={styles.sectionTitle}>Feed 🎬</Text>
+                  <Text style={styles.sectionTitle}>Feed</Text>
                 ) : (
                   <SkeletonRoot>
                     <Skeleton width={120} height={22} radius={6} />
@@ -465,14 +433,14 @@ export default function GullyFameHome() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={{ marginBottom: 12 }}
-              contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+              style={{ marginBottom: 12, marginHorizontal: -wp(5) }}
+              contentContainerStyle={{ paddingHorizontal: wp(5), gap: 8 }}
             >
               {[
-                { id: "trending", label: "Trending 🔥" },
-                { id: "for-you", label: "For You 👤" },
-                { id: "popular", label: "Popular ⭐" },
-                { id: "saved", label: "Saved 💾" },
+                { id: "trending", label: "Trending" },
+                { id: "for-you", label: "For You" },
+                { id: "popular", label: "Popular" },
+                { id: "saved", label: "Saved" },
               ].map((tab) => (
                 <TouchableOpacity
                   key={tab.id}
@@ -481,17 +449,18 @@ export default function GullyFameHome() {
                   style={[
                     {
                       paddingHorizontal: 14,
-                      paddingVertical: 8,
-                      borderRadius: 20,
-                      backgroundColor: feedTab === tab.id ? "#EC9A15" : "rgba(255,255,255,0.1)",
+                      height: 32,
+                      justifyContent: "center",
+                      borderRadius: 16,
+                      backgroundColor: feedTab === tab.id ? "#EC9A15" : "rgba(255,255,255,0.08)",
                     },
                   ]}
                 >
                   <Text
                     style={{
-                      color: feedTab === tab.id ? "#000" : "#999",
-                      fontSize: 12,
-                      fontWeight: "600",
+                      color: feedTab === tab.id ? "#1A1A1A" : "#CAD7D8",
+                      fontSize: 13,
+                      fontFamily: "Inter_600SemiBold",
                     }}
                   >
                     {tab.label}
@@ -558,10 +527,33 @@ export default function GullyFameHome() {
                 ))}
               </ScrollView>
             ) : (
-              <View style={{ paddingVertical: 40, justifyContent: "center", alignItems: "center" }}>
-                <Text style={{ color: "#999", fontSize: 14 }}>
-                  {feedTab === "saved" ? "Reels you save will show up here" : "No reels yet"}
-                </Text>
+              <View style={homeExtraStyles.emptyFeed} testID="home-feed-empty">
+                <View style={homeExtraStyles.emptyFeedIcon}>
+                  <Ionicons name={feedTab === "saved" ? "bookmark-outline" : "film-outline"} size={22} color="#EC9A15" />
+                </View>
+                <View style={homeExtraStyles.emptyFeedBody}>
+                  <Text style={homeExtraStyles.emptyFeedTitle}>
+                    {feedTab === "saved" ? "Nothing saved yet" : "No reels here yet"}
+                  </Text>
+                  <Text style={homeExtraStyles.emptyFeedText}>
+                    {feedTab === "saved"
+                      ? "Tap the bookmark on any reel to keep it here."
+                      : "Post the first one and get your talent seen."}
+                  </Text>
+                  <TouchableOpacity
+                    style={homeExtraStyles.emptyFeedButton}
+                    onPress={() =>
+                      feedTab === "saved" ? router.push("/(main)/reel" as any) : checkAuthAndNavigate("/(main)/camera")
+                    }
+                    activeOpacity={0.8}
+                    testID="home-feed-empty-action"
+                  >
+                    <Ionicons name={feedTab === "saved" ? "play" : "add"} size={16} color="#1A1A1A" />
+                    <Text style={homeExtraStyles.emptyFeedButtonText}>
+                      {feedTab === "saved" ? "Watch reels" : "Upload a reel"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>
@@ -729,12 +721,16 @@ export default function GullyFameHome() {
               ) : null}
             </View>
             {!upcomingCompetitionsFull.length ? (
-              <View style={homeExtraStyles.comingSoon} testID="home-upcoming-coming-soon">
-                <TrophyIcon size={34} />
-                <Text style={homeExtraStyles.comingSoonTitle}>Coming Soon</Text>
-                <Text style={homeExtraStyles.comingSoonText}>
-                  New competitions are on the way. Stay tuned!
-                </Text>
+              <View style={homeExtraStyles.emptyFeed} testID="home-upcoming-coming-soon">
+                <View style={homeExtraStyles.emptyFeedIcon}>
+                  <Ionicons name="trophy-outline" size={22} color="#EC9A15" />
+                </View>
+                <View style={homeExtraStyles.emptyFeedBody}>
+                  <Text style={homeExtraStyles.emptyFeedTitle}>No upcoming competitions</Text>
+                  <Text style={homeExtraStyles.emptyFeedText}>
+                    New ones are announced here first. Check back soon.
+                  </Text>
+                </View>
               </View>
             ) : (
             <ScrollView
@@ -907,7 +903,7 @@ export default function GullyFameHome() {
                   <Text style={homeExtraStyles.title}>
                     {progress.levelTitle} · Level {progress.level}
                   </Text>
-                  <Text style={homeExtraStyles.accent}>🔥 {progress.streakCount} day streak</Text>
+                  <Text style={homeExtraStyles.accent}>{progress.streakCount}-day streak</Text>
                 </View>
                 <View style={homeExtraStyles.track}>
                   <View
@@ -1029,15 +1025,22 @@ export default function GullyFameHome() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      {headerStuck && (
-        <Animated.View
-          style={[
-            styles.stickyHeader,
-            {
-              paddingTop: Platform.OS === "ios" ? insets.top + 10 : insets.top + 10,
-            },
-          ]}
-        >
+      {/* One fixed header that never moves. Its gradient is invisible over the banner and fades in
+          as the page scrolls, so content slides softly underneath the icons. */}
+      <View
+        style={[styles.stickyHeader, { paddingTop: insets.top + 10 }]}
+        pointerEvents="box-none"
+      >
+          <Animated.View
+            style={[homeExtraStyles.stickyFade, { opacity: headerFade }]}
+            pointerEvents="none"
+          >
+            <LinearGradient
+              colors={["#3C2610", "rgba(60, 38, 16, 0.95)", "rgba(60, 38, 16, 0)"]}
+              locations={[0, 0.7, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
           <View style={styles.stickyHeaderContent}>
             <TouchableOpacity
               style={styles.stickyHeaderIconButton}
@@ -1047,7 +1050,7 @@ export default function GullyFameHome() {
                 accessibilityLabel={unreadCount > 0 ? "Notifications, unread" : "Notifications"}
                 hitSlop={4}
             >
-              <NotificationIcon />
+              <Bell size={24} color="#FFFFFF" strokeWidth={1.8} />
               {unreadCount > 0 && <View style={styles.notificationDot} />}
             </TouchableOpacity>
             <TouchableOpacity
@@ -1058,11 +1061,10 @@ export default function GullyFameHome() {
                 accessibilityLabel="Messages"
                 hitSlop={4}
             >
-              <ChatIcon />
+              <MessageCircle size={24} color="#FFFFFF" strokeWidth={1.8} />
             </TouchableOpacity>
           </View>
-        </Animated.View>
-      )}
+      </View>
 
       <Animated.FlatList
         data={homeSections}
@@ -1071,11 +1073,9 @@ export default function GullyFameHome() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { opacity: fadeAnim }]}
         scrollEventThrottle={16}
-        extraData={headerStuck}
-        onScroll={(event) => {
-          const stuck = event.nativeEvent.contentOffset.y > 50;
-          if (stuck !== headerStuck) setHeaderStuck(stuck);
-        }}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+        })}
       />
 
       <BottomNav
@@ -1090,6 +1090,39 @@ export default function GullyFameHome() {
 }
 
 const homeExtraStyles = StyleSheet.create({
+  stickyFade: { position: "absolute", top: 0, left: 0, right: 0, bottom: -28 },
+  emptyFeed: {
+    flexDirection: "row",
+    gap: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "#1A1A1A",
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.25)",
+  },
+  emptyFeedIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: "rgba(236, 154, 21, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyFeedBody: { flex: 1 },
+  emptyFeedTitle: { color: "#FFFFFF", fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  emptyFeedText: { color: "#CAD7D8", fontSize: 13, lineHeight: 18, marginTop: 2, fontFamily: "Inter_400Regular" },
+  emptyFeedButton: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#EC9A15",
+  },
+  emptyFeedButtonText: { color: "#1A1A1A", fontSize: 13, fontFamily: "Inter_600SemiBold" },
   card: {
     marginHorizontal: 16,
     marginTop: 0,
@@ -1201,29 +1234,5 @@ const homeExtraStyles = StyleSheet.create({
     color: "#CAD7D8",
     fontSize: 11,
     fontFamily: "Inter_500Medium",
-  },
-  comingSoon: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 32,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "rgba(233,168,58,0.6)",
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  comingSoonTitle: {
-    color: "#E9A83A",
-    fontSize: 18,
-    fontFamily: "Inter_700Bold",
-    marginTop: 10,
-  },
-  comingSoonText: {
-    color: "#CAD7D8",
-    fontSize: 13,
-    fontFamily: "Inter_400Regular",
-    marginTop: 4,
-    textAlign: "center",
   },
 });

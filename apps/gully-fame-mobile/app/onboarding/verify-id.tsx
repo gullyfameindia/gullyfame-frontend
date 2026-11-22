@@ -78,7 +78,7 @@ export default function OnboardingVerifyId() {
         </View>
 
         <View style={styles.welcomeCard}>
-          <Text style={styles.welcomeTitle}>Hey {friendlyName} 👋</Text>
+          <Text style={styles.welcomeTitle}>Hey {friendlyName}</Text>
           <Text style={styles.welcomeSubtitle}>Before we open the stage, we'll do a lightning-fast face check to keep things fair.</Text>
         </View>
 
@@ -170,14 +170,14 @@ const styles = StyleSheet.create({
     letterSpacing:0,
     color: "#000",
     marginBottom: 10,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   welcomeSubtitle: {
     color: "#000",
     fontSize: 13.8,
     lineHeight: 20,
     letterSpacing:0,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   instructionsCard: {
     backgroundColor: "#FFFFFF",
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     color: "#000",
     marginBottom: 20,
     letterSpacing:0,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   stepRow: {
     flexDirection: "row",
@@ -208,14 +208,14 @@ const styles = StyleSheet.create({
   },
   stepBadgeText: {
     color: "#EC9A15",
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   stepDescription: {
     color: "#000",
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     letterSpacing:0,
   },
   highlightCard: {
@@ -228,13 +228,13 @@ const styles = StyleSheet.create({
     color: "#CAD7D8",
     fontSize: 18,
     marginBottom: 5,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   highlightText: {
     color: "#CAD7D8",
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   primaryButton: {
     marginTop: 32,
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   secondaryButton: {
     alignSelf: "center",
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     color: "#CAD7D8",
     textDecorationLine: "underline",
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });
 

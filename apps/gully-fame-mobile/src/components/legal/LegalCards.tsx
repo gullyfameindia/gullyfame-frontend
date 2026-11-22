@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
     textAlign: "center",
   },
   heroMeta: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     marginTop: 6,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   heroWelcome: {
     color: C.muted,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 12,
     textAlign: "center",
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
 
   // Section cards
@@ -187,14 +187,14 @@ const styles = StyleSheet.create({
   badgeText: {
     color: C.accent,
     fontSize: 12,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   heading: {
     flex: 1,
     color: C.text,
     fontSize: 15,
     lineHeight: 20,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   subHeading: {
     color: C.accent,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     marginTop: 6,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   bulletRow: {
     flexDirection: "row",
@@ -225,6 +225,6 @@ const styles = StyleSheet.create({
     color: C.muted,
     fontSize: 14,
     lineHeight: 21,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

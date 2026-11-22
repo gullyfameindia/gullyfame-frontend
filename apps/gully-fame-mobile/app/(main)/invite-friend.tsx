@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 18,
     paddingHorizontal: 12,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     fontSize: 13,
     lineHeight: 18,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   heroIcon: {
     width: 64,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: C.text,
     fontSize: 17,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     marginBottom: 12,
   },
   statsRow: {
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
   statLabel: {
     color: C.faint,
     fontSize: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 6,
   },
   statValueRow: {
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   statValue: {
     color: C.text,
     fontSize: 20,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   historyLink: {
     flexDirection: "row",
@@ -446,14 +446,14 @@ const styles = StyleSheet.create({
   historyLinkText: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 
   // Code
   sectionLabel: {
     color: C.muted,
     fontSize: 13,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
     marginBottom: 8,
   },
   codeLoading: {
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   codeText: {
     color: C.text,
     fontSize: 22,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
     letterSpacing: 2,
   },
   copyButton: {
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   copyText: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   errorBox: {
     alignItems: "center",
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   errorTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
     textAlign: "center",
   },
   errorText: {
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   dividerRow: {
     flexDirection: "row",
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   dividerText: {
     color: C.faint,
     fontSize: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   inviteButton: {
     borderRadius: 16,
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   inviteButtonText: {
     color: C.text,
     fontSize: 16,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
 
   // Share row
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
   shareLabel: {
     color: C.muted,
     fontSize: 11,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
 
   // Apply code
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   applyText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   usedCodeText: {
     color: C.muted,
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
     paddingHorizontal: 8,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // How it works
@@ -625,11 +625,11 @@ const styles = StyleSheet.create({
   stepNumberText: {
     color: C.accent,
     fontSize: 13,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   stepText: {
     color: C.muted,
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 });

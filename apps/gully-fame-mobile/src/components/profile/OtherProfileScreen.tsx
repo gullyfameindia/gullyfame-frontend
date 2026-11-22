@@ -62,7 +62,8 @@ export default function OtherProfileScreen() {
     () => reels.reels.filter((r) => !!r.id).map((r) => ({ ...r, id: String(r.id) })),
     [reels.reels]
   );
-  const latestReelId = items[0]?.id;
+  // Support goes to a competition entry (normal reels can't receive coins); use the newest one.
+  const latestReelId = items.find((r: any) => !!r.competition)?.id;
 
   const posts = useMemo(
     () => ({
@@ -172,7 +173,7 @@ export default function OtherProfileScreen() {
           followBusy={followBusy}
           onToggleFollow={userId ? toggleFollow : undefined}
           onMessage={userId ? openMessage : undefined}
-          // Tips are sent to a reel (POST reels/:id/tip), so Support needs at least one post.
+          // Tips go to a competition entry (POST reels/:id/tip), so Support needs at least one entry.
           onSupport={TIPPING_ENABLED && latestReelId ? () => setSupportVisible(true) : undefined}
         />
         </View>

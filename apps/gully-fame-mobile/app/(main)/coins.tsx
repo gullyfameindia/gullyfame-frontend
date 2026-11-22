@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginBottom: 18,
     paddingHorizontal: 24,
   },
@@ -290,17 +290,17 @@ const styles = StyleSheet.create({
   balanceAmount: {
     color: C.text,
     fontSize: 38,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   balanceUnit: {
     color: "rgba(255,255,255,0.9)",
     fontSize: 18,
-    fontFamily: "Rubik_500Medium",
+    fontFamily: "Inter_500Medium",
   },
   balanceValue: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 14,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
   balanceActions: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   earnButtonText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   redeemButton: {
     flex: 1,
@@ -333,14 +333,14 @@ const styles = StyleSheet.create({
   redeemButtonText: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   progressText: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 12,
     textAlign: "center",
     marginTop: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // History card
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   viewAll: {
     color: C.accent,
     fontSize: 14,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   row: {
     flexDirection: "row",
@@ -392,23 +392,23 @@ const styles = StyleSheet.create({
   rowTitle: {
     color: C.text,
     fontSize: 15,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
   rowDesc: {
     color: C.muted,
     fontSize: 12,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 2,
   },
   rowDate: {
     color: C.faint,
     fontSize: 11,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
     marginTop: 3,
   },
   rowAmount: {
     fontSize: 15,
-    fontFamily: "Rubik_700Bold",
+    fontFamily: "Inter_700Bold",
   },
   emptyState: {
     alignItems: "center",
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     color: C.faint,
     fontSize: 15,
     marginTop: 10,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   footerNote: {
     color: C.faint,
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 16,
     lineHeight: 17,
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
 
   // Error state
@@ -440,11 +440,11 @@ const styles = StyleSheet.create({
     color: C.muted,
     marginTop: 12,
     textAlign: "center",
-    fontFamily: "Rubik_400Regular",
+    fontFamily: "Inter_400Regular",
   },
   retryText: {
     color: C.accent,
     fontSize: 16,
-    fontFamily: "Rubik_600SemiBold",
+    fontFamily: "Inter_600SemiBold",
   },
 });
