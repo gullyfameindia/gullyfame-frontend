@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View, type DimensionValue, type LayoutChangeEvent, type StyleProp, type ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   Easing,
   FadeOut,
@@ -120,36 +121,86 @@ export function SkeletonGrid({
   );
 }
 
-/** Rows with an optional round avatar and two text lines, e.g. chats, notifications, transactions. */
+/** Rows with a thumbnail, a title bar with a pill on the right and two text lines, e.g. chats, notifications, transactions. */
 export function SkeletonList({
   rows = 6,
   avatar = true,
-  avatarSize = 48,
-  avatarRadius = avatarSize / 2,
-  trailing = false,
+  avatarSize = 44,
+  avatarRadius = 12,
+  trailing = true,
   style,
 }: {
   rows?: number;
   avatar?: boolean;
   avatarSize?: number;
-  /** Corner radius of the avatar; round by default, smaller for square thumbnails. */
+  /** Corner radius of the thumbnail; a soft square by default. */
   avatarRadius?: number;
-  /** A short block on the right, e.g. an amount or a time. */
+  /** A short pill at the end of the title line, e.g. an amount or a time. */
   trailing?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   return (
     <SkeletonRoot style={style}>
       {Array.from({ length: rows }, (_, i) => (
-        <View key={i} style={styles.row}>
-          {avatar && <Skeleton width={avatarSize} height={avatarSize} radius={avatarRadius} />}
+        <View key={i} style={styles.listRow}>
+          {avatar && (
+            <View style={[styles.thumb, { width: avatarSize, height: avatarSize, borderRadius: avatarRadius }]}>
+              <Skeleton width="100%" height="100%" radius={avatarRadius} />
+              <Ionicons name="image" size={avatarSize * 0.4} color="rgba(255,255,255,0.14)" style={styles.thumbIcon} />
+            </View>
+          )}
           <View style={styles.rowText}>
-            <Skeleton width={i % 2 ? "55%" : "70%"} height={14} radius={4} />
-            <Skeleton width={i % 2 ? "35%" : "45%"} height={12} radius={4} />
+            <View style={styles.titleRow}>
+              <Skeleton height={14} radius={4} style={styles.flex} />
+              {trailing && <Skeleton width={56} height={14} radius={4} />}
+            </View>
+            <Skeleton width="50%" height={12} radius={4} />
+            <Skeleton width="50%" height={12} radius={4} />
           </View>
-          {trailing && <Skeleton width={56} height={14} radius={4} />}
         </View>
       ))}
+    </SkeletonRoot>
+  );
+}
+
+/** A text page: a title card followed by a few section cards, e.g. privacy policy, terms, about, FAQs. */
+export function SkeletonArticle({ sections = 4, style }: { sections?: number; style?: StyleProp<ViewStyle> }) {
+  return (
+    <SkeletonRoot style={[styles.cards, style]}>
+      <View style={{ alignItems: "center", gap: 10 }}>
+        <Skeleton width={52} height={52} radius={26} />
+        <Skeleton width="60%" height={20} radius={6} />
+        <Skeleton width="35%" height={12} radius={4} />
+      </View>
+      {Array.from({ length: sections }, (_, i) => (
+        <View key={i} style={{ gap: 10 }}>
+          <Skeleton width="50%" height={16} radius={4} />
+          <Skeleton height={12} radius={4} />
+          <Skeleton height={12} radius={4} />
+          <Skeleton width="70%" height={12} radius={4} />
+        </View>
+      ))}
+    </SkeletonRoot>
+  );
+}
+
+/** The top of a profile page: avatar, name, stats pill, and the action buttons. */
+export function SkeletonProfileHeader({ style }: { style?: StyleProp<ViewStyle> }) {
+  return (
+    <SkeletonRoot style={[{ gap: 16, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }, style]}>
+      <View style={styles.row}>
+        <Skeleton width={96} height={96} radius={20} />
+        <View style={styles.rowText}>
+          <Skeleton width="60%" height={20} radius={6} />
+          <Skeleton width="30%" height={16} radius={8} />
+        </View>
+      </View>
+      <Skeleton height={52} radius={26} />
+      <View style={styles.detailButtons}>
+        <Skeleton height={44} radius={12} style={styles.flex} />
+        <Skeleton height={44} radius={12} style={styles.flex} />
+      </View>
+      <Skeleton width="80%" height={14} radius={4} />
     </SkeletonRoot>
   );
 }
@@ -246,6 +297,10 @@ const styles = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap" },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
   rowText: { flex: 1, gap: 8 },
+  listRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, paddingVertical: 12 },
+  thumb: { alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  thumbIcon: { position: "absolute" },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   cards: { gap: 20 },
   detail: { gap: 16, padding: 16 },
   detailAvatar: { alignItems: "center", gap: 16 },

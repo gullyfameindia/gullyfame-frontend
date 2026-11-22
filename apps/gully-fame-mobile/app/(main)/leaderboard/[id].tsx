@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { safeIdParam } from "@/utils/routeParams";
 import { openOwnProfile } from "@/utils/openProfile";
 import { useState, useEffect, useCallback } from "react";
@@ -9,8 +10,7 @@ import {
   StatusBar,
   Text,
   TouchableOpacity,
-  View,
-  ActivityIndicator
+  View
 } from "react-native";
 import BottomNav from "@components/layout/BottomNav";
 import {
@@ -26,7 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getLeaderboard, LeaderboardRow } from "@/api/services/competitionService";
 import { getErrorMessage } from "@/api/client";
 import { toastError } from "@/components/ui/Toast";
-import { SkeletonLoader } from "@/components/Skeleton";
+import { SkeletonDetail, SkeletonList } from "@/components/Skeleton/Skeleton";
 
 
 const tabs = [
@@ -119,7 +119,7 @@ export default function MyFameScreen() {
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
         <StatusBar barStyle="light-content" />
         {isLoading ? (
-          <SkeletonLoader style={{ alignSelf: "stretch" }} />
+          <SkeletonDetail style={{ alignSelf: "stretch" }} />
         ) : (
           <>
             <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError}</Text>
@@ -137,7 +137,7 @@ export default function MyFameScreen() {
       <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.backButton}>
           <BackIcon color="white" size={24} />
         </TouchableOpacity>
         
@@ -320,7 +320,7 @@ export default function MyFameScreen() {
                 ))}
               {hasMore && (
                 <TouchableOpacity onPress={loadMore} disabled={loadingMore} style={{ alignItems: "center", paddingVertical: 16 }}>
-                  {loadingMore ? <ActivityIndicator color="#EC9A15" /> : <Text style={{ color: "#EC9A15" }}>Load more</Text>}
+                  {loadingMore ? <SkeletonList rows={2} avatarSize={40} /> : <Text style={{ color: "#EC9A15" }}>Load more</Text>}
                 </TouchableOpacity>
               )}
             </ScrollView>

@@ -4,18 +4,18 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  ActivityIndicator,
   TouchableOpacity,
   StatusBar,
   Platform,
 } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { Ionicons } from "@expo/vector-icons";
 import { useInteractionReels } from "@/hooks/useInteractionReels";
 import { reelsService } from "@/api/services/reelsService";
 import { showToast, toastError } from "@/components/ui/Toast";
-import { SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
+import { SkeletonGrid, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
 // Same brown + orange palette as the rest of the app.
 const C = {
@@ -82,7 +82,7 @@ export default function SavedScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerSide}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerSide}>
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Saved</Text>
@@ -144,7 +144,7 @@ export default function SavedScreen() {
           }
           ListFooterComponent={
             <View style={styles.footer}>
-              {saved.loadingMore && <ActivityIndicator color={C.accent} style={{ paddingVertical: 12 }} />}
+              {saved.loadingMore && <SkeletonGrid count={2} columns={2} style={{ paddingVertical: 12 }} />}
               <Text style={styles.footerNote}>Only you can see what you've saved.</Text>
             </View>
           }

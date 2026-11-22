@@ -20,6 +20,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle } from "react-native-svg";
 import * as Clipboard from "expo-clipboard";
@@ -441,7 +442,7 @@ export default function ChatDetailScreen() {
         ) : (
           <>
             <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-              onPress={() => router.back()}
+              onPress={() => safeBack("/(main)/home")}
               testID="chat-back"
               style={styles.headerButton}
             >
@@ -758,7 +759,7 @@ export default function ChatDetailScreen() {
                   {
                     text: "Delete",
                     style: "destructive",
-                    onPress: () => router.back(),
+                    onPress: () => safeBack("/(main)/home"),
                   },
                 ]);
               }}
@@ -793,7 +794,7 @@ export default function ChatDetailScreen() {
                       onPress: async () => {
                         try {
                           await blockUser(chatUserId, (name as string) || "User");
-                          router.back();
+                          safeBack("/(main)/home");
                         } catch (error) {
                           Alert.alert("Couldn't block", getErrorMessage(error));
                         }

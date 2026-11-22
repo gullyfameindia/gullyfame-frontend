@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Image as ExpoImage } from "expo-image";
 import Svg, { Path } from "react-native-svg";
@@ -306,7 +307,7 @@ export default function PostReelScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.backButton}>
           <BackIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Share Reel</Text>

@@ -17,21 +17,39 @@ import { FAQS } from "@/content/legal/faq";
  * screens always have something to show offline.
  */
 
-function usePage(fetcher: () => Promise<{ success: boolean; data?: { content: string } }>): string | null {
+function usePageState(fetcher: () => Promise<{ success: boolean; data?: { content: string } }>): {
+  text: string | null;
+  loading: boolean;
+} {
   const [text, setText] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
-    fetcher().then((r) => {
-      const content = r.success ? r.data?.content?.trim() : "";
-      if (!cancelled && content) setText(content);
-    });
+    fetcher()
+      .then((r) => {
+        const content = r.success ? r.data?.content?.trim() : "";
+        if (!cancelled && content) setText(content);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  return text;
+  return { text, loading };
 }
+
+function usePage(fetcher: () => Promise<{ success: boolean; data?: { content: string } }>): string | null {
+  return usePageState(fetcher).text;
+}
+
+/** Same as the text hooks below, plus a flag that is true until the first answer arrives. */
+export const useTermsPage = () => usePageState(getTermsAndConditions);
+export const usePrivacyPage = () => usePageState(getPrivacyPolicy);
+export const useAboutPage = () => usePageState(getAboutUs);
 
 export const useTermsText = () => usePage(getTermsAndConditions);
 export const usePrivacyText = () => usePage(getPrivacyPolicy);
@@ -39,12 +57,15 @@ export const useAboutText = () => usePage(getAboutUs);
 export const useCompetitionRulesText = () => usePage(getCompetitionRules);
 
 /** FAQs from the admin panel, or the bundled FAQ document when none are published. */
-export function useFaqSections(): LegalSection[] {
+export function useFaqState(): { sections: LegalSection[]; loading: boolean } {
   const [sections, setSections] = useState<LegalSection[]>(FAQS);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
     getFaqs().then((r) => {
-      if (cancelled || !r.success || !r.data?.length) return;
+      if (cancelled) return;
+      setLoading(false);
+      if (!r.success || !r.data?.length) return;
       setSections(
         r.data.map((f, i) => ({
           number: String(i + 1),
@@ -56,24 +77,40 @@ export function useFaqSections(): LegalSection[] {
             .map((line) => (/^[•\-*]\s+/.test(line) ? { t: "b" as const, x: line.replace(/^[•\-*]\s+/, "") } : { t: "p" as const, x: line })),
         }))
       );
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
     });
     return () => {
       cancelled = true;
     };
   }, []);
-  return sections;
+  return { sections, loading };
+}
+
+export function useFaqSections(): LegalSection[] {
+  return useFaqState().sections;
+}
+
+export function useSupportContactState(): { contact: SupportContact; loading: boolean } {
+  const [contact, setContact] = useState<SupportContact>({});
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    getSupportContact()
+      .then((r) => {
+        if (!cancelled && r.success && r.data) setContact(r.data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return { contact, loading };
 }
 
 export function useSupportContact(): SupportContact {
-  const [contact, setContact] = useState<SupportContact>({});
-  useEffect(() => {
-    let cancelled = false;
-    getSupportContact().then((r) => {
-      if (!cancelled && r.success && r.data) setContact(r.data);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return contact;
+  return useSupportContactState().contact;
 }

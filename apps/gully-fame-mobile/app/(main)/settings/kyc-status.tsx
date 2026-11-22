@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Image, Alert } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -235,7 +236,7 @@ export default function KYCStatusScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerSide}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerSide}>
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>KYC Verification</Text>

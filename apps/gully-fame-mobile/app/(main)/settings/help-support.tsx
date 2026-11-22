@@ -12,10 +12,12 @@ import {
   TextInput,
 } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
-import { useSupportContact } from "@/hooks/useCmsContent";
+import { useSupportContactState } from "@/hooks/useCmsContent";
 import { FAQS } from "@/content/legal/faq";
 import type { LegalSection } from "@/content/legal/types";
+import { SkeletonArticle } from "@/components/Skeleton/Skeleton";
 
 // Support contacts used when the admin panel has none set.
 const DEFAULT_SUPPORT_EMAIL = "admin@gullyfame.com";
@@ -42,7 +44,7 @@ const HELP_FAQS: LegalSection[] = FAQS.filter((f) => HELP_FAQ_NUMBERS.includes(f
 
 export default function HelpSupportScreen() {
   // Contact details and FAQs are managed in the admin panel; the constants above are the fallback.
-  const contact = useSupportContact();
+  const { contact: contact, loading: supportLoading } = useSupportContactState();
   const [query, setQuery] = useState("");
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -97,7 +99,7 @@ export default function HelpSupportScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerSide}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerSide}>
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Help & Support</Text>
@@ -105,6 +107,10 @@ export default function HelpSupportScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {supportLoading ? (
+          <SkeletonArticle />
+        ) : (
+        <>
         <Text style={styles.subtitle}>How can we help you today? Find answers or get in touch with our team.</Text>
 
         {/* Search */}
@@ -213,6 +219,8 @@ export default function HelpSupportScreen() {
             <Text style={styles.footerLink}>Contact us</Text>
           </TouchableOpacity>
         </View>
+        </>
+        )}
       </ScrollView>
     </View>
   );

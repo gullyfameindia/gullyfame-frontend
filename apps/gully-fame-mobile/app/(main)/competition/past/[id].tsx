@@ -17,6 +17,7 @@ import {
     LayoutAnimation,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path } from "react-native-svg";
 import {
@@ -28,7 +29,7 @@ import {
 } from "@/icons";
 import { pastCompetitionStyles as styles } from "@/styles/pastCompetitionStyles";
 import TopPerformer from "@/components/home/TopDancers/TopPerformer";
-import { SkeletonLoader } from "@/components/Skeleton";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 import TopTenLeaderboard from "@/components/TopTenLeaderboard/TopTenLeaderboard";
 import SafeImage from "@/components/SafeImage";
 import { getCompetitionDetails } from "@/api/services/competitionService";
@@ -161,7 +162,7 @@ export default function PastCompetitionScreen() {
         return (
             <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
                 {loading ? (
-                    <SkeletonLoader style={{ alignSelf: "stretch" }} />
+                    <SkeletonDetail style={{ alignSelf: "stretch" }} />
                 ) : (
                     <>
                         <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError || "Competition not found."}</Text>
@@ -182,7 +183,7 @@ export default function PastCompetitionScreen() {
             <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
 
             <View style={styles.header}>
-                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerButton}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerButton}>
                     <BackIcon />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>

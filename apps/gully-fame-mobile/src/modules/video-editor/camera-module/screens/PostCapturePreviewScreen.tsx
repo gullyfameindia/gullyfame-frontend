@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, StatusBar, StyleSheet, Text, TouchableOpacity
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useIsFocused, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { showToast } from "@/store/slices/postingSlice";
@@ -131,12 +132,12 @@ const PostCapturePreviewScreen: React.FC = () => {
 
   const handleBack = useCallback(() => {
     if (clips.length === 0) {
-      router.back();
+      safeBack("/(main)/home");
       return;
     }
     Alert.alert("Discard clips?", "Go back to the camera. You can keep your clips to record more.", [
       { text: "Cancel", style: "cancel" },
-      { text: "Keep clips", onPress: () => router.back() },
+      { text: "Keep clips", onPress: () => safeBack("/(main)/home") },
       {
         text: "Discard",
         style: "destructive",
@@ -200,7 +201,7 @@ const PostCapturePreviewScreen: React.FC = () => {
     return (
       <View style={[styles.container, styles.center, { paddingTop: insets.top }]}>
         <Text style={styles.emptyText}>Nothing to preview. Record a clip or take a photo first.</Text>
-        <TouchableOpacity style={styles.emptyBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.emptyBtn} onPress={() => safeBack("/(main)/home")}>
           <Text style={styles.emptyBtnText}>Back to camera</Text>
         </TouchableOpacity>
       </View>

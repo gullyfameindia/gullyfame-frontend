@@ -81,15 +81,14 @@ const handleSkip = () => finish();
           disabled={loading} 
         >
           {loading ? (
-            <ActivityIndicator color="white" />
+            <View style={styles.buttonLoading}>
+              <ActivityIndicator color="white" />
+              <Text style={styles.buttonText}>Enabling...</Text>
+            </View>
           ) : (
             <Text style={styles.buttonText}>Enable</Text>
           )}
         </TouchableOpacity>
-
-        {loading && (
-          <Text style={styles.loadingText}>Enabling location...</Text>
-        )}
 
         <TouchableOpacity
           style={styles.skipButton}
@@ -146,8 +145,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 140,
     borderRadius: 30,
     marginTop: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  buttonText: { color: "white", fontSize: 16, fontWeight: "600" },
+  buttonText: { color: "white", fontSize: 16, fontWeight: "600", textAlign: "center" },
+  buttonLoading: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 },
   loadingText: { marginTop: 10, color: "#3C2610", fontSize: 14 },
   skipButton: {
     marginTop: 20,

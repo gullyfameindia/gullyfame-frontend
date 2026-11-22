@@ -1,6 +1,6 @@
 import type { CameraClip } from '../types/camera.types';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://backend.gullyfame.com/v1/api';
+const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://api.gullyfame.com/v1/api';
 
 export interface VideoMetadata {
   title: string;

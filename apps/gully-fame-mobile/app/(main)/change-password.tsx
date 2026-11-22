@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import Svg, { Path } from "react-native-svg";
 import { EyeIcon, EyeOffIcon } from "@/icons";
 import { authService, AUTH_RULES } from "@api/services/authService";
@@ -112,7 +113,7 @@ export default function ChangePassword() {
       setCurrentPassword("");
       setNewPassword("");
       setRetypePassword("");
-      router.back();
+      safeBack("/(main)/home");
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +128,7 @@ export default function ChangePassword() {
         {/* Header with Back Arrow */}
         <View style={styles.header}>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-            onPress={() => router.back()}
+            onPress={() => safeBack("/(main)/home")}
             style={styles.backButton}
           >
             <Svg width={20} height={20} viewBox="0 0 16 16" fill="none">

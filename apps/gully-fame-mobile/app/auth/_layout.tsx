@@ -23,6 +23,7 @@ export default function AuthLayout() {
       <Stack.Screen name="login-via-otp" options={{}} />
       <Stack.Screen name="login-via-email" options={{}} />
       <Stack.Screen name="verify-otp" options={{}} />
+      <Stack.Screen name="verify-signup" options={{}} />
       <Stack.Screen name="resetpassword" options={{}} />
       <Stack.Screen name="forgotpassword" options={{}} />
       

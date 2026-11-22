@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { Ionicons } from "@expo/vector-icons";
-import { LegalDocument } from "@/components/legal/LegalDocument";
+import { LegalCards } from "@/components/legal/LegalCards";
 import { getCompetitionRules } from "@/api/services/cmsService";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 
 /** Competition rules written in the admin panel (GET public/competitionRules). */
 export default function CompetitionRulesScreen() {
@@ -28,7 +30,7 @@ export default function CompetitionRulesScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.backButton} accessibilityLabel="Back">
           <Ionicons name="chevron-back" size={28} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Competition Rules</Text>
@@ -37,9 +39,9 @@ export default function CompetitionRulesScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading ? (
-          <ActivityIndicator color="#EC9A15" style={{ marginTop: 40 }} />
+          <SkeletonDetail bannerHeight={0} style={{ padding: 0 }} />
         ) : text ? (
-          <LegalDocument title={["Competition Rules"]} sections={[]} accordion={false} plainText={text} />
+          <LegalCards title={["Competition Rules"]} sections={[]} plainText={text} icon="trophy-outline" />
         ) : (
           <Text style={styles.empty}>The competition rules haven&apos;t been published yet. Please check back soon.</Text>
         )}

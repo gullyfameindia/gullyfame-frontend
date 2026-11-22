@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar, Platform } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { Ionicons } from "@expo/vector-icons";
 import { unblockUser, useBlockedUsers, type BlockedUser } from "@/utils/moderation";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
@@ -44,7 +45,7 @@ export default function BlockedUsersScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerSide} accessibilityRole="button" accessibilityLabel="Go back">
+        <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.headerSide} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Blocked Users</Text>

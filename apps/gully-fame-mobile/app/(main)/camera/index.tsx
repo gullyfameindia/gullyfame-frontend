@@ -12,6 +12,7 @@ import {
 } from "react-native-vision-camera";
 import { useCameraPermission, useMicrophonePermission } from "react-native-vision-camera/lib/hooks/usePermission";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import TopBar from "@modules/video-editor/camera-module/components/capture/TopBar";
@@ -33,6 +34,7 @@ import { listFilters } from "@api/services/filterLibraryService";
 import { getLatestDraft, type PublishedReel } from "@api/services/videoUploadService";
 import { matchPresetByName } from "@modules/video-editor/camera-module/components/preview/filterPresets";
 import { CloseIcon } from "@/icons";
+import { Skeleton, SkeletonGrid, SkeletonList } from "@/components/Skeleton/Skeleton";
 
 // ============================================================================
 // CAMERA IMPLEMENTATION CHOICE: Set CAMERA_USE_EXPO_CAMERA to true to use expo-camera,
@@ -737,7 +739,7 @@ export default function TikTokCameraScreen() {
             style: "destructive",
             onPress: () => {
               setRecordedClips([]);
-              router.back();
+              safeBack("/(main)/home");
             },
           },
         ]
@@ -1050,6 +1052,11 @@ export default function TikTokCameraScreen() {
   return (
     <View style={styles.container} {...cameraSwipeResponder.panHandlers}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      {/* Shimmer stands in for the camera preview until the camera is ready. */}
+      {!(device && isFocused && transitionComplete && appState === "active") && (
+        <Skeleton radius={0} style={StyleSheet.absoluteFill} />
+      )}
 
       {/* CRITICAL FIX: Camera ALWAYS rendered at bottom, no conditional mount to avoid Surface abandonment */}
       {CAMERA_USE_EXPO_CAMERA ? (
@@ -1430,9 +1437,7 @@ export default function TikTokCameraScreen() {
                 </View>
 
                 {loadingFilters ? (
-                  <View style={styles.filterGridLoading}>
-                    <Text style={styles.filterGridLoadingText}>Loading filters...</Text>
-                  </View>
+                  <SkeletonGrid count={6} columns={3} aspectRatio={1} style={{ padding: 12 }} />
                 ) : (
                   <ScrollView
                     scrollEnabled
@@ -1532,7 +1537,7 @@ export default function TikTokCameraScreen() {
                 <View style={styles.popupArrow} />
                 <View style={styles.smallPopupContent}>
                   {loadingFilters ? (
-                    <Text style={styles.smallPopupOptionText}>Loading filters...</Text>
+                    <SkeletonList rows={3} avatarSize={28} trailing={false} />
                   ) : (
                     <>
                       <TouchableOpacity

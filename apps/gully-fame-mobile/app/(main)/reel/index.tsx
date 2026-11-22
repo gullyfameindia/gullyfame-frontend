@@ -3,6 +3,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as MediaLibrary from "expo-media-library/legacy";
 import { Asset } from "expo-asset";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import {
   View,
   Text,
@@ -82,8 +83,8 @@ import {
 } from "@/icons";
 import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
 import { saveDownload } from "@/services/downloadsStore";
-import { SkeletonLoader } from "@/components/Skeleton";
 import UserAvatar from "@/components/UserAvatar";
+import { Skeleton, SkeletonList, SkeletonReel } from "@/components/Skeleton/Skeleton";
 
 // Turns the backend's flat comment list into top-level comments with replies.
 function groupComments(list: ReelComment[], blockedIds: Set<string> = new Set()) {
@@ -152,10 +153,8 @@ function ReelVideoPlayer({ reel, isVisible, videoRefs }: ReelVideoPlayerProps) {
   // The poster covers the player until the first frame is drawn, so the reel never shows a
   // blank black screen while the video downloads.
   const [firstFrameShown, setFirstFrameShown] = React.useState(false);
-  const [isBuffering, setIsBuffering] = React.useState(player.status === "loading");
   React.useEffect(() => {
     const sub = player.addListener("statusChange", ({ status }) => {
-      setIsBuffering(status === "loading");
       if (status === "error") setPlaybackFailed(true);
       else if (status === "readyToPlay") setPlaybackFailed(false);
     });
@@ -210,9 +209,10 @@ function ReelVideoPlayer({ reel, isVisible, videoRefs }: ReelVideoPlayerProps) {
       {!firstFrameShown && poster ? (
         <ReelPoster uri={poster} />
       ) : null}
-      {isVisible && !playbackFailed && (!firstFrameShown || isBuffering) ? (
-        <View style={styles.reelBuffering} pointerEvents="none" testID="reel-buffering">
-          <ActivityIndicator size="large" color="#fff" />
+      {/* Until the first frame draws, a shimmer stands in for the video (no spinner). */}
+      {isVisible && !playbackFailed && !firstFrameShown && !poster ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none" testID="reel-buffering">
+          <Skeleton radius={0} style={StyleSheet.absoluteFill} />
         </View>
       ) : null}
       {playbackFailed ? (
@@ -1025,7 +1025,7 @@ export default function GullyReelScreen() {
     // Hide it from this list so the reporter doesn't keep seeing it.
     const remaining = reels.filter((r) => String(r._backendId || r.id) !== reelId);
     setReels(remaining);
-    if (remaining.length === 0) router.back();
+    if (remaining.length === 0) safeBack("/(main)/home");
   };
 
   const confirmDeleteReel = (reel: any) => {
@@ -1044,7 +1044,7 @@ export default function GullyReelScreen() {
           toastSuccess("Post deleted");
           const remaining = reels.filter((r) => r.id !== reel.id);
           setReels(remaining);
-          if (remaining.length === 0) router.back();
+          if (remaining.length === 0) safeBack("/(main)/home");
         },
       },
     ]);
@@ -1437,7 +1437,7 @@ export default function GullyReelScreen() {
       </View>
 
       {isLoadingReels && reels.length === 0 ? (
-        <SkeletonLoader style={feedStateStyles.center} />
+        <SkeletonReel style={StyleSheet.absoluteFill} />
       ) : reels.length === 0 ? (
         <View style={feedStateStyles.center}>
           <Text style={feedStateStyles.title}>
@@ -1550,9 +1550,7 @@ export default function GullyReelScreen() {
                     keyboardShouldPersistTaps="handled"
                   >
                     {isLoadingComments ? (
-                      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                        <ActivityIndicator size="large" color={THEME_COLOR} />
-                      </View>
+                      <SkeletonList rows={6} avatarSize={36} />
                     ) : comments.length === 0 ? (
                       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                         <Text style={{ color: "#999", fontSize: 14 }}>No comments yet</Text>

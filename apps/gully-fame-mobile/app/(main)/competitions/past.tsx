@@ -10,6 +10,7 @@ import {
   StatusBar,
 } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import Svg, { Path, G } from "react-native-svg";
 import { useCompetitionList } from "@/hooks/useCompetitionList";
 import { resolveMediaUrl } from "@/utils/mediaUrl";
@@ -25,7 +26,7 @@ export default function PastCompetitionsScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.backButton}>
           <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
             <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
           </Svg>

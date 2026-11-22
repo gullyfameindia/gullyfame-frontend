@@ -12,7 +12,10 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import OutlinedField, { FIELD_COLORS, fieldInputStyle } from "@/components/ui/OutlinedField";
+import { safeBack } from "@/utils/safeBack";
 import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
 import { showGuestModeUnavailable } from "@utils/guestMode";
 import { GoogleIcon, InstagramIcon, AppleIcon } from "@/icons";
@@ -21,6 +24,7 @@ import { authService, AUTH_RULES } from "@api/services/authService";
 const { width, height } = Dimensions.get("window");
 
 export default function LoginViaOTP() {
+  const [focus, setFocus] = useState<string | null>(null);
   const params = useLocalSearchParams();
   const [emailOrMobile, setEmailOrMobile] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -48,7 +52,8 @@ export default function LoginViaOTP() {
         setErrorMessage(result.message);
         return;
       }
-      const query = `txnId=${encodeURIComponent(result.data.txnId)}&mobile=${encodeURIComponent(mobile)}`;
+      // resendIn < full window when the server reused a code sent moments ago.
+      const query = `txnId=${encodeURIComponent(result.data.txnId)}&mobile=${encodeURIComponent(mobile)}&resendIn=${result.data.resendIn ?? ""}`;
       router.replace(`/auth/verify-otp?${query}` as any);
     } finally {
       setIsLoading(false);
@@ -56,7 +61,7 @@ export default function LoginViaOTP() {
   };
 
   return (
-    <KeyboardAvoidingScreen style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container} statusBarColor="#3C2610">
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -83,39 +88,20 @@ export default function LoginViaOTP() {
           </Text>
 
           {}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Mobile Number <Text style={styles.required}>*</Text>
-            </Text>
+          <OutlinedField label="Mobile Number" required icon="call-outline" focused={focus === "m"}>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your 10-digit mobile number"
-              placeholderTextColor="#B0B0B0"
+              style={fieldInputStyle}
+              placeholder="98765 43210"
+              placeholderTextColor={FIELD_COLORS.placeholder}
               value={emailOrMobile}
               onChangeText={setEmailOrMobile}
+              onFocus={() => setFocus("m")}
+              onBlur={() => setFocus(null)}
               testID="otp-login-mobile"
-              autoCapitalize="none"
-              keyboardType="email-address"
+              keyboardType="phone-pad"
+              maxLength={10}
             />
-          </View>
-
-          {}
-          <View style={styles.orContainer}>
-            <Text style={styles.orText}>Or</Text>
-          </View>
-
-          {}
-          <TouchableOpacity
-            style={styles.passwordLoginButton}
-            onPress={() => router.back()}
-            testID="otp-login-back"
-            activeOpacity={0.7}
-          >
-            <Text style={styles.passwordLoginText}>
-              Login via{" "}
-              <Text style={styles.passwordUnderlinedText}>Password</Text>
-            </Text>
-          </TouchableOpacity>
+          </OutlinedField>
 
           {errorMessage ? (
             <View style={styles.errorContainer}>
@@ -140,11 +126,27 @@ export default function LoginViaOTP() {
             )}
           </TouchableOpacity>
 
+          <View style={styles.continueWithContainer}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.continueWithText}>or</Text>
+            <View style={styles.separatorLine} />
+          </View>
+
+          <TouchableOpacity
+            style={styles.passwordLoginButton}
+            onPress={() => safeBack()}
+            testID="otp-login-back"
+            activeOpacity={0.8}
+          >
+            <Ionicons name="lock-closed-outline" size={20} color="#3C2610" />
+            <Text style={styles.passwordLoginText}>Login with Password</Text>
+          </TouchableOpacity>
+
           {SOCIAL_LOGIN_ENABLED && (
             <>
               <View style={styles.continueWithContainer}>
                 <View style={styles.separatorLine} />
-                <Text style={styles.continueWithText}>OR Continue With</Text>
+                <Text style={styles.continueWithText}>or continue with</Text>
                 <View style={styles.separatorLine} />
               </View>
 
@@ -193,8 +195,7 @@ export default function LoginViaOTP() {
             onPress={showGuestModeUnavailable}
           >
             <Text style={styles.skipText}>
-              Let me have a look!{" "}
-              <Text style={styles.skipLink}>SKIP{">>"}</Text>
+              Just browsing? <Text style={styles.skipLink}>Skip →</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -216,31 +217,22 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    paddingTop: 40,
     paddingBottom: 30,
     backgroundColor: "#3C2610",
-    top: 40,
+    paddingTop: 30,
   },
   logo: {
     width: width * 0.3,
     height: height * 0.075,
   },
   formContainer: {
-    backgroundColor: "#F6F9FD",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
     paddingHorizontal: 30,
     paddingTop: 20,
-    paddingBottom: height * 0.24,
-    top: height * 0.075,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 6,
+    backgroundColor: "#FFF9F1",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    flex: 1,
+    paddingBottom: 24,
   },
   title: {
     fontSize: 25,
@@ -252,25 +244,26 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   label: {
-    fontSize: 16,
     color: "#111827",
-    marginBottom: 4,
     fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    marginBottom: 8,
   },
   required: {
     color: "#DC2626",
   },
   input: {
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#D4DAE9",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 10,
     paddingVertical: 8,
-    fontSize: 14,
     color: "#111827",
     fontFamily: "Inter_400Regular",
     height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#E7D9C4",
+    backgroundColor: "#FFFFFF",
+    minHeight: 54,
+    paddingHorizontal: 14,
+    fontSize: 15,
   },
   continueWithContainer: {
     flexDirection: "row",
@@ -300,38 +293,46 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sendOtpButton: {
-    backgroundColor: "#3C2610",
-    borderRadius: 30,
     paddingVertical: 18,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 4,
     marginBottom: 20,
     marginTop: 10,
+    backgroundColor: "#EC9A15",
+    borderRadius: 14,
+    minHeight: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#EC9A15",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   sendOtpText: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: "Inter_700Bold",
   },
   sendOtpButtonDisabled: {
     opacity: 0.6,
   },
   passwordLoginButton: {
-    borderWidth: 0,
-    borderRadius: 30,
     paddingVertical: 12,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 56,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#3C2610",
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
-    backgroundColor: "transparent",
+    marginTop: 0,
+    marginBottom: 0,
   },
   passwordLoginText: {
-    color: "#000",
+    color: "#3C2610",
     fontSize: 16,
-    fontFamily: "Inter_400Regular",
+    fontFamily: "Inter_600SemiBold",
   },
   passwordUnderlinedText: {
     color: "#EC9A15",
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
   },
   createAccountContainer: {
     alignItems: "center",
-    marginBottom: -10,
+    marginTop: 22,
     flexDirection: "row",
     justifyContent: "center",
   },
@@ -365,9 +366,9 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   skipContainer: {
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
-    paddingVertical: 15,
+    backgroundColor: "#FFF9F1",
+    paddingVertical: 14,
   },
   skipText: {
     fontSize: width * 0.038,
@@ -379,12 +380,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
     borderWidth: 1,
-    borderRadius: 8,
     padding: 12,
     marginBottom: 15,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FCA5A5",
+    borderRadius: 12,
   },
   errorText: {
     color: "#DC2626",

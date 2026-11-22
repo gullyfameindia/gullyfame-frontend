@@ -6,12 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   FlatList,
-  ActivityIndicator,
   TextInput,
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { TALENT_CATEGORIES } from "@/constants/talentCategories";
 import { getFollowedCategories } from "@/utils/followedCategories";
@@ -20,6 +20,7 @@ import { getFollowList, type FollowListKind, type FollowUser } from "@/api/servi
 import { getErrorMessage } from "@/api/client";
 import { openUserProfile } from "@/utils/openProfile";
 import { safeIdParam } from "@/utils/routeParams";
+import { SkeletonList } from "@/components/Skeleton/Skeleton";
 
 type TabKey = FollowListKind;
 const TABS: TabKey[] = ["followers", "following"];
@@ -124,9 +125,7 @@ function FollowList({
 
   if (loading && !loaded) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#EC9A15" size="large" />
-      </View>
+      <SkeletonList rows={8} trailing style={{ paddingHorizontal: 16 }} />
     );
   }
 
@@ -178,7 +177,7 @@ function FollowList({
           </Text>
         </View>
       }
-      ListFooterComponent={loadingMore ? <ActivityIndicator color="#EC9A15" style={{ padding: 16 }} /> : null}
+      ListFooterComponent={loadingMore ? <SkeletonList rows={2} style={{ paddingHorizontal: 16 }} /> : null}
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.userRow}
@@ -271,7 +270,7 @@ const FollowersScreen: React.FC = () => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Back" testID="followers-back">
+        <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.backButton} accessibilityLabel="Back" testID="followers-back">
           <Ionicons name="chevron-back" size={28} color="#fff" />
         </TouchableOpacity>
       </View>

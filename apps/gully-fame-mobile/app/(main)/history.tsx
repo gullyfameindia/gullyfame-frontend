@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
-  ActivityIndicator,
-} from "react-native";
+  } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { getWallet, toDisplayTransaction, DisplayTransaction } from "@/api/services/walletService";
@@ -113,7 +113,7 @@ export default function HistoryScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.backButton}>
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Wallet & History</Text>
@@ -263,7 +263,7 @@ export default function HistoryScreen() {
               {hasMore ? (
                 <TouchableOpacity onPress={loadMore} disabled={loadingMore} style={styles.loadMore}>
                   {loadingMore ? (
-                    <ActivityIndicator color={C.accent} />
+                    <SkeletonList rows={2} avatarSize={40} />
                   ) : (
                     <Text style={styles.loadMoreText}>Load more</Text>
                   )}

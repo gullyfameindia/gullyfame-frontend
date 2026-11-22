@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { BackIcon } from "@/icons";
@@ -105,7 +106,7 @@ export default function CoinsScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerSide}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerSide}>
           <BackIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>GFI Coins Earned</Text>

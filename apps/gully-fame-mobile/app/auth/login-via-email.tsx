@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
+import OutlinedField, { FIELD_COLORS, fieldInputStyle } from "@/components/ui/OutlinedField";
 import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
 import { showGuestModeUnavailable } from "@utils/guestMode";
 import { GoogleIcon, InstagramIcon, AppleIcon } from "@/icons";
@@ -21,6 +22,7 @@ import { AUTH_RULES } from "@api/services/authService";
 const { width, height } = Dimensions.get("window");
 
 export default function LoginViaEmail() {
+  const [focus, setFocus] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const isLoading = false;
@@ -61,7 +63,7 @@ export default function LoginViaEmail() {
   };
 
   return (
-    <KeyboardAvoidingScreen style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container} statusBarColor="#3C2610">
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -88,20 +90,19 @@ export default function LoginViaEmail() {
           </Text>
 
           {}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Email <Text style={styles.required}>*</Text>
-            </Text>
+          <OutlinedField label="Email" required icon="mail-outline" focused={focus === "e"}>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor="#B0B0B0"
+              style={fieldInputStyle}
+              placeholder="you@example.com"
+              placeholderTextColor={FIELD_COLORS.placeholder}
               value={email}
               onChangeText={setEmail}
+              onFocus={() => setFocus("e")}
+              onBlur={() => setFocus(null)}
               autoCapitalize="none"
               keyboardType="email-address"
             />
-          </View>
+          </OutlinedField>
 
           {}
           <View style={styles.orContainer}>
@@ -200,8 +201,7 @@ export default function LoginViaEmail() {
             onPress={showGuestModeUnavailable}
           >
             <Text style={styles.skipText}>
-              Let me have a look!{" "}
-              <Text style={styles.skipLink}>SKIP{">>"}</Text>
+              Just browsing? <Text style={styles.skipLink}>Skip →</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -223,31 +223,22 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    paddingTop: 40,
     paddingBottom: 30,
     backgroundColor: "#3C2610",
-    top: 40,
+    paddingTop: 30,
   },
   logo: {
     width: width * 0.3,
     height: height * 0.075,
   },
   formContainer: {
-    backgroundColor: "#F6F9FD",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
     paddingHorizontal: 30,
     paddingTop: 20,
-    paddingBottom: height * 0.28,
-    top: height * 0.075,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 6,
+    backgroundColor: "#FFF9F1",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    flex: 1,
+    paddingBottom: 24,
   },
   title: {
     fontSize: 25,
@@ -259,25 +250,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
-    fontSize: 16,
     color: "#111827",
-    marginBottom: 6,
     fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    marginBottom: 8,
   },
   required: {
     color: "#DC2626",
   },
   input: {
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#D4DAE9",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 10,
     paddingVertical: 8,
-    fontSize: 14,
     color: "#111827",
     fontFamily: "Inter_400Regular",
     height: 50,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#E7D9C4",
+    backgroundColor: "#FFFFFF",
+    minHeight: 54,
+    paddingHorizontal: 14,
+    fontSize: 15,
   },
   orContainer: {
     alignItems: "center",
@@ -314,21 +306,23 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
   },
   sendOtpButton: {
-    backgroundColor: "#3C2610",
-    borderRadius: 30,
     paddingVertical: 18,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 4,
     marginBottom: 20,
     marginTop: 0,
+    backgroundColor: "#EC9A15",
+    borderRadius: 14,
+    minHeight: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#EC9A15",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   sendOtpText: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: "Inter_700Bold",
   },
   sendOtpButtonDisabled: {
@@ -379,9 +373,9 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   skipContainer: {
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
-    paddingVertical: 15,
+    backgroundColor: "#FFF9F1",
+    paddingVertical: 14,
   },
   skipText: {
     fontSize: width * 0.038,
@@ -393,12 +387,12 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_600SemiBold",
   },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
     borderWidth: 1,
-    borderRadius: 8,
     padding: 12,
     marginBottom: 15,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FCA5A5",
+    borderRadius: 12,
   },
   errorText: {
     color: "#DC2626",

@@ -12,10 +12,12 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { safeBack } from "@/utils/safeBack";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import { getCategories, updateProfile, Category } from "@api/services/userService";
 import { getErrorMessage } from "@api/client";
+import { SkeletonGrid } from "@/components/Skeleton/Skeleton";
 
 const { width } = Dimensions.get("window");
 
@@ -41,7 +43,13 @@ export default function OnboardingSelectCategory() {
     setLoadError("");
     try {
       const data = await getCategories(1, 50);
-      setOptions(data.categories);
+      // The server may send `name`/`_id` instead of `label`/`id`; accept either.
+      const raw = (data?.categories ?? (Array.isArray(data) ? data : [])) as any[];
+      setOptions(
+        raw
+          .map((c) => ({ ...c, id: String(c.id ?? c._id ?? ""), label: String(c.label ?? c.name ?? c.title ?? "") }))
+          .filter((c) => c.id && c.label)
+      );
     } catch (error) {
       setLoadError(getErrorMessage(error));
     } finally {
@@ -57,9 +65,9 @@ export default function OnboardingSelectCategory() {
     setSelected((prev) => (prev.includes(item) ? prev.filter((value) => value !== item) : [...prev, item]));
   };
 
-  const handleContinue = async (picked: string[] = selected) => {
+  const handleContinue = async (picked: string[] = selected, skipping = false) => {
     if (saving) return;
-    if (picked.length === 0) {
+    if (picked.length === 0 && !skipping) {
       Alert.alert(
         "Choose at least one",
         role === "participant"
@@ -70,14 +78,19 @@ export default function OnboardingSelectCategory() {
     }
 
     // The user profile stores a single category id.
-    setSaving(true);
-    try {
-      await updateProfile({ categories: picked[0] });
-    } catch (error) {
-      Alert.alert("Could not save", getErrorMessage(error));
-      return;
-    } finally {
-      setSaving(false);
+    if (picked.length > 0) {
+      setSaving(true);
+      try {
+        await updateProfile({ categories: picked[0] });
+      } catch (error) {
+        // Skipping must never be blocked by a failed save.
+        if (!skipping) {
+          Alert.alert("Could not save", getErrorMessage(error));
+          return;
+        }
+      } finally {
+        setSaving(false);
+      }
     }
 
     const query = [
@@ -99,7 +112,7 @@ export default function OnboardingSelectCategory() {
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerBackButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack()} style={styles.headerBackButton}>
             <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
               <Path
                 d="M16 7H3.83L9.42 1.41L8 0L0 8L8 16L9.41 14.59L3.83 9H16V7Z"
@@ -127,7 +140,7 @@ export default function OnboardingSelectCategory() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color="#EC9A15" style={{ marginVertical: 32 }} />
+          <SkeletonGrid count={6} columns={2} aspectRatio={1.6} />
         ) : loadError ? (
           <TouchableOpacity onPress={loadCategories} style={{ marginVertical: 24 }}>
             <Text style={[styles.cardText, { textAlign: "center" }]}>{loadError}</Text>
@@ -171,12 +184,7 @@ export default function OnboardingSelectCategory() {
           style={styles.secondaryButton}
           activeOpacity={0.75}
           onPress={() => {
-            if (selected.length === 0 && options.length > 0) {
-              setSelected([options[0].id]);
-              handleContinue([options[0].id]);
-            } else {
-              handleContinue();
-            }
+            handleContinue(selected, true);
           }}
         >
           <Text style={styles.secondaryButtonText}>Skip (We&apos;ll guess for now)</Text>

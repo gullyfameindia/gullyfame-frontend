@@ -14,8 +14,7 @@ import {
   Platform,
   Text,
   ScrollView,
-  ActivityIndicator,
-} from "react-native";
+  } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   SafeAreaView,
@@ -33,6 +32,7 @@ import {
 } from "@utils/responsive";
 
 import { useRouter } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import {
   searchAll,
   searchUsersPage,
@@ -44,7 +44,7 @@ import { getErrorMessage } from "@/api/client";
 import { openUserProfile } from "@/utils/openProfile";
 import { openCompetition } from "@/utils/openCompetition";
 import { toastError } from "@/components/ui/Toast";
-import { SkeletonList } from "@/components/Skeleton/Skeleton";
+import { Skeleton, SkeletonGrid, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
 
 const getScreenDimensions = () => {
@@ -167,9 +167,12 @@ export default function SearchScreen() {
   // Show the cached home data at once, then refresh it.
   useEffect(() => {
     let active = true;
-    getCachedHomeScreen().then((cached) => {
-      if (active && cached) setHome(cached);
-    });
+    // TEMP (testing skeletons): skip the saved copy in dev so the loading state is visible.
+    if (!__DEV__) {
+      getCachedHomeScreen().then((cached) => {
+        if (active && cached) setHome(cached);
+      });
+    }
     getHomeScreen()
       .then((data) => {
         if (active) setHome(data);
@@ -309,7 +312,7 @@ export default function SearchScreen() {
       >
         <View style={styles.topRow}>
           <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.replace("/(main)" as any))}
+            onPress={() => (router.canGoBack() ? safeBack("/(main)/home") : router.replace("/(main)" as any))}
             style={styles.backButton}
             accessibilityLabel="Back"
           >
@@ -426,6 +429,19 @@ export default function SearchScreen() {
           </View>
           ) : null}
 
+          {home === null ? (
+            <SkeletonRoot style={{ paddingHorizontal: scale(12), gap: scale(16), marginTop: scale(16) }}>
+              <Skeleton width="45%" height={20} radius={6} />
+              <View style={{ flexDirection: "row", gap: scale(12) }}>
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} width={scale(140)} height={scale(64)} radius={12} />
+                ))}
+              </View>
+              <Skeleton width="45%" height={20} radius={6} />
+              <SkeletonGrid count={4} columns={2} />
+            </SkeletonRoot>
+          ) : (
+          <>
           <View style={styles.sectionBlock}>
             <Text style={styles.sectionHeading}>Explore Categories</Text>
             <ScrollView
@@ -489,6 +505,8 @@ export default function SearchScreen() {
                 ))}
               </View>
             </View>
+          )}
+          </>
           )}
         </ScrollView>
       ) : (
@@ -631,7 +649,7 @@ export default function SearchScreen() {
               data={searchResults.results}
               onEndReached={loadMoreResults}
               onEndReachedThreshold={0.5}
-              ListFooterComponent={loadingMore ? <ActivityIndicator color={THEME_COLOR} style={{ margin: 16 }} /> : null}
+              ListFooterComponent={loadingMore ? <SkeletonList rows={2} style={{ paddingHorizontal: 16 }} /> : null}
               keyExtractor={(item) => item._id}
               contentContainerStyle={{ paddingBottom: bottomNavHeight }}
               renderItem={({ item }) => (
@@ -679,7 +697,7 @@ export default function SearchScreen() {
               data={searchResults.results}
               onEndReached={loadMoreResults}
               onEndReachedThreshold={0.5}
-              ListFooterComponent={loadingMore ? <ActivityIndicator color={THEME_COLOR} style={{ margin: 16 }} /> : null}
+              ListFooterComponent={loadingMore ? <SkeletonList rows={2} style={{ paddingHorizontal: 16 }} /> : null}
               keyExtractor={(item) => item._id}
               contentContainerStyle={{
                 paddingBottom: bottomNavHeight,
@@ -712,7 +730,7 @@ export default function SearchScreen() {
               data={searchResults.results}
               onEndReached={loadMoreResults}
               onEndReachedThreshold={0.5}
-              ListFooterComponent={loadingMore ? <ActivityIndicator color={THEME_COLOR} style={{ margin: 16 }} /> : null}
+              ListFooterComponent={loadingMore ? <SkeletonList rows={2} style={{ paddingHorizontal: 16 }} /> : null}
               numColumns={3}
               keyExtractor={(item) => item._id}
               contentContainerStyle={{ paddingBottom: bottomNavHeight }}

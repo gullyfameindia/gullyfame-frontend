@@ -39,7 +39,7 @@ import {
 } from "@/icons";
 import SafeImage from "@/components/SafeImage";
 import HeroBannerCarousel from "@/components/home/HeroBannerCarousel/HeroBannerCarousel";
-import { Skeleton, SkeletonCaption, SkeletonRoot } from "@/components/Skeleton/Skeleton";
+import { Skeleton, SkeletonCaption, SkeletonCards, SkeletonList, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 import CategoriesCarousel from "@/components/home/CategoriesCarousel/CategoriesCarousel";
 import { getAuthToken, getErrorMessage } from "@/api/client";
 import { getCachedHomeScreen, getHomeScreen, HomeScreenData } from "@/api/services/homeService";
@@ -102,6 +102,8 @@ export default function GullyFameHome() {
   const [headerStuck, setHeaderStuck] = useState(false);
 
   const [homeError, setHomeError] = useState("");
+  // False until the first home data (saved copy or server) arrives; sections show skeletons meanwhile.
+  const [homeReady, setHomeReady] = useState(false);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [dailyMission, setDailyMission] = useState<{ target: number; current: number; completed: boolean } | null>(null);
   const [feedError, setFeedError] = useState("");
@@ -118,11 +120,14 @@ export default function GullyFameHome() {
     // Level card and daily mission are hidden while XP and missions are switched off.
     setProgress(XP_AND_MISSIONS_ENABLED ? data.progress : null);
     setDailyMission(XP_AND_MISSIONS_ENABLED ? data.dailyMission : null);
+    setHomeReady(true);
   }, []);
 
   // The last home screen saved on this device shows first; the server copy replaces it.
   const homeLoadedRef = useRef(false);
   useEffect(() => {
+    // TEMP (testing skeletons): skip the saved copy in dev so the loading state is visible.
+    if (__DEV__) return;
     getCachedHomeScreen().then((cached) => {
       if (cached && !homeLoadedRef.current) applyHome(cached);
     });
@@ -137,6 +142,7 @@ export default function GullyFameHome() {
       applyHome(data);
     } catch (error) {
       setHomeError(getErrorMessage(error));
+      setHomeReady(true);
     }
   }, [applyHome]);
 
@@ -327,6 +333,43 @@ export default function GullyFameHome() {
   ];
 
   const renderSection = ({ item }: { item: { id: string } }) => {
+    // Skeletons for every data section until the first home data arrives.
+    if (!homeReady) {
+      switch (item.id) {
+        case "categories":
+          return (
+            <SkeletonRoot style={{ paddingHorizontal: 32, marginTop: 24, marginBottom: 24, gap: 18 }}>
+              <Skeleton width={170} height={22} radius={6} />
+              <View style={{ flexDirection: "row", gap: 28 }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <View key={i} style={{ alignItems: "center", gap: 8 }}>
+                    <Skeleton width={58} height={58} radius={29} />
+                    <Skeleton width={56} height={12} radius={4} />
+                  </View>
+                ))}
+              </View>
+            </SkeletonRoot>
+          );
+        case "live":
+        case "upcoming":
+        case "past":
+          return (
+            <View style={{ paddingHorizontal: 16, marginBottom: 24, gap: 12 }}>
+              <Skeleton width="55%" height={20} radius={6} />
+              <SkeletonCards count={1} height={170} />
+            </View>
+          );
+        case "top_competitors":
+          return (
+            <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+              <Skeleton width="45%" height={20} radius={6} />
+              <SkeletonList rows={3} />
+            </View>
+          );
+        default:
+          break;
+      }
+    }
     switch (item.id) {
       case "hero":
         return (
@@ -342,7 +385,16 @@ export default function GullyFameHome() {
                 <Rect width="100%" height="100%" fill="url(#radialGradient)" />
               </Svg>
             </View>
-            <HeroBannerCarousel />
+            {homeReady ? (
+              <HeroBannerCarousel />
+            ) : (
+              <SkeletonRoot style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", gap: 14, paddingHorizontal: 32 }}>
+                <Skeleton width={72} height={72} radius={36} />
+                <Skeleton width="45%" height={22} radius={6} />
+                <Skeleton width="30%" height={14} radius={4} />
+                <Skeleton width="80%" height={14} radius={4} />
+              </SkeletonRoot>
+            )}
             {/* Hidden while the sticky header shows the same icons, so they never appear twice. */}
             <View
               style={[
@@ -393,10 +445,23 @@ export default function GullyFameHome() {
           <View style={styles.section}>
             <View style={styles.sectionHeaderWithIcon}>
               <View style={styles.sectionTitleRow}>
-                <Text style={styles.sectionTitle}>Feed 🎬</Text>
+                {homeReady ? (
+                  <Text style={styles.sectionTitle}>Feed 🎬</Text>
+                ) : (
+                  <SkeletonRoot>
+                    <Skeleton width={120} height={22} radius={6} />
+                  </SkeletonRoot>
+                )}
               </View>
             </View>
 
+            {!homeReady ? (
+              <SkeletonRoot style={{ flexDirection: "row", gap: 8, paddingHorizontal: 16, marginBottom: 12 }}>
+                {[96, 84, 90, 70].map((w, i) => (
+                  <Skeleton key={i} width={w} height={34} radius={20} />
+                ))}
+              </SkeletonRoot>
+            ) : (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -434,8 +499,9 @@ export default function GullyFameHome() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+            )}
 
-            {feedLoading ? (
+            {feedLoading || !homeReady ? (
               <SkeletonRoot style={[styles.trendingScroll, { flexDirection: "row", overflow: "hidden" }]}>
                 {[0, 1, 2].map((i) => (
                   <View key={i} style={styles.trendingReelCardWrapper}>
@@ -944,7 +1010,13 @@ export default function GullyFameHome() {
       case "role_banner":
         return (
           <View style={{ marginBottom: 40 }}>
-            <RoleBasedBanner />
+            {homeReady ? (
+              <RoleBasedBanner />
+            ) : (
+              <SkeletonRoot style={{ paddingHorizontal: 16 }}>
+                <Skeleton height={76} radius={16} />
+              </SkeletonRoot>
+            )}
           </View>
         );
 

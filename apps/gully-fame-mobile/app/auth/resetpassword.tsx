@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import OutlinedField, { FIELD_COLORS, fieldInputStyle } from "@/components/ui/OutlinedField";
+import { safeBack } from "@/utils/safeBack";
 import Svg, { Path } from "react-native-svg";
 import { authService, AUTH_RULES } from "@api/services/authService";
 import { EyeIcon, EyeOffIcon } from "@/icons";
@@ -19,6 +21,7 @@ import { EyeIcon, EyeOffIcon } from "@/icons";
 const { width, height } = Dimensions.get("window");
 
 export default function ResetPassword() {
+  const [focus, setFocus] = useState<string | null>(null);
   const params = useLocalSearchParams();
   const resetToken = params.resetToken ? String(params.resetToken) : "";
 
@@ -115,7 +118,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <KeyboardAvoidingScreen style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container} statusBarColor="#3C2610">
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -123,8 +126,8 @@ export default function ResetPassword() {
         {/* Header with Back Arrow and Logo */}
         <View style={styles.header}>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-            onPress={() => router.back()}
-            style={styles.backButton}
+            onPress={() => safeBack()}
+            style={styles.headerSide}
           >
             <Svg width={20} height={20} viewBox="0 0 16 16" fill="none">
               <Path
@@ -133,75 +136,66 @@ export default function ResetPassword() {
               />
             </Svg>
           </TouchableOpacity>
-        </View>
-
-        {/* Logo */}
-        <View style={styles.logoContainer}>
           <Image
             source={require("@assets/images/gfi.png")}
             style={styles.logo}
             resizeMode="contain"
           />
+          <View style={styles.headerSide} />
         </View>
 
-        {/* Title */}
-        <Text style={[styles.title, { fontFamily: "PlayfairDisplay_700Bold" }]}>
+        <View style={styles.card}>
+        <Text style={styles.title}>
           Reset Password
         </Text>
 
-        {/* New Password Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>New Password</Text>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter New Password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={handlePasswordChange}
-            />
+        <OutlinedField label="New Password" required icon="lock-closed-outline" focused={focus === "pw"}>
+          <TextInput
+            style={fieldInputStyle}
+            placeholder="At least 6 characters"
+            placeholderTextColor={FIELD_COLORS.placeholder}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={handlePasswordChange}
+            onFocus={() => setFocus("pw")}
+            onBlur={() => setFocus(null)}
+          />
             {password.length > 0 && (
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                style={styles.eyeIcon}
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                style={{ paddingLeft: 10, paddingVertical: 4 }}
+                hitSlop={10}
                 onPress={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? (
-                  <EyeOffIcon size={20} color="#9CA3AF" />
-                ) : (
-                  <EyeIcon size={20} color="#9CA3AF" />
-                )}
+                {showPassword ? <EyeOffIcon size={20} color={FIELD_COLORS.icon} /> : <EyeIcon size={20} color={FIELD_COLORS.icon} />}
               </TouchableOpacity>
             )}
-          </View>
-        </View>
+        </OutlinedField>
 
-        {/* Confirm Password Input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Confirm Password</Text>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Re-enter New Password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry={!showConfirmPassword}
-              value={confirmPassword}
-              onChangeText={handleConfirmPasswordChange}
-            />
+        <OutlinedField label="Confirm Password" required icon="shield-checkmark-outline" focused={focus === "cpw"}>
+          <TextInput
+            style={fieldInputStyle}
+            placeholder="Re-enter your new password"
+            placeholderTextColor={FIELD_COLORS.placeholder}
+            secureTextEntry={!showConfirmPassword}
+            value={confirmPassword}
+            onChangeText={handleConfirmPasswordChange}
+            onFocus={() => setFocus("cpw")}
+            onBlur={() => setFocus(null)}
+          />
             {confirmPassword.length > 0 && (
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
-                style={styles.eyeIcon}
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
+                style={{ paddingLeft: 10, paddingVertical: 4 }}
+                hitSlop={10}
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >
-                {showConfirmPassword ? (
-                  <EyeOffIcon size={20} color="#9CA3AF" />
-                ) : (
-                  <EyeIcon size={20} color="#9CA3AF" />
-                )}
+                {showConfirmPassword ? <EyeOffIcon size={20} color={FIELD_COLORS.icon} /> : <EyeIcon size={20} color={FIELD_COLORS.icon} />}
               </TouchableOpacity>
             )}
-          </View>
-        </View>
+        </OutlinedField>
 
         {/* Password Requirements */}
         {password.length > 0 && passwordErrors.length > 0 && (
@@ -250,52 +244,61 @@ export default function ResetPassword() {
             <Text style={styles.primaryButtonText}>Update Password</Text>
           )}
         </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: "#FFF9F1",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 30,
+  },
+  headerSide: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   container: {
     flex: 1,
     backgroundColor: "#3C2610",
   },
   content: {
-    paddingHorizontal: 30,
-    paddingTop: height * 0.06,
-    paddingBottom: 20,
+    flexGrow: 1,
+    paddingTop: height * 0.015,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 0,
-  },
-  backButton: {
-    padding: 8,
-    marginTop: 10,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginTop: -50,
-    marginBottom: 60,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 28,
   },
   logo: {
     width: width * 0.35,
     height: height * 0.08,
   },
   title: {
-    color: "#FFFFFF",
-    fontSize: 25,
-    marginBottom: 30,
+    color: "#1F2937",
+    fontSize: 28,
+    fontFamily: "PlayfairDisplay_800ExtraBold",
+    marginBottom: 10,
   },
   inputGroup: {
     marginBottom: 24,
   },
   label: {
-    color: "#FFFFFF",
-    fontSize: 15,
+    color: "#1F2937",
+    fontSize: 14,
     marginBottom: 8,
-    fontFamily: "Inter",
+    fontFamily: "Inter_600SemiBold",
   },
   passwordContainer: {
     position: "relative",
@@ -303,17 +306,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   input: {
-    backgroundColor: "#55402d",
-    borderRadius: 5,
-    paddingHorizontal: 12,
     paddingVertical: 14,
     paddingRight: 45,
-    color: "#c8c8c8",
-    fontSize: 14,
+    color: "#1F2937",
     fontFamily: "Inter_400Regular",
-    borderWidth: 0,
-    borderColor: "rgba(255,255,255,0.2)",
     flex: 1,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#E7D9C4",
+    backgroundColor: "#FFFFFF",
+    minHeight: 54,
+    paddingHorizontal: 14,
+    fontSize: 15,
   },
   eyeIcon: {
     position: "absolute",
@@ -321,32 +325,34 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   primaryButton: {
-    backgroundColor: "#EC9A15",
     paddingVertical: 18,
-    borderRadius: 30,
-    alignItems: "center",
     marginTop: 12,
-    shadowColor: "#000",
+    backgroundColor: "#EC9A15",
+    borderRadius: 14,
+    minHeight: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#EC9A15",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   primaryButtonText: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: "Inter_700Bold",
   },
   primaryButtonDisabled: {
     opacity: 0.6,
   },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
     borderWidth: 1,
-    borderRadius: 8,
     padding: 12,
     marginBottom: 15,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FCA5A5",
+    borderRadius: 12,
   },
   errorText: {
     color: "#DC2626",
@@ -369,7 +375,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   requirementsContainer: {
-    backgroundColor: "#2A1F0F",
+    backgroundColor: "#FEF3E2",
     borderRadius: 8,
     padding: 12,
     marginBottom: 15,

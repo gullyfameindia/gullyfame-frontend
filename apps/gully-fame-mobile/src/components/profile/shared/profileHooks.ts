@@ -61,7 +61,8 @@ export function useOwnProfile() {
         ...EMPTY_PROFILE,
         ...(getOwnProfileSnapshot<ProfileData>() || {}),
     }));
-    const [isLoading, setIsLoading] = useState(() => !getOwnProfileSnapshot());
+    // TEMP (testing skeletons): in dev, ignore the saved profile so the loading state shows.
+    const [isLoading, setIsLoading] = useState(() => __DEV__ || !getOwnProfileSnapshot());
     const [error, setError] = useState("");
 
     // Remember the latest profile for the next visit.
@@ -76,7 +77,7 @@ export function useOwnProfile() {
         const snapshot = getOwnProfileSnapshot<ProfileData>();
         if (snapshot) {
             setProfileData((prev) => (prev.id ? prev : { ...prev, ...snapshot }));
-            setIsLoading(false);
+            if (!__DEV__) setIsLoading(false);
         }
         const cached = Object.fromEntries(
             await AsyncStorage.multiGet([

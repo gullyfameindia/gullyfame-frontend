@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ImageBackground, StatusBar, Modal, Animated, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, ImageBackground, StatusBar, Modal, Animated } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, G, Circle, Rect } from "react-native-svg";
 import { getCategories } from "@/api/services/userService";
 import { getFollowedCategories, setCategoryFollowed } from "@/utils/followedCategories";
 import { TALENT_CATEGORIES } from "@/constants/talentCategories";
 import { listCompetitionsByCategory, getCompetitionReels, type CompetitionListItem } from "@/api/services/competitionService";
+import { SkeletonCards, SkeletonGrid } from "@/components/Skeleton/Skeleton";
 
 const { width, height } = Dimensions.get("window");
 
@@ -322,7 +324,7 @@ export default function CategoryDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {}
         <View style={styles.header}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.backButton}>
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
             </Svg>
@@ -441,9 +443,7 @@ export default function CategoryDetailScreen() {
               if (filteredComps.length === 0) {
                 if (listsLoading) {
                   return (
-                    <View style={styles.emptyState}>
-                      <ActivityIndicator color="#EC9A15" />
-                    </View>
+                    <SkeletonCards count={3} />
                   );
                 }
                 return (
@@ -800,9 +800,7 @@ export default function CategoryDetailScreen() {
         ) : (
           <View style={styles.content}>
             {sampleReels.length === 0 && listsLoading && (
-              <View style={styles.emptyState}>
-                <ActivityIndicator color="#EC9A15" />
-              </View>
+              <SkeletonGrid count={6} columns={2} />
             )}
             {sampleReels.length === 0 && !listsLoading && (
               <View style={styles.emptyState}>

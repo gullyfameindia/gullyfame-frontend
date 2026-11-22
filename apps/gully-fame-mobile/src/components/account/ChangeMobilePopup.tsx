@@ -11,7 +11,8 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { apiPost, getErrorMessage } from "@/api/client";
+import { apiPost, getErrorMessage, getRetryAfterSeconds } from "@/api/client";
+import OtpCodeInput, { OTP_LENGTH } from "@/components/ui/OtpCodeInput";
 
 // Same brown + orange palette as the rest of the app.
 const C = {
@@ -69,7 +70,9 @@ export default function ChangeMobilePopup({ visible, currentMobile, onClose, onC
 
   const digits = mobile.replace(/\D/g, "");
 
-  const sendCode = async () => {
+  // First send inside the resend window gets back the code already texted (no error);
+  // "Resend code" passes resend=true and is told exactly how long to wait if it is too soon.
+  const sendCode = async (resend = false) => {
     if (busy) return;
     if (!/^[6-9]\d{9}$/.test(digits)) {
       setError("Enter a valid 10-digit Indian mobile number.");
@@ -78,13 +81,18 @@ export default function ChangeMobilePopup({ visible, currentMobile, onClose, onC
     setBusy(true);
     setError("");
     try {
-      const res = await apiPost<{ txnId: string }>("user/mobile/send-otp", { mobile: digits });
+      const res = await apiPost<{ txnId: string; resendIn?: number }>("user/mobile/send-otp", {
+        mobile: digits,
+        ...(resend ? { resend: true } : {}),
+      });
       setTxnId(res.txnId);
       setStep("code");
       setOtp("");
-      setResendIn(RESEND_SECONDS);
+      setResendIn(res.resendIn ?? RESEND_SECONDS);
     } catch (e) {
       setError(getErrorMessage(e));
+      const wait = getRetryAfterSeconds(e);
+      if (wait > 0) setResendIn(wait);
     } finally {
       setBusy(false);
     }
@@ -92,7 +100,7 @@ export default function ChangeMobilePopup({ visible, currentMobile, onClose, onC
 
   const verifyCode = async () => {
     if (busy) return;
-    if (!/^\d{4,8}$/.test(otp.trim())) {
+    if (otp.length !== OTP_LENGTH) {
       setError("Enter the code we sent to your new number.");
       return;
     }
@@ -150,23 +158,22 @@ export default function ChangeMobilePopup({ visible, currentMobile, onClose, onC
             <>
               <Text style={styles.desc}>We sent a code to +91 {digits}.</Text>
               <Text style={styles.label}>Code</Text>
-              <TextInput
-                style={[styles.input, styles.otpInput]}
+              <OtpCodeInput
                 value={otp}
                 onChangeText={(t) => {
-                  setOtp(t.replace(/[^\d]/g, "").slice(0, 8));
+                  setOtp(t);
                   setError("");
                 }}
-                placeholder="Enter code"
-                placeholderTextColor={C.faint}
-                keyboardType="number-pad"
+                theme="dark"
                 autoFocus
+                hasError={Boolean(error)}
+                testID="change-mobile-otp"
               />
               <View style={styles.linkRow}>
                 <TouchableOpacity onPress={() => setStep("number")} disabled={busy}>
                   <Text style={styles.link}>Change number</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={sendCode} disabled={busy || resendIn > 0}>
+                <TouchableOpacity onPress={() => sendCode(true)} disabled={busy || resendIn > 0}>
                   <Text style={[styles.link, resendIn > 0 && styles.linkDisabled]}>
                     {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend code"}
                   </Text>
@@ -178,9 +185,9 @@ export default function ChangeMobilePopup({ visible, currentMobile, onClose, onC
           {!!error && <Text style={styles.error}>{error}</Text>}
 
           <TouchableOpacity
-            style={[styles.primaryButton, busy && styles.disabled]}
-            onPress={step === "number" ? sendCode : verifyCode}
-            disabled={busy}
+            style={[styles.primaryButton, (busy || (step === "code" && otp.length !== OTP_LENGTH)) && styles.disabled]}
+            onPress={step === "number" ? () => sendCode(false) : verifyCode}
+            disabled={busy || (step === "code" && otp.length !== OTP_LENGTH)}
             activeOpacity={0.8}
             accessibilityRole="button"
           >
@@ -271,11 +278,6 @@ const styles = StyleSheet.create({
     color: C.text,
     fontSize: 16,
     fontFamily: "Rubik_400Regular",
-  },
-  otpInput: {
-    letterSpacing: 6,
-    textAlign: "center",
-    fontSize: 20,
   },
   linkRow: {
     flexDirection: "row",

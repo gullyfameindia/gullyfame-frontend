@@ -200,6 +200,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   otp_expired: "This OTP has expired. Please request a new one.",
   otp_too_many_attempts: "Too many incorrect attempts. Please request a new OTP.",
   otp_resend_too_soon: "Please wait a few seconds before requesting another OTP.",
+  email_change_needs_verification: "To change your email, verify the new address with the code we send to it.",
+  email_same: "This is already your email address.",
   otp_send_failed: "Could not send the OTP. Please check the number and try again.",
   otp_service_unavailable: "OTP service is unavailable right now.",
   otp_email_not_supported: "OTP login is only available with a mobile number.",
@@ -276,6 +278,17 @@ export function friendlyMessage(raw?: string | null): string {
   // Remaining snake_case keys we don't know about.
   if (/^[a-z]+(_[a-z]+)+$/.test(trimmed)) return GENERIC_MESSAGE;
   return trimmed;
+}
+
+/**
+ * Seconds the server asked us to wait before trying again (OTP resend limit or rate limit), or 0.
+ * Read from the response body's retryAfterSeconds or the Retry-After header.
+ */
+export function getRetryAfterSeconds(error: unknown): number {
+  if (!(error instanceof ApiError)) return 0;
+  const fromBody = Number((error.data as { retryAfterSeconds?: unknown } | null)?.retryAfterSeconds);
+  if (Number.isFinite(fromBody) && fromBody > 0) return Math.ceil(fromBody);
+  return error.retryAfterMs && error.retryAfterMs > 0 ? Math.ceil(error.retryAfterMs / 1000) : 0;
 }
 
 /** Message to show for any thrown value (ApiError or otherwise). */
@@ -483,7 +496,15 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// TEMP (testing skeleton loaders): remove this constant and the delay below when done.
+const TEMP_LOADING_DELAY_MS = 5000;
+
 apiClient.interceptors.request.use(async (config) => {
+  // TEMP: slow every request down so loading states stay visible. Dev builds only.
+  // Sign-in, OTP and logout (auth/*) are left out so they stay fast.
+  if (__DEV__ && TEMP_LOADING_DELAY_MS > 0 && !/(^|\/)auth\//.test(config.url ?? "")) {
+    await new Promise((resolve) => setTimeout(resolve, TEMP_LOADING_DELAY_MS));
+  }
   if (!isOnline) {
     throw new ApiError("You're offline. Check your internet connection and try again.", {
       isNetworkError: true,
@@ -548,8 +569,8 @@ apiClient.interceptors.response.use(
     }
 
     const status = error.response.status;
-    const retryAfterMs =
-      status === 429 ? parseRetryAfterMs((error.response.headers as any)?.["retry-after"]) : null;
+    // 429 rate limits and 400 "wait before requesting another code" both send Retry-After.
+    const retryAfterMs = parseRetryAfterMs((error.response.headers as any)?.["retry-after"]);
 
     // Rate limited / temporarily unavailable: GETs wait (honouring Retry-After for 429) and try again.
     if (canRetry && RETRYABLE_STATUS.has(status)) {
@@ -645,6 +666,8 @@ export interface ApiResult<T = any> {
   error?: string;
   status?: number | null;
   isNetworkError?: boolean;
+  /** Set when the server said how long to wait before trying again (OTP resend / rate limit). */
+  retryAfterSeconds?: number;
 }
 
 /**
@@ -663,6 +686,7 @@ export async function toResult<T>(fn: () => Promise<T>, successMessage = "succes
       error: message,
       status: error instanceof ApiError ? error.status : null,
       isNetworkError: error instanceof ApiError ? error.isNetworkError : false,
+      retryAfterSeconds: getRetryAfterSeconds(error) || undefined,
     };
   }
 }

@@ -14,6 +14,7 @@ import {
   TextInput,
 } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
@@ -21,6 +22,7 @@ import * as Clipboard from "expo-clipboard";
 import { getReferral, applyReferralCode, ReferralSummary } from "@/api/services/userService";
 import { getErrorMessage } from "@/api/client";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
+import { Skeleton } from "@/components/Skeleton/Skeleton";
 
 // Same brown + orange palette as the rest of the app.
 const C = {
@@ -144,7 +146,7 @@ export default function InviteFriendScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerSide} testID="invite-back">
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerSide} testID="invite-back">
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Invite & Earn</Text>
@@ -207,7 +209,7 @@ export default function InviteFriendScreen() {
         <Text style={styles.sectionLabel}>Your referral code</Text>
         {codeLoading ? (
           <View style={styles.codeLoading}>
-            <ActivityIndicator size="small" color={C.accent} />
+            <Skeleton height={44} radius={12} />
           </View>
         ) : userReferralCode ? (
           <View style={styles.codeBox}>

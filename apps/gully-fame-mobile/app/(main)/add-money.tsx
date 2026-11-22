@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Alert, ActivityIndicator, TextInput } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { BackIcon } from "@/icons";
@@ -10,6 +11,7 @@ import { getProfile, displayName } from "@/api/services/userService";
 import { getErrorMessage } from "@/api/client";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
 import { COIN_PURCHASE_ENABLED } from "@/config/features";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 
 interface CoinPackage {
   id: string;
@@ -37,7 +39,7 @@ export default function AddMoneyRoute() {
 function CoinPurchaseUnavailable() {
   useEffect(() => {
     toastError("Buying coins is not available yet.");
-    if (router.canGoBack()) router.back();
+    if (router.canGoBack()) safeBack("/(main)/home");
     else router.replace("/(main)/coins" as any);
   }, []);
   return <View style={{ flex: 1, backgroundColor: "#000" }} />;
@@ -100,7 +102,7 @@ function AddMoneyScreen() {
       if (outcome.status === "paid") {
         if (typeof outcome.balance === "number") setBalance(outcome.balance);
         toastSuccess(`${packageData.coins} GFI coins added to your wallet.`);
-        router.back();
+        safeBack("/(main)/home");
       } else if (outcome.status === "pending") {
         Alert.alert("Payment processing", outcome.message);
       } else if (outcome.status === "failed") {
@@ -118,7 +120,7 @@ function AddMoneyScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-          onPress={() => router.back()}
+          onPress={() => safeBack("/(main)/home")}
           style={styles.backButton}
         >
           <BackIcon />
@@ -128,10 +130,7 @@ function AddMoneyScreen() {
       </View>
 
       {loading ? (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color="#EC9A15" />
-          <Text style={{ color: "#999", marginTop: 12 }}>Loading wallet...</Text>
-        </View>
+        <SkeletonDetail bannerHeight={120} />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}

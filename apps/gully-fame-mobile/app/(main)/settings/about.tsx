@@ -1,10 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
 import { FAQS } from "@/content/legal/faq";
-import { useAboutText } from "@/hooks/useCmsContent";
+import { useAboutPage } from "@/hooks/useCmsContent";
+import { SkeletonArticle } from "@/components/Skeleton/Skeleton";
 
 // Same brown + orange palette as the rest of the app.
 const C = {
@@ -33,7 +35,7 @@ const FEATURES: { text: string; icon: keyof typeof Ionicons.glyphMap }[] = [
 
 export default function AboutScreen() {
   const version = Constants.expoConfig?.version ?? "";
-  const remoteAbout = useAboutText();
+  const { text: remoteAbout, loading: aboutLoading } = useAboutPage();
   const aboutText = remoteAbout || ABOUT_TEXT;
 
   return (
@@ -42,7 +44,7 @@ export default function AboutScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerSide}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerSide}>
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>About</Text>
@@ -50,6 +52,10 @@ export default function AboutScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {aboutLoading ? (
+          <SkeletonArticle />
+        ) : (
+        <>
         {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
@@ -81,6 +87,8 @@ export default function AboutScreen() {
             </View>
           ))}
         </View>
+        </>
+        )}
       </ScrollView>
     </View>
   );

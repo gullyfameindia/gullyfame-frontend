@@ -6,17 +6,18 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
   ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Svg, { Path } from "react-native-svg";
 import PhoneMessageIcon from "@components/ui/PhoneMessageIcon";
 import { authService, AUTH_RULES } from "@api/services/authService";
 import { getErrorMessage } from "@api/client";
+import OtpCodeInput, { OTP_LENGTH } from "@/components/ui/OtpCodeInput";
 import { registerPushTokenWithBackend } from "@utils/pushToken";
 import { useUserRole } from "@/contexts/UserRoleContext";
 import { saveUserSession } from "@utils/userSession";
@@ -40,7 +41,11 @@ export default function VerifyOtp() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [currentTxnId, setCurrentTxnId] = useState(txnId);
-  const [cooldown, setCooldown] = useState(AUTH_RULES.resendCooldownSeconds);
+  // Server-reported wait (less than the full window when a code sent moments ago was reused).
+  const [cooldown, setCooldown] = useState(() => {
+    const n = params.resendIn === undefined || params.resendIn === "" ? NaN : Number(params.resendIn);
+    return Number.isFinite(n) && n >= 0 ? Math.ceil(n) : AUTH_RULES.resendCooldownSeconds;
+  });
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -61,14 +66,18 @@ export default function VerifyOtp() {
     setIsResending(true);
     try {
       const result =
-        mode === "reset" ? await authService.forgotPassword(resetUserId) : await authService.resendOtp(mobile);
+        mode === "reset"
+          ? await authService.forgotPassword(resetUserId, { resend: true })
+          : await authService.resendOtp(mobile);
       if (!result.success || !result.data?.txnId) {
         setErrorMessage(result.message);
+        if (result.retryAfterSeconds) setCooldown(result.retryAfterSeconds);
         return;
       }
       setCurrentTxnId(result.data.txnId);
+      // The old code is replaced; clear what was typed for it.
       setOtp("");
-      setCooldown(AUTH_RULES.resendCooldownSeconds);
+      setCooldown(result.data.resendIn ?? AUTH_RULES.resendCooldownSeconds);
       setSuccessMessage("A new verification code has been sent.");
     } finally {
       setIsResending(false);
@@ -79,7 +88,7 @@ export default function VerifyOtp() {
     if (isLoading) return;
     setErrorMessage("");
     setSuccessMessage("");
-    if (!/^\d{6}$/.test(otp)) {
+    if (otp.length !== OTP_LENGTH) {
       setErrorMessage("Please enter the 6-digit code.");
       return;
     }
@@ -113,7 +122,9 @@ export default function VerifyOtp() {
       if (result.data.isNewUser || !profile.firstName) {
         router.replace("/onboarding/personal-details" as any);
       } else {
-        router.replace("/auth/location");
+        // TEMP: location permission step disabled; restore the next line to ask for location again.
+        // router.replace("/auth/location");
+        router.replace("/(main)/home" as any);
       }
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
@@ -123,10 +134,10 @@ export default function VerifyOtp() {
   };
 
   return (
-    <KeyboardAvoidingScreen style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container} statusBarColor="#3C2610">
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {}
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack()} style={styles.backButton}>
           <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
             <Path
               d="M16 7H3.83L9.42 1.41L8 0L0 8L8 16L9.41 14.59L3.83 9H16V7Z"
@@ -158,31 +169,17 @@ export default function VerifyOtp() {
 
         {}
         <View style={styles.otpContainer}>
-        <View style={styles.otpRow}>
-          {Array.from({ length: 6 }).map((_, index) => (
-            <View 
-              key={index} 
-              style={[
-                styles.otpBox,
-                otp[index] && styles.otpBoxFilled
-              ]}
-            >
-              <Text style={styles.otpBoxText}>{otp[index] || ""}</Text>
-            </View>
-          ))}
-        </View>
-
-          {}
-        <TextInput
-          value={otp}
-          onChangeText={(value) => setOtp(value.replace(/[^0-9]/g, "").slice(0, 6))}
-          keyboardType="number-pad"
-          style={styles.hiddenInput}
-          maxLength={6}
-            autoFocus={true}
-            editable={true}
-            caretHidden={true}
-        />
+          <OtpCodeInput
+            value={otp}
+            onChangeText={(value) => {
+              setOtp(value);
+              if (errorMessage) setErrorMessage("");
+            }}
+            autoFocus
+            hasError={Boolean(errorMessage)}
+            source={mode === "reset" ? "email" : "sms"}
+            testID="verify-otp-input"
+          />
         </View>
         {}
         <TouchableOpacity 
@@ -212,10 +209,10 @@ export default function VerifyOtp() {
 
         {}
         <TouchableOpacity 
-          style={[styles.validateButton, isLoading && styles.validateButtonDisabled]} 
+          style={[styles.validateButton, (isLoading || otp.length !== OTP_LENGTH) && styles.validateButtonDisabled]} 
           activeOpacity={0.85} 
           onPress={handleValidate}
-          disabled={isLoading}
+          disabled={isLoading || otp.length !== OTP_LENGTH}
         >
           {isLoading ? (
             <ActivityIndicator color="#FFFFFF" />
@@ -231,7 +228,7 @@ export default function VerifyOtp() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FFF9F1",
   },
   content: {
     paddingHorizontal: 24,
@@ -282,39 +279,6 @@ const styles = StyleSheet.create({
     position: "relative",
     marginBottom: 32,
   },
-  otpRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 4,
-  },
-  otpBox: {
-    width: width * 0.12,
-    height: width * 0.14,
-    borderWidth: 1,
-    borderColor: "#999999",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-  },
-  otpBoxFilled: {
-    borderColor: "#999999",
-  },
-  otpBoxText: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#1A1A1A",
-  },
-  hiddenInput: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0,
-    fontSize: 1,
-    color: "transparent",
-    zIndex: 10,
-  },
   resendButton: {
     alignItems: "center",
     marginBottom: 220,
@@ -329,16 +293,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   validateButton: {
-    backgroundColor: "#3C2610",
-    borderRadius: 32,
     paddingVertical: 16,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
     marginBottom: 12,
+    backgroundColor: "#EC9A15",
+    borderRadius: 14,
+    minHeight: 56,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#EC9A15",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   validateButtonDisabled: {
     backgroundColor: "#9CA3AF",
@@ -346,15 +312,15 @@ const styles = StyleSheet.create({
   validateButtonText: {
     color: "#FFFFFF",
     fontSize: 17,
-    fontFamily: "Inter_500Medium",
+    fontFamily: "Inter_700Bold",
   },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
     borderWidth: 1,
-    borderRadius: 8,
     padding: 12,
     marginBottom: 15,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FCA5A5",
+    borderRadius: 12,
   },
   errorText: {
     color: "#DC2626",

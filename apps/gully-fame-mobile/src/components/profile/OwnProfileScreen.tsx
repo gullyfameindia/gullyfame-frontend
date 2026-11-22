@@ -42,6 +42,7 @@ import { useUserReels } from "@/hooks/useUserReels";
 import { useProfileExtras } from "@/hooks/useProfileExtras";
 import { useInteractionReels } from "@/hooks/useInteractionReels";
 import { XP_AND_MISSIONS_ENABLED } from "@/config/features";
+import { Skeleton, SkeletonProfileHeader } from "@/components/Skeleton/Skeleton";
 
 const profileTabs = [
   { name: "Home", icon: HomeIconSVG, label: "" },
@@ -322,6 +323,19 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
     </View>
   );
 
+  // While the profile loads, keep the top bar and show shimmer blocks for everything below it.
+  const topLoading = (
+    <View>
+      <View style={[ownStyles.topBar, { paddingTop: insets.top + 6 }]}>
+        <TouchableOpacity onPress={() => router.replace("/(main)" as any)} style={ownStyles.topIcon} accessibilityLabel="Back">
+          <BackIcon color="white" size={22} />
+        </TouchableOpacity>
+        <View style={ownStyles.topActions} />
+      </View>
+      <SkeletonProfileHeader />
+    </View>
+  );
+
   const top = (
     <View>
       <View style={[ownStyles.topBar, { paddingTop: insets.top + 6 }]}>
@@ -368,6 +382,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
               >
                 {displayName || (isLoading ? "" : "User")}
               </Text>
+              {!displayName && isLoading ? <Skeleton width={140} height={20} radius={6} /> : null}
               {profileData.isVerified ? <VerifiedBadgeIcon size={18} /> : null}
             </View>
             <View
@@ -536,7 +551,7 @@ export default function OwnProfileScreen({ role }: { role: "fan" | "participant"
   return (
     <View style={{ flex: 1, backgroundColor: "#3C2610" }}>
       <StatusBar barStyle="light-content" />
-      <ProfileView top={top} tabs={tabs} canCreatePost={!isFan} ownerId={userId} textTabs />
+      <ProfileView loading={isLoading} top={isLoading ? topLoading : top} tabs={tabs} canCreatePost={!isFan} ownerId={userId} textTabs />
 
       <ProfileBurgerMenuModal
         isVisible={menuVisible}

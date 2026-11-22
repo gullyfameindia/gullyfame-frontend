@@ -15,7 +15,7 @@ export const TERMS_OF_SERVICE: LegalSection[] = [
     number: "1",
     heading: "AGREEMENT AND SCOPE",
     body: [
-      { t: "p", x: "These Terms of Service (“Terms”) constitute a legally binding agreement between you and GULLYFAME INDIA PRIVATE LIMITED (“GullyFame India”), a company incorporated under the laws of India having its registered office at Ground Floor, 55 B, House 55B, Satguru Ram Singh Marg, Travel Masti, Najafgarh Road Industrial Area, New Delhi, West Delhi, Delhi, 110015 (“we,” “us,” or “our”), governing your access to and use of the GullyFame India mobile application, website, software, features, content, tools, and related services (collectively, the “Platform”)." },
+      { t: "p", x: "These Terms of Service (“Terms”) constitute a legally binding agreement between you and GULLY FAME INDIA PRIVATE LIMITED (“GullyFame India”), a company incorporated under the laws of India having its registered office at Ground Floor, 55 B, House 55B, Satguru Ram Singh Marg, Travel Masti, Najafgarh Road Industrial Area, New Delhi, West Delhi, Delhi, 110015 (“we,” “us,” or “our”), governing your access to and use of the GullyFame India mobile application, website, software, features, content, tools, and related services (collectively, the “Platform”)." },
       { t: "p", x: "By registering, accessing, browsing, or using the Platform, you agree to these Terms, the Privacy Policy and any additional terms displayed for a particular feature, competition, promotion, creator programme, transaction service. If you do not agree, you must not use the Platform." },
       { t: "p", x: "If you wish to use our Services, please ensure that you are permitted to do so, in your jurisdiction. You are required to follow certain rules while you use our Platform. We have listed these rules in this document. Please read these Terms and all other hyperlinks mentioned here carefully. Please note that by using our Platform, you agree to these Terms. Also, if you are using these services outside India, please comply with your local laws." },
       { t: "p", x: "Where a feature has separate terms, those terms apply to that feature and prevail to the extent of any inconsistency." },
@@ -278,7 +278,7 @@ export const TERMS_OF_SERVICE: LegalSection[] = [
     number: "27",
     heading: "CONTACT AND GRIEVANCE REDRESSAL DETAILS",
     body: [
-      { t: "p", x: "Legal Entity: GULLYFAME INDIA PRIVATE LIMITED" },
+      { t: "p", x: "Legal Entity: GULLY FAME INDIA PRIVATE LIMITED" },
       { t: "p", x: "CIN: U62099DL2025PTC455455" },
       { t: "p", x: "GSTIN: 07AAMCG3793P1ZP" },
       { t: "p", x: "Registered Office: Ground Floor, 55 B, House 55B, Satguru Ram Singh Marg, Travel Masti, Najafgarh Road Industrial Area, New Delhi, West Delhi, Delhi, 110015" },

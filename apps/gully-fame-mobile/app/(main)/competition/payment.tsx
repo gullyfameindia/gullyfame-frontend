@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { joinCompetition } from "@/api/services/competitionService";
 import { ApiError, getErrorMessage } from "@/api/client";
 import { openCompetition } from "@/utils/openCompetition";
@@ -101,7 +102,7 @@ export default function CompetitionPaymentScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerBackButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerBackButton}>
             <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path d="M19 12H5M12 19l-7-7 7-7" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>

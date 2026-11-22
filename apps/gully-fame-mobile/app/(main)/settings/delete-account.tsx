@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform, Linking } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { Ionicons } from "@expo/vector-icons";
 import { apiDelete, apiPost, getErrorMessage } from "@/api/client";
 import { performLogout } from "@/utils/logout";
@@ -76,7 +77,7 @@ export default function DeleteAccountScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.headerSide} accessibilityRole="button" accessibilityLabel="Go back">
+        <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.headerSide} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="chevron-back" size={28} color={C.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Delete Account</Text>
@@ -121,7 +122,7 @@ export default function DeleteAccountScreen() {
           <Text style={styles.dangerText}>{busy ? "Deleting…" : "Delete permanently"}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.keepButton} onPress={() => router.back()} activeOpacity={0.8} accessibilityRole="button">
+        <TouchableOpacity style={styles.keepButton} onPress={() => safeBack("/(main)/home")} activeOpacity={0.8} accessibilityRole="button">
           <Text style={styles.keepText}>Cancel, keep my account</Text>
         </TouchableOpacity>
 

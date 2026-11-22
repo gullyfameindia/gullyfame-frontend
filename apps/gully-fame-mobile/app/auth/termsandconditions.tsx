@@ -1,59 +1,61 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import Svg, { Path } from "react-native-svg";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LegalDocument } from "@/components/legal/LegalDocument";
+import { safeBack } from "@/utils/safeBack";
+import { LegalCards, LEGAL_COLORS as C } from "@/components/legal/LegalCards";
 import { TERMS_OF_SERVICE, TERMS_OF_SERVICE_TITLE } from "@/content/legal/termsOfService";
+import { useTermsText } from "@/hooks/useCmsContent";
 
+/** Terms shown during sign-up: same layout as Settings > Terms of Service, plus an Agree footer. */
 export default function TermsAndConditions() {
-  const router = useRouter(); 
-  const [isPressed, setIsPressed] = useState(false);
+  const insets = useSafeAreaInsets();
+  const remoteText = useTermsText();
+
   const handleAgree = async () => {
     try {
-      
       await AsyncStorage.setItem("termsAccepted", "true");
-      
-      router.back();
     } catch {
-      
-      router.back();
+      /* still go back; the sign-up screen asks again if it was not saved */
     }
+    safeBack();
   };
 
   return (
-    <View style={styles.container}>
-      {}
-     <View style={styles.header}>
-      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} style={styles.backButton} onPress={() => router.back()}>
-        <Svg width={15} height={15} viewBox="0 0 16 16" fill="none">
-          <Path
-            d="M16 7H3.83L9.42 1.41L8 0L0 8L8 16L9.41 14.59L3.83 9H16V7Z"
-            fill="white"
-          />
-        </Svg>
-      </TouchableOpacity>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
 
-      <Text style={[styles.headerTitle, { fontFamily: "PlayfairDisplay_500Medium" }]}>
-        Terms & Conditions
-      </Text>
-    </View>
+      <View style={styles.header}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={10}
+          onPress={() => safeBack()}
+          style={styles.headerSide}
+        >
+          <Ionicons name="chevron-back" size={28} color={C.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Terms & Conditions</Text>
+        <View style={styles.headerSide} />
+      </View>
 
-      {}
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <LegalDocument title={TERMS_OF_SERVICE_TITLE} sections={TERMS_OF_SERVICE} />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <LegalCards title={TERMS_OF_SERVICE_TITLE} sections={TERMS_OF_SERVICE} plainText={remoteText} />
       </ScrollView>
 
-      {}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
+        <Text style={styles.footerHint}>
+          By tapping <Text style={styles.footerHintStrong}>I Agree</Text>, you accept these Terms and our Privacy Policy.
+        </Text>
         <TouchableOpacity
-          style={[styles.agreeButton, isPressed && styles.agreeButtonPressed]}
+          style={styles.agreeButton}
           onPress={handleAgree}
-          onPressIn={() => setIsPressed(true)}
-          onPressOut={() => setIsPressed(false)}
-          activeOpacity={1}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          testID="terms-agree"
         >
-          <Text style={styles.agreeButtonText}>Agree</Text>
+          <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
+          <Text style={styles.agreeButtonText}>I Agree</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -63,70 +65,69 @@ export default function TermsAndConditions() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF',
-    
+    backgroundColor: C.bg,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#3C2610',
-    paddingTop:70,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
-  backButton: {
-    padding: 8,
-  },
-  backText: {
-    fontSize: 18,
-    color: '#FFF',
+  headerSide: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'left',
-    fontSize: 18,
-    color: '#FFF',
-    marginLeft: 15,
+    color: C.text,
+    fontSize: 20,
+    fontFamily: "PlayfairDisplay_700Bold",
   },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  termsText: {
-    fontSize: 13,
-    color: '#727272',
-    textAlign: 'justify',
-    lineHeight: 20,
-    fontFamily: "Inter_400Regular",
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 24,
-    alignItems: 'center',
+    paddingTop: 14,
+    backgroundColor: C.card,
+    borderTopWidth: 1,
+    borderTopColor: C.border,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+  },
+  footerHint: {
+    color: C.muted,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "center",
+    marginBottom: 12,
+    fontFamily: "Rubik_400Regular",
+  },
+  footerHintStrong: {
+    color: C.accent,
+    fontFamily: "Rubik_600SemiBold",
   },
   agreeButton: {
-    backgroundColor: '#E9ECEF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    width: '100%',
-    alignItems: 'center',
-  },
-  agreeButtonPressed: {
-    backgroundColor: '#D1D5DB',
+    flexDirection: "row",
+    gap: 8,
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: C.accent,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: C.accent,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
   agreeButtonText: {
-    fontSize: 16,
-    color: '#000',
-    fontFamily: "Inter_500Medium",
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontFamily: "Inter_700Bold",
   },
 });

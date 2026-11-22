@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Image, Share, StatusBar, Text, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import BottomNav from "@components/layout/BottomNav";
 import { UserIconSVG, HomeIconSVG, ReelIconSVG, SearchIconSVG, BackIcon, ShareIcon } from "@/icons";
 import { useOtherUserProfile } from "@/components/profile/shared/profileHooks";
@@ -19,6 +20,7 @@ import { useUserReels } from "@/hooks/useUserReels";
 import { useProfileExtras } from "@/hooks/useProfileExtras";
 import { userService } from "@/api/services/userService";
 import { followUpdateEmitter } from "@/utils/followEmitter";
+import { SkeletonProfileHeader } from "@/components/Skeleton/Skeleton";
 
 const profileTabs = [
   { name: "Home", icon: HomeIconSVG, label: "" },
@@ -133,7 +135,7 @@ export default function OtherProfileScreen() {
   const top = (
     <View>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Back">
+        <TouchableOpacity onPress={() => safeBack("/(main)/home")} style={styles.backButton} accessibilityLabel="Back">
           <BackIcon color="white" size={24} />
         </TouchableOpacity>
         <TouchableOpacity
@@ -206,7 +208,8 @@ export default function OtherProfileScreen() {
     <View style={{ flex: 1, backgroundColor: "#3C2610" }}>
       <StatusBar barStyle="light-content" />
       <ProfileView
-        top={top}
+        loading={isLoading}
+        top={isLoading ? <SkeletonProfileHeader style={{ paddingTop: 64 }} /> : top}
         tabs={tabs}
         canCreatePost={false}
         unavailable={unavailable}

@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { BackIcon } from "@/icons";
 import { getErrorMessage } from "@/api/client";
@@ -28,6 +29,7 @@ import {
   type WithdrawalRequest,
   type WithdrawalSummary,
 } from "@/api/services/withdrawalService";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 
 const STATUS_COLOR: Record<string, string> = {
   PENDING: "#EC9A15",
@@ -151,7 +153,7 @@ export default function WithdrawScreen() {
     <KeyboardAvoidingScreen style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.backButton}>
           <BackIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Withdraw</Text>
@@ -159,9 +161,7 @@ export default function WithdrawScreen() {
       </View>
 
       {loading && !summary ? (
-        <View style={styles.center}>
-          <ActivityIndicator color="#EC9A15" />
-        </View>
+        <SkeletonDetail bannerHeight={120} />
       ) : loadError && !summary ? (
         <View style={styles.center}>
           <Text style={styles.muted}>{loadError}</Text>

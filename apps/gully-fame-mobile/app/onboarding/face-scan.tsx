@@ -11,6 +11,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
+import { safeBack } from "@/utils/safeBack";
 import { router, useLocalSearchParams } from "expo-router";
 import Svg, { Path } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -101,7 +102,7 @@ export default function OnboardingFaceScan() {
       <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerBackButton}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack()} style={styles.headerBackButton}>
             <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
               <Path
                 d="M16 7H3.83L9.42 1.41L8 0L0 8L8 16L9.41 14.59L3.83 9H16V7Z"

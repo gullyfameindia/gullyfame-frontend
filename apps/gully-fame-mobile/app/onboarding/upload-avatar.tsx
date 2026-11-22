@@ -16,6 +16,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
+import { safeBack } from "@/utils/safeBack";
 import { router, useLocalSearchParams } from "expo-router";
 import { updateProfile } from "@api/services/userService";
 import { getErrorMessage } from "@api/client";
@@ -217,7 +218,7 @@ export default function OnboardingUploadAvatar() {
       >
         <View style={styles.headerRow}>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-            onPress={() => router.back()}
+            onPress={() => safeBack()}
             style={styles.headerBackButton}
           >
             <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
@@ -277,7 +278,7 @@ export default function OnboardingUploadAvatar() {
                   errorMessage.includes("bio") &&
                   styles.bioInputError,
               ]}
-              placeholder="Introduce yourself in a sentence or two"
+              placeholder="e.g. Street dancer from Delhi who loves hip-hop"
               placeholderTextColor="#94A3B8"
               multiline
               numberOfLines={4}
@@ -299,7 +300,7 @@ export default function OnboardingUploadAvatar() {
             <View style={styles.threeWordsInputContainer}>
               <TextInput
                 style={styles.threeWordsInput}
-                placeholder="1st word"
+                placeholder="e.g. Bold"
                 placeholderTextColor="#94A3B8"
                 value={threeWords[0]}
                 onChangeText={(text) => {
@@ -311,7 +312,7 @@ export default function OnboardingUploadAvatar() {
               <Text style={styles.threeWordsSeparator}>|</Text>
               <TextInput
                 style={styles.threeWordsInput}
-                placeholder="2nd word"
+                placeholder="e.g. Creative"
                 placeholderTextColor="#94A3B8"
                 value={threeWords[1]}
                 onChangeText={(text) => {
@@ -323,7 +324,7 @@ export default function OnboardingUploadAvatar() {
               <Text style={styles.threeWordsSeparator}>|</Text>
               <TextInput
                 style={styles.threeWordsInput}
-                placeholder="3rd word"
+                placeholder="e.g. Fearless"
                 placeholderTextColor="#94A3B8"
                 value={threeWords[2]}
                 onChangeText={(text) => {

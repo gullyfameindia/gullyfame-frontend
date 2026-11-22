@@ -1,7 +1,7 @@
 // File Route: apps/gully-fame-mobile/components/ProfileBurgerMenuModal.tsx
 
 import { router } from "expo-router";
-import { Modal, TouchableOpacity, View, Text, Image, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { Modal, TouchableOpacity, View, Text, Image, ScrollView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ProfileData } from "@/components/profile/shared/profileHooks";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,8 @@ import { getMyCompetitions } from "@/api/services/competitionService";
 import { toastError } from "@/components/ui/Toast";
 import ComingSoonPopup from "@/components/ui/ComingSoonPopup";
 import { apiGet, getErrorMessage } from "@/api/client";
+import { Skeleton } from "@/components/Skeleton/Skeleton";
+import { performLogout } from "@utils/logout";
 
 // Same brown + orange palette as the rest of the app.
 const C = {
@@ -73,16 +75,26 @@ const SETTINGS_ITEMS: MenuItem[] = [
   { id: "delete-account", label: "Delete Account", icon: "trash-outline", path: "/(main)/settings/delete-account", danger: true },
 ];
 
+const EMPTY_STATS: UserStats = {
+  competitionCount: 0,
+  coinsEarned: 0,
+  kycStatus: "not submitted",
+  walletBalance: 0,
+  totalEarnings: 0,
+  totalTips: 0,
+};
+
+// Kept at module level so the values survive the menu closing/remounting.
+// null until the first successful fetch.
+let cachedStats: UserStats | null = null;
+
+const sameStats = (a: UserStats, b: UserStats) =>
+  (Object.keys(a) as (keyof UserStats)[]).every((k) => a[k] === b[k]);
+
 function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: ProfileBurgerMenuModalProps) {
-  const [userStats, setUserStats] = useState<UserStats>({
-    competitionCount: 0,
-    coinsEarned: 0,
-    kycStatus: "not submitted",
-    walletBalance: 0,
-    totalEarnings: 0,
-    totalTips: 0,
-  });
+  const [userStats, setUserStats] = useState<UserStats>(cachedStats ?? EMPTY_STATS);
   const insets = useSafeAreaInsets();
+  // Spinner only on the very first load; later opens show cached values and refresh silently.
   const [loading, setLoading] = useState(false);
   const [noCompetitionVisible, setNoCompetitionVisible] = useState(false);
 
@@ -104,7 +116,7 @@ function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: 
 
   // Fetch real-time user statistics from backend
   const fetchUserStats = async () => {
-    setLoading(true);
+    if (!cachedStats) setLoading(true);
     try {
       const [kyc, wallet, competitions] = await Promise.all([
         getMyKyc().catch(() => null),
@@ -112,14 +124,19 @@ function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: 
         apiGet<{ total: number }>("user/competitions", { params: { page: 1, limit: 1 } }).catch(() => ({ total: 0 })),
       ]);
       const tipsReceived = wallet.transactions.filter((tx) => tx.type === "TIP_RECEIVED").length;
-      setUserStats({
+      const next: UserStats = {
         competitionCount: competitions.total || 0,
         coinsEarned: wallet.earned,
         kycStatus: kyc ? (kyc.status.toLowerCase() as UserStats["kycStatus"]) : "not submitted",
         walletBalance: wallet.balance,
         totalEarnings: wallet.earned,
         totalTips: tipsReceived,
-      });
+      };
+      // Only update the UI when a value actually changed.
+      if (!cachedStats || !sameStats(cachedStats, next)) {
+        cachedStats = next;
+        setUserStats(next);
+      }
     } catch {
       // Keep the previous values; the menu still works without stats.
     } finally {
@@ -210,7 +227,7 @@ function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: 
               <View style={styles.statRow}>
                 <TouchableOpacity style={styles.statTile} onPress={() => handleNavigation("/(main)/coins")} activeOpacity={0.7}>
                   {loading ? (
-                    <ActivityIndicator size="small" color={C.accent} />
+                    <Skeleton width={40} height={16} radius={4} />
                   ) : (
                     <Text style={styles.statValue}>{userStats.coinsEarned.toLocaleString("en-IN")}</Text>
                   )}
@@ -223,7 +240,7 @@ function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: 
                   testID="burger-menu-leaderboard-rank"
                 >
                   {loading ? (
-                    <ActivityIndicator size="small" color={C.accent} />
+                    <Skeleton width={40} height={16} radius={4} />
                   ) : (
                     <Text style={styles.statValue}>{userStats.competitionCount > 0 ? userStats.competitionCount : "--"}</Text>
                   )}
@@ -231,7 +248,7 @@ function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: 
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.statTile} onPress={() => handleNavigation("/(main)/settings/kyc-status")} activeOpacity={0.7}>
                   {loading ? (
-                    <ActivityIndicator size="small" color={C.accent} />
+                    <Skeleton width={40} height={16} radius={4} />
                   ) : (
                     <Text
                       style={[styles.statValue, { color: kycColor, fontSize: 13, textAlign: "center" }]}
@@ -294,7 +311,6 @@ function ProfileBurgerMenuModal({ isVisible, onClose = () => {}, profileData }: 
                 style={styles.logout}
                 onPress={async () => {
                   onClose();
-                  const { performLogout } = await import("@utils/logout");
                   await performLogout();
                 }}
                 activeOpacity={0.8}

@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   RefreshControl,
@@ -18,6 +17,7 @@ import { Directions, Gesture, GestureDetector } from "react-native-gesture-handl
 import { ProfileMediaItem, ProfileMediaTile } from "./ProfileMediaTile";
 import { CAN_DELETE_POSTS, deletePost } from "@/api/services/profileExtrasService";
 import { resolveMediaUrl } from "@/utils/mediaUrl";
+import { Skeleton, SkeletonGrid, SkeletonRoot } from "@/components/Skeleton/Skeleton";
 
 const BG = "#3C2610";
 const ACCENT = "#EC9A15";
@@ -53,6 +53,8 @@ export interface ProfileTab {
 }
 
 interface Props {
+  /** True while the profile itself loads: the whole screen shows shimmer blocks. */
+  loading?: boolean;
   /** Everything above the tabs, unchanged from the original profile. */
   top: React.ReactNode;
   tabs: ProfileTab[];
@@ -68,7 +70,6 @@ interface Props {
 
 type Row = { type: "top" } | { type: "tabs" } | { type: "row"; key: string; items: ProfileMediaItem[] } | { type: "state" };
 
-const Skeleton = ({ style }: { style: any }) => <View style={[styles.skeleton, style]} />;
 
 export default function ProfileView({
   top,
@@ -77,6 +78,7 @@ export default function ProfileView({
   unavailable,
   ownerId,
   textTabs = false,
+  loading = false,
 }: Props) {
   const insets = useSafeAreaInsets();
   const { width, height: windowHeight } = useWindowDimensions();
@@ -97,6 +99,7 @@ export default function ProfileView({
 
   const rows: Row[] = useMemo(() => {
     const base: Row[] = [{ type: "top" }];
+    if (loading) return base.concat({ type: "tabs" }, { type: "state" });
     if (unavailable || !tab) return base.concat({ type: "state" });
     base.push({ type: "tabs" });
     const items = source?.items ?? [];
@@ -106,7 +109,7 @@ export default function ProfileView({
       base.push({ type: "row", key: `${tab.key}:${slice.map((s) => s.id).join("|")}`, items: slice });
     }
     return base;
-  }, [source?.items, tab, unavailable]);
+  }, [source?.items, tab, unavailable, loading]);
 
   // Each tab keeps its own scroll position once the tab bar is pinned.
   const switchTab = useCallback(
@@ -184,7 +187,14 @@ export default function ProfileView({
     [refreshCurrent]
   );
 
-  const renderTabs = () => (
+  const renderTabs = () =>
+    loading ? (
+      <SkeletonRoot style={{ flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
+        {tabs.map((t) => (
+          <Skeleton key={t.key} height={20} radius={6} style={{ flex: 1 }} />
+        ))}
+      </SkeletonRoot>
+    ) : (
     <View
       // Top padding keeps the icons below the status bar once the tab bar is pinned.
       style={[styles.tabs, { paddingTop: tabsStuck ? insets.top : 0 }]}
@@ -223,6 +233,15 @@ export default function ProfileView({
   );
 
   const renderState = () => {
+    if (loading) {
+      return (
+        <View style={styles.skeletonGrid}>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Skeleton key={i} radius={0} style={{ width: tileSize, height: tileHeight }} />
+          ))}
+        </View>
+      );
+    }
     if (unavailable) {
       return (
         <View style={styles.state}>
@@ -236,7 +255,7 @@ export default function ProfileView({
       return (
         <View style={styles.skeletonGrid}>
           {Array.from({ length: 9 }).map((_, i) => (
-            <Skeleton key={i} style={{ width: tileSize, height: tileHeight }} />
+            <Skeleton key={i} radius={0} style={{ width: tileSize, height: tileHeight }} />
           ))}
         </View>
       );
@@ -339,7 +358,7 @@ export default function ProfileView({
         }
         ListFooterComponent={
           <View style={{ paddingBottom: BOTTOM_NAV_SPACE + insets.bottom }}>
-            {source?.loadingMore ? <ActivityIndicator color={ACCENT} style={{ marginTop: 12 }} /> : null}
+            {source?.loadingMore ? <SkeletonGrid count={2} columns={2} style={{ marginTop: 12 }} /> : null}
           </View>
         }
         showsVerticalScrollIndicator={false}

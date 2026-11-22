@@ -1,6 +1,7 @@
 import { useState, useEffect,  useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, Platform, Animated, ActivityIndicator, Alert, Switch } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { BackIcon } from "@/icons";
@@ -367,7 +368,7 @@ export default function NotificationsScreen() {
       <View style={responsiveStyles.headerContainer}>
         <View style={responsiveStyles.header}>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-            onPress={() => router.back()}
+            onPress={() => safeBack("/(main)/home")}
             style={responsiveStyles.headerButton}
           >
             <BackIcon color="#EC9A15" />
@@ -588,7 +589,7 @@ export default function NotificationsScreen() {
         {!loading && !loadError && hasMore ? (
           <TouchableOpacity onPress={loadMore} disabled={loadingMore} style={{ alignItems: "center", paddingVertical: 16 }}>
             {loadingMore ? (
-              <ActivityIndicator size="small" color="#EC9A15" />
+              <SkeletonList rows={2} />
             ) : (
               <Text style={{ color: "#EC9A15", fontSize: 14, fontWeight: "600" }}>Load more</Text>
             )}

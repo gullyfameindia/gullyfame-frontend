@@ -28,7 +28,7 @@ import { getCompetitionDetails, getLeaderboard } from "@/api/services/competitio
 import { getErrorMessage } from "@/api/client";
 import { resolveMediaUrl } from "@/utils/mediaUrl";
 import { openCompetition } from "@/utils/openCompetition";
-import { SkeletonLoader } from "@/components/Skeleton";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 
 const { height } = Dimensions.get("window");
 
@@ -181,7 +181,7 @@ export default function LiveCompetitionScreen() {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
         {loading ? (
-          <SkeletonLoader style={{ alignSelf: "stretch" }} />
+          <SkeletonDetail style={{ alignSelf: "stretch" }} />
         ) : (
           <>
             <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError || "Competition not found."}</Text>

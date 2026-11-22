@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { View, StatusBar } from "react-native";
 import { getProfileRoute, DEFAULT_ROLE } from "@/components/profile/shared/profileTypes";
-import { SkeletonLoader } from "@/components/Skeleton";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 
 export default function ProfileRouter() {
   const params = useLocalSearchParams();
@@ -90,7 +90,7 @@ export default function ProfileRouter() {
   return (
     <View style={{ flex: 1, backgroundColor: "#3C2610" }}>
       <StatusBar barStyle="light-content" />
-      <SkeletonLoader />
+      <SkeletonDetail avatar />
     </View>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { safeIdParam } from "@/utils/routeParams";
 import { View, Text, ScrollView, Image, TouchableOpacity, StatusBar, LayoutAnimation } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BackIcon } from "@/icons";
@@ -12,7 +13,7 @@ import { openCompetition } from "@/utils/openCompetition";
 import { validateKycBeforeCompetition } from "@/utils/kycValidation";
 import { toastError, toastSuccess } from "@/components/ui/Toast";
 import { upcomingCompetitionStyles as styles } from "@/styles/upcomingCompetitionStyles";
-import { SkeletonLoader } from "@/components/Skeleton";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 
 const formatCurrency = (amount: number): string => {
   if (!amount) return "₹0";
@@ -130,7 +131,7 @@ export default function UpcomingCompetitionScreen() {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 24 }]}>
         {loading ? (
-          <SkeletonLoader style={{ alignSelf: "stretch" }} />
+          <SkeletonDetail style={{ alignSelf: "stretch" }} />
         ) : (
           <>
             <Text style={{ color: "#ccc", textAlign: "center" }}>{loadError || "Competition not found."}</Text>
@@ -162,7 +163,7 @@ export default function UpcomingCompetitionScreen() {
       </View>
 
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => router.back()} style={styles.headerButton}><BackIcon /></TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10} onPress={() => safeBack("/(main)/home")} style={styles.headerButton}><BackIcon /></TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{competitionData.title}</Text>
         <View style={{ width: 40 }} />
       </View>

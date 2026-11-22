@@ -15,6 +15,7 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path, Circle } from "react-native-svg";
@@ -375,7 +376,7 @@ export default function InboxScreen() {
       <View style={responsiveStyles.headerContainer}>
         <View style={responsiveStyles.header}>
           <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-            onPress={() => router.back()}
+            onPress={() => safeBack("/(main)/home")}
             style={responsiveStyles.headerButton}
           >
             <BackIcon color="#EC9A15" />

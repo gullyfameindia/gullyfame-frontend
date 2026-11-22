@@ -3,6 +3,7 @@ import { validatePickedAsset } from "@/utils/fileValidation";
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert, ActivityIndicator, useWindowDimensions } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useIsFocused, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -369,7 +370,7 @@ export default function EditScreen() {
   // Done: the edits already live in the shared editorSlice, so just return to the preview.
   // Export happens on the preview's Next, never here.
   const handleDone = () => {
-    router.back();
+    safeBack("/(main)/home");
   };
 
   return (
@@ -380,7 +381,7 @@ export default function EditScreen() {
       <SafeAreaView style={styles.topBar} edges={["top"]}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
           style={styles.closeButton}
-          onPress={() => router.back()}
+          onPress={() => safeBack("/(main)/home")}
         >
           <Ionicons name="close" size={28} color="#fff" />
         </TouchableOpacity>

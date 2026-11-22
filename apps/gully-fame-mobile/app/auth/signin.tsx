@@ -6,6 +6,8 @@ import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
 import { showGuestModeUnavailable } from "@utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppleIcon, EyeIcon, EyeOffIcon } from "@/icons";
+import { Ionicons } from "@expo/vector-icons";
+import OutlinedField, { FIELD_COLORS, fieldInputStyle } from "@/components/ui/OutlinedField";
 import { authService, AUTH_RULES } from "@api/services/authService";
 import { getErrorMessage } from "@api/client";
 import { registerPushTokenWithBackend } from "@utils/pushToken";
@@ -20,6 +22,7 @@ export default function SignIn() {
   const [emailOrMobile, setEmailOrMobile] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [focus, setFocus] = useState<string | null>(null);
   const { setRole } = useUserRole();
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -64,7 +67,9 @@ export default function SignIn() {
       setRole(profile.role);
       registerPushTokenWithBackend();
       setSuccessMessage("Login successful!");
-      router.replace("/auth/location");
+      // TEMP: location permission step disabled; restore the next line to ask for location again.
+      // router.replace("/auth/location");
+      router.replace("/(main)/home" as any);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -79,190 +84,149 @@ export default function SignIn() {
   };
 
   return (
-    <KeyboardAvoidingScreen style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container} statusBarColor="#3C2610">
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {}
         <View style={styles.logoContainer}>
-          <Image
-            source={require("@assets/images/gfi.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <Image source={require("@assets/images/gfi.png")} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.tagline}>Show your talent. Find your fame.</Text>
         </View>
 
-        {}
         <View style={styles.formContainer}>
-          <Text
-            style={[
-              styles.title,
-              { fontFamily: "PlayfairDisplay_800ExtraBold" },
-            ]}
-          >
-            Welcome back!{"\n"}Sign in to continue
-          </Text>
+          <Text style={styles.title}>Welcome back!</Text>
+          <Text style={styles.subtitle}>Sign in to continue your journey</Text>
 
-          {}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Email/Mobile <Text style={styles.required}>*</Text>
-            </Text>
+          <OutlinedField label="Email / Mobile" required icon="person-outline" focused={focus === "id"}>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your email or mobile number"
+              style={fieldInputStyle}
+              placeholder="you@example.com or 98765 43210"
               testID="signin-identifier"
-              placeholderTextColor="#B0B0B0"
+              placeholderTextColor={FIELD_COLORS.placeholder}
               value={emailOrMobile}
               onChangeText={setEmailOrMobile}
+              onFocus={() => setFocus("id")}
+              onBlur={() => setFocus(null)}
               autoCapitalize="none"
+              keyboardType="email-address"
+              returnKeyType="next"
             />
-          </View>
+          </OutlinedField>
 
-          {}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Password <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                testID="signin-password"
-                placeholderTextColor="#B0B0B0"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              {password.length > 0 && (
-                <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                  testID="signin-toggle-password"
-                >
-                  {showPassword ? (
-                    <EyeOffIcon size={20} color="#9CA3AF" />
-                  ) : (
-                    <EyeIcon size={20} color="#9CA3AF" />
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
+          <OutlinedField label="Password" required icon="lock-closed-outline" focused={focus === "pw"}>
+            <TextInput
+              style={fieldInputStyle}
+              placeholder="Your password"
+              testID="signin-password"
+              placeholderTextColor={FIELD_COLORS.placeholder}
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocus("pw")}
+              onBlur={() => setFocus(null)}
+              secureTextEntry={!showPassword}
+              returnKeyType="go"
+              onSubmitEditing={handleSignIn}
+            />
+            {password.length > 0 && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                style={styles.eyeIcon}
+                hitSlop={10}
+                onPress={() => setShowPassword(!showPassword)}
+                testID="signin-toggle-password"
+              >
+                {showPassword ? <EyeOffIcon size={20} color={C.icon} /> : <EyeIcon size={20} color={C.icon} />}
+              </TouchableOpacity>
+            )}
+          </OutlinedField>
 
-          <View style={styles.forgotContainer}>
-            <TouchableOpacity
-              onPress={() => router.push("/auth/forgotpassword")}
-              testID="signin-forgot-password"
-              activeOpacity={0.7}
-            >
-              <Text style={styles.forgotText}>Forgot Password?</Text>
-            </TouchableOpacity>
-          </View>
-
-          {}
-          <View style={styles.orContainer}>
-            <Text style={styles.orText}>Or</Text>
-          </View>
-
-          {}
           <TouchableOpacity
-            style={styles.otpLoginButton}
-            onPress={() => router.push("/auth/login-via-otp")}
-            testID="signin-otp-login"
+            style={styles.forgotContainer}
+            onPress={() => router.push("/auth/forgotpassword")}
+            testID="signin-forgot-password"
             activeOpacity={0.7}
+            hitSlop={8}
           >
-            <Text style={styles.otpLoginText}>
-              Login via <Text style={styles.otpUnderlinedText}>OTP</Text>
-            </Text>
+            <Text style={styles.forgotText}>Forgot Password?</Text>
           </TouchableOpacity>
 
           {errorMessage ? (
             <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle" size={18} color="#DC2626" />
               <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
           ) : null}
 
           {successMessage ? (
             <View style={styles.successContainer}>
+              <Ionicons name="checkmark-circle" size={18} color="#059669" />
               <Text style={styles.successText}>{successMessage}</Text>
             </View>
           ) : null}
 
-          {}
           <TouchableOpacity
-            style={[
-              styles.signInButton,
-              isLoading && styles.signInButtonDisabled,
-            ]}
+            style={[styles.signInButton, isLoading && styles.signInButtonDisabled]}
             onPress={handleSignIn}
             testID="signin-submit"
             disabled={isLoading}
+            activeOpacity={0.85}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.signInText}>Sign In</Text>
-            )}
+            {isLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.signInText}>Sign In</Text>}
           </TouchableOpacity>
 
-          {SOCIAL_LOGIN_ENABLED && (
-            <>
-              <View style={styles.continueWithContainer}>
-                <View style={styles.separatorLine} />
-                <Text style={styles.continueWithText}>OR Continue With</Text>
-                <View style={styles.separatorLine} />
-              </View>
+          <View style={styles.continueWithContainer}>
+            <View style={styles.separatorLine} />
+            <Text style={styles.continueWithText}>or</Text>
+            <View style={styles.separatorLine} />
+          </View>
 
-              <View style={styles.socialIconsContainer}>
-                {Platform.OS === "ios" && (
-                  <TouchableOpacity accessibilityRole="button" accessibilityLabel="Continue with Apple"
-                    style={[
-                      styles.socialIconButton,
-                      isSocialLoading && styles.socialIconButtonDisabled,
-                    ]}
-                    activeOpacity={0.7}
-                    onPress={handleAppleLogin}
-                    disabled={isSocialLoading}
-                  >
-                    {isSocialLoading ? (
-                      <ActivityIndicator color="#666" size="small" />
-                    ) : (
-                      <AppleIcon size={40} />
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
+          <TouchableOpacity
+            style={styles.otpLoginButton}
+            onPress={() => router.push("/auth/login-via-otp")}
+            testID="signin-otp-login"
+            activeOpacity={0.8}
+          >
+            <Ionicons name="phone-portrait-outline" size={20} color={C.brown} />
+            <Text style={styles.otpLoginText}>Login with OTP</Text>
+          </TouchableOpacity>
+
+          {SOCIAL_LOGIN_ENABLED && Platform.OS === "ios" && (
+            <View style={styles.socialIconsContainer}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Continue with Apple"
+                style={[styles.socialIconButton, isSocialLoading && styles.socialIconButtonDisabled]}
+                activeOpacity={0.7}
+                onPress={handleAppleLogin}
+                disabled={isSocialLoading}
+              >
+                {isSocialLoading ? <ActivityIndicator color="#666" size="small" /> : <AppleIcon size={40} />}
+              </TouchableOpacity>
+            </View>
           )}
 
-          {}
           <View style={styles.createAccountContainer}>
-            <Text style={styles.createAccountText}>
-              Don&apos;t have an account?{" "}
-            </Text>
+            <Text style={styles.createAccountText}>Don&apos;t have an account? </Text>
             <TouchableOpacity
               onPress={() => router.push("/auth/createaccount")}
               testID="signin-create-account"
               activeOpacity={0.7}
+              hitSlop={8}
             >
               <Text style={styles.createAccountLink}>Create One</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {}
-        <View style={styles.skipContainer}>
-          <TouchableOpacity
-            onPress={showGuestModeUnavailable}
-            testID="signin-skip"
-          >
-            <Text style={styles.skipText}>
-              Let me have a look!{" "}
-              <Text style={styles.skipLink}>SKIP{">>"}</Text>
-            </Text>
+          <View style={styles.flexSpacer} />
+
+          <TouchableOpacity style={styles.skipContainer} onPress={showGuestModeUnavailable} testID="signin-skip" activeOpacity={0.7}>
+            <Text style={styles.skipText}>Just browsing?</Text>
+            <Text style={styles.skipLink}>Skip</Text>
+            <Ionicons name="arrow-forward" size={16} color={C.orange} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -270,231 +234,114 @@ export default function SignIn() {
   );
 }
 
+const C = {
+  brown: "#3C2610",
+  orange: "#EC9A15",
+  card: "#FFF9F1",
+  text: "#1F2937",
+  muted: "#6B7280",
+  icon: "#9A7B55",
+  placeholder: "#A8A29E",
+  border: "#E7D9C4",
+};
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#3C2610",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  logoContainer: {
-    alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 30,
-    backgroundColor: "#3C2610",
-    top: 40,
-  },
-  logo: {
-    width: width * 0.3,
-    height: height * 0.075,
-  },
+  container: { flex: 1, backgroundColor: C.brown },
+  scrollView: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
+  logoContainer: { alignItems: "center", paddingTop: height * 0.035, paddingBottom: 28 },
+  logo: { width: width * 0.3, height: height * 0.075 },
+  tagline: { marginTop: 10, color: "#F3D9B1", fontSize: 13, fontFamily: "Inter_500Medium", letterSpacing: 0.3 },
   formContainer: {
-    backgroundColor: "#F6F9FD",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingHorizontal: 30,
-    paddingTop: 20,
-    paddingBottom: height * 0.12,
-    top: height * 0.05,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 6,
+    flex: 1,
+    backgroundColor: C.card,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 30,
+    paddingBottom: 24,
   },
-  title: {
-    fontSize: 25,
-    color: "#1F2937",
-    marginBottom: 25,
-    fontFamily: "PlayfairDisplay_800ExtraBold",
-  },
-  inputGroup: {
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 16,
-    color: "#111827",
-    marginBottom: 6,
-    fontFamily: "Inter_600SemiBold",
-  },
-  required: {
-    color: "#DC2626",
-  },
-  passwordContainer: {
-    position: "relative",
+  title: { fontSize: 28, color: C.text, fontFamily: "PlayfairDisplay_800ExtraBold" },
+  subtitle: { fontSize: 15, color: C.muted, fontFamily: "Inter_400Regular", marginTop: 4, marginBottom: 26 },
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 14, color: C.text, marginBottom: 8, fontFamily: "Inter_600SemiBold" },
+  required: { color: "#DC2626" },
+  inputRow: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  input: {
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#D4DAE9",
+    height: 54,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: C.border,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    paddingRight: 45,
-    fontSize: 14,
-    color: "#111827",
-    fontFamily: "Inter_400Regular",
-    height: 50,
-    flex: 1,
+    paddingHorizontal: 14,
   },
-  eyeIcon: {
-    position: "absolute",
-    right: 12,
-    padding: 4,
-  },
-  forgotContainer: {
-    alignItems: "flex-end",
-    marginBottom: 4,
-  },
-  forgotText: {
-    fontSize: 13,
-    color: "#EC9A15",
-    fontFamily: "Inter_600SemiBold",
-    textDecorationLine: "underline",
-  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, height: "100%", fontSize: 15, color: C.text, fontFamily: "Inter_400Regular", paddingVertical: 0 },
+  eyeIcon: { paddingLeft: 10, paddingVertical: 4 },
+  forgotContainer: { alignSelf: "flex-end", marginTop: -6, marginBottom: 20 },
+  forgotText: { fontSize: 14, color: C.orange, fontFamily: "Inter_600SemiBold" },
   signInButton: {
-    backgroundColor: "#3C2610",
-    borderRadius: 30,
-    paddingVertical: 18,
+    backgroundColor: C.orange,
+    borderRadius: 14,
+    height: 56,
+    justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: C.orange,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 4,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  signInText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontFamily: "Inter_700Bold",
-  },
-  signInButtonDisabled: {
-    opacity: 0.6,
-  },
-  createAccountContainer: {
-    alignItems: "center",
-    marginBottom: -14,
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  createAccountText: {
-    fontSize: 14,
-    color: "#000",
-    fontFamily: "Inter_400Regular",
-  },
-  createAccountLink: {
-    color: "#EC9A15",
-    fontSize: 14,
-    fontFamily: "Inter_600SemiBold",
-    textDecorationLine: "underline",
-  },
-  skipContainer: {
-    backgroundColor: "#FFFFFF", 
-    alignItems: "center",
-    paddingVertical: 15,
-  },
-  skipText: {
-    fontSize: width * 0.038,
-    color: "#666",
-    fontFamily: "Inter_400Regular",
-  },
-  skipLink: {
-    color: "#EC9A15",
-    fontFamily: "Inter_600SemiBold",
-  },
-  orContainer: {
-    alignItems: "center",
-    marginBottom: 0,
-  },
-  orText: {
-    fontSize: 14,
-    color: "#000",
-    fontFamily: "Inter_400Regular",
-  },
+  signInText: { color: "#FFFFFF", fontSize: 17, fontFamily: "Inter_700Bold", letterSpacing: 0.3 },
+  signInButtonDisabled: { opacity: 0.6 },
+  continueWithContainer: { flexDirection: "row", alignItems: "center", marginVertical: 20 },
+  separatorLine: { flex: 1, height: 1, backgroundColor: C.border },
+  continueWithText: { marginHorizontal: 12, fontSize: 13, color: C.muted, fontFamily: "Inter_500Medium" },
   otpLoginButton: {
-    borderWidth: 0,
-    borderRadius: 30,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginBottom: 6,
-    backgroundColor: "transparent",
-  },
-  otpLoginText: {
-    color: "#000",
-    fontSize: 16,
-    fontFamily: "Inter_400Regular",
-  },
-  otpUnderlinedText: {
-    color: "#EC9A15",
-    textDecorationLine: "underline",
-    fontFamily: "Inter_400Regular",
-  },
-  continueWithContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 15,
-  },
-  separatorLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#D1D5DB",
-  },
-  continueWithText: {
-    marginHorizontal: 12,
-    fontSize: 14,
-    color: "#000",
-    fontFamily: "Inter_400Regular",
-  },
-  socialIconsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 20,
-    marginBottom: 20,
-  },
-  socialIconButton: {
+    gap: 8,
+    height: 56,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: C.brown,
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
   },
-  socialIconButtonDisabled: {
-    opacity: 0.6,
-  },
+  otpLoginText: { color: C.brown, fontSize: 16, fontFamily: "Inter_600SemiBold" },
+  createAccountContainer: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginTop: 22 },
+  createAccountText: { fontSize: 14, color: C.muted, fontFamily: "Inter_400Regular" },
+  createAccountLink: { color: C.orange, fontSize: 14, fontFamily: "Inter_700Bold" },
+  flexSpacer: { flex: 1, minHeight: 20 },
+  skipContainer: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10 },
+  skipText: { fontSize: 14, color: C.muted, fontFamily: "Inter_400Regular" },
+  skipLink: { color: C.orange, fontSize: 14, fontFamily: "Inter_700Bold" },
+  socialIconsContainer: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 20, marginTop: 16 },
+  socialIconButton: { justifyContent: "center", alignItems: "center" },
+  socialIconButtonDisabled: { opacity: 0.6 },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FCA5A5",
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  errorText: {
-    color: "#DC2626",
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    textAlign: "center",
-  },
+  errorText: { flex: 1, color: "#B91C1C", fontSize: 14, fontFamily: "Inter_500Medium" },
   successContainer: {
-    backgroundColor: "#D1FAE5",
-    borderColor: "#10B981",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#ECFDF5",
+    borderColor: "#6EE7B7",
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  successText: {
-    color: "#10B981",
-    fontSize: 14,
-    fontFamily: "Inter_500Medium",
-    textAlign: "center",
-  },
+  successText: { flex: 1, color: "#047857", fontSize: 14, fontFamily: "Inter_500Medium" },
 });

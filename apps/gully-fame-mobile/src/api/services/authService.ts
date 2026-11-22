@@ -8,10 +8,36 @@ import { getProfile, updateProfile, BackendUser, ProfileUpdate } from "./userSer
 
 export type BackendRole = "participants" | "fan";
 
+export interface SignupStartData {
+  signupId: string;
+  /** Masked, e.g. "+91 ******3210". */
+  mobile: string;
+  /** Masked, e.g. "jo****@gmail.com". */
+  email: string;
+  smsSent: boolean;
+  emailSent: boolean;
+  /** Seconds until each code may be re-sent (a code still valid from an earlier submit is reused). */
+  mobileResendIn?: number;
+  emailResendIn?: number;
+  expiresIn: number;
+}
+
+export interface SignupVerifyData {
+  emailVerified: boolean;
+  mobileVerified: boolean;
+  created: boolean;
+  user?: any;
+  token?: string;
+  refreshToken?: string;
+}
+
 export interface RegisterRequest {
   firstName: string;
+  /** Empty when the full name is a single word. */
   lastName: string;
-  /** 10 digits, unique. */
+  /** Dialling code, e.g. "+91". */
+  countryCode: string;
+  /** National number, digits only (10 for India), unique. */
   mobile: string;
   /** Unique, max 50 chars. */
   email: string;
@@ -39,6 +65,10 @@ export interface OtpRequestData {
   txnId: string;
   smsSent: boolean;
   expiresIn: number;
+  /** Seconds until another code may be requested. */
+  resendIn?: number;
+  /** True when the server returned the code it had already sent (inside the resend window). */
+  reused?: boolean;
 }
 
 export interface VerifyOtpRequest {
@@ -75,6 +105,8 @@ export interface ForgotPasswordData {
   email: string;
   emailSent: boolean;
   expiresIn: number;
+  resendIn?: number;
+  reused?: boolean;
 }
 
 export interface ResetOtpData {
@@ -94,23 +126,69 @@ export const AUTH_RULES = {
 };
 
 export const authService = {
-  /** POST /auth/register. Returns no token, so callers log in afterwards. */
+  /**
+   * POST /auth/register: sign-up step 1. Nothing is created yet; the server texts a code to the
+   * mobile and emails another one. Finish with verifySignup.
+   */
   registerUser: (data: RegisterRequest) =>
-    toResult(async () => {
-      await apiPost(
-        "auth/register",
-        {
-          firstName: data.firstName.trim(),
-          lastName: data.lastName.trim(),
-          mobile: data.mobile.trim(),
-          email: data.email.trim().toLowerCase(),
-          password: data.password,
-          role: data.role,
-        },
-        { skipAuth: true }
-      );
-      return {};
-    }, "Account created"),
+    toResult(
+      () =>
+        apiPost<SignupStartData>(
+          "auth/register",
+          {
+            firstName: data.firstName.trim(),
+            lastName: data.lastName.trim(),
+            countryCode: data.countryCode,
+            mobile: data.mobile.trim(),
+            email: data.email.trim().toLowerCase(),
+            password: data.password,
+            role: data.role,
+          },
+          { skipAuth: true }
+        ),
+      "Verification codes sent"
+    ),
+
+  /**
+   * POST /auth/register/verify: send one or both codes. When both are verified the account is
+   * created and the response carries { user, token, refreshToken }.
+   */
+  verifySignup: (signupId: string, codes: { mobileOtp?: string; emailOtp?: string }) =>
+    toResult(
+      () =>
+        apiPost<SignupVerifyData>(
+          "auth/register/verify",
+          {
+            signupId,
+            ...(codes.mobileOtp ? { mobileOtp: codes.mobileOtp } : {}),
+            ...(codes.emailOtp ? { emailOtp: codes.emailOtp } : {}),
+          },
+          { skipAuth: true }
+        ),
+      "Verified"
+    ),
+
+  /** POST /auth/register/resend: a new code on one channel (30s cooldown on the server). */
+  resendSignupCode: (signupId: string, channel: "mobile" | "email") =>
+    toResult(
+      () => apiPost<{ channel: string; resendIn?: number }>("auth/register/resend", { signupId, channel }, { skipAuth: true }),
+      "Code sent"
+    ),
+
+  /** Change email, step 1: code to the new address. `resend` asks for a fresh code. */
+  sendEmailChangeCode: (email: string, opts: { resend?: boolean } = {}) =>
+    toResult(
+      () =>
+        apiPost<{ txnId: string; email: string; expiresIn: number; resendIn?: number; reused?: boolean }>(
+          "user/email/send-otp",
+          { email: email.trim().toLowerCase(), ...(opts.resend ? { resend: true } : {}) }
+        ),
+      "Code sent"
+    ),
+
+  /** Change email, step 2: the code proves the address; the server saves it. */
+  verifyEmailChange: (txnId: string, otp: string) =>
+    toResult(() => apiPost<{ email: string }>("user/email/verify", { txnId, otp }), "Email updated"),
 
   /**
    * POST /auth/login.
@@ -157,10 +235,19 @@ export const authService = {
       return result;
     }, "Login successful"),
 
-  /** Forgot password, step 1: emails a 6-digit code to the account's email. */
-  forgotPassword: (userId: string) =>
+  /**
+   * Forgot password, step 1: emails a 6-digit code to the account's email. A first request inside
+   * the resend window gets the code already sent; `resend: true` asks for a new one (and gets the
+   * remaining wait when it is too soon).
+   */
+  forgotPassword: (userId: string, opts: { resend?: boolean } = {}) =>
     toResult(
-      () => apiPost<ForgotPasswordData>("auth/forgot-password", { userId: userId.trim() }, { skipAuth: true }),
+      () =>
+        apiPost<ForgotPasswordData>(
+          "auth/forgot-password",
+          { userId: userId.trim(), ...(opts.resend ? { resend: true } : {}) },
+          { skipAuth: true }
+        ),
       "Reset code sent to your email"
     ),
 

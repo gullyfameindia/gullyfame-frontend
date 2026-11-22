@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import {
   Dimensions,
@@ -12,6 +12,10 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import CountryCodePicker from "@/components/CountryCodePicker";
+import OutlinedField, { DARK_FIELD_COLORS, darkFieldInputStyle } from "@/components/ui/OutlinedField";
+import { DEFAULT_COUNTRY_ISO, findCountry, isValidNationalNumber, type Country } from "@/constants/countries";
 import { router, useFocusEffect } from "expo-router";
 import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
 import { showGuestModeUnavailable } from "@utils/guestMode";
@@ -38,8 +42,9 @@ try {
 const { width, height } = Dimensions.get("window");
 
 export default function CreateAccount() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [focus, setFocus] = useState<string | null>(null);
+  const [country, setCountry] = useState<Country>(findCountry(DEFAULT_COUNTRY_ISO));
   const [mobileNo, setMobileNo] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,6 +58,12 @@ export default function CreateAccount() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  // Values the server already told us are registered, so a field stays red (and is
+  // reported together with the other one) even when the server names only one per reply.
+  const takenEmails = useRef(new Set<string>());
+  const takenMobiles = useRef(new Set<string>());
+  const [emailTaken, setEmailTaken] = useState(false);
+  const [mobileTaken, setMobileTaken] = useState(false);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -128,20 +139,31 @@ export default function CreateAccount() {
     setErrorMessage("");
     setPasswordErrors([]);
     setConfirmPasswordError("");
-    const first = firstName.trim();
-    const last = lastName.trim();
-    const mobile = mobileNo.trim();
+    // One "Full Name" field: the first word is the first name, the rest is the last name.
+    const name = fullName.trim().replace(/\s+/g, " ");
+    const [first = "", ...restOfName] = name.split(" ");
+    const last = restOfName.join(" ");
+    const mobile = mobileNo.replace(/\D/g, "");
+    const mobileKey = `${country.dial}${mobile}`;
     const mail = email.trim().toLowerCase();
-    if (!first || !last || !mobile || !mail || !password || !confirmPassword) {
+    if (!name || !mobile || !mail || !password || !confirmPassword) {
       setErrorMessage("Please fill all required fields.");
       return;
     }
-    if (first.length > AUTH_RULES.stringMaxLength || last.length > AUTH_RULES.stringMaxLength) {
-      setErrorMessage("Names must be 255 characters or fewer.");
+    if (name.length < 2 || !/[a-zA-Z\u0900-\u097F]/.test(name)) {
+      setErrorMessage("Enter your full name.");
       return;
     }
-    if (!AUTH_RULES.mobile.test(mobile)) {
-      setErrorMessage("Enter a valid 10-digit mobile number.");
+    if (name.length > AUTH_RULES.stringMaxLength) {
+      setErrorMessage("Name must be 255 characters or fewer.");
+      return;
+    }
+    if (!isValidNationalNumber(country, mobile)) {
+      setErrorMessage(
+        country.minDigits === country.maxDigits
+          ? `Enter a valid ${country.minDigits}-digit mobile number for ${country.name}.`
+          : `Enter a valid mobile number for ${country.name}.`
+      );
       return;
     }
     if (!AUTH_RULES.email.test(mail) || mail.length > AUTH_RULES.emailMaxLength) {
@@ -174,33 +196,50 @@ export default function CreateAccount() {
       const result = await authService.registerUser({
         firstName: first,
         lastName: last,
+        countryCode: country.dial,
         mobile,
         email: mail,
         password,
         role: backendRole,
       });
       if (!result.success) {
-        setErrorMessage(result.message);
+        const msg = result.message || "";
+        const isDuplicate = /already|taken|exist|registered|in use|used/i.test(msg);
+        if (isDuplicate && /e-?mail/i.test(msg)) takenEmails.current.add(mail);
+        if (isDuplicate && /mobile|phone|number/i.test(msg)) takenMobiles.current.add(mobileKey);
+        const eTaken = takenEmails.current.has(mail);
+        const mTaken = takenMobiles.current.has(mobileKey);
+        setEmailTaken(eTaken);
+        setMobileTaken(mTaken);
+        setErrorMessage(
+          eTaken && mTaken
+            ? "This email and mobile number are already registered. Try signing in."
+            : eTaken
+              ? "This email is already registered. Try signing in."
+              : mTaken
+                ? "This mobile number is already registered. Try signing in."
+                : msg
+        );
         return;
       }
-      // Register returns no token, so sign in with the new credentials.
-      const login = await authService.login({ userId: mail, password, viaPassword: true });
-      if (!login.success || !login.data?.token) {
-        setSuccessMessage("Account created! Please sign in.");
-        router.replace(`/auth/signin?email=${encodeURIComponent(mail)}` as any);
+      // The account is only created after the mobile and email codes are verified.
+      const pending = result.data;
+      if (!pending?.signupId) {
+        setErrorMessage("Could not start verification. Please try again.");
         return;
       }
-      await saveUserSession(login.data.token, login.data.user, login.data.refreshToken);
-      await AsyncStorage.setItem("accountCreatedVia", "normal");
-      registerPushTokenWithBackend();
-      setSuccessMessage("Account created successfully!");
       const query = [
+        `signupId=${encodeURIComponent(pending.signupId)}`,
+        `maskedMobile=${encodeURIComponent(pending.mobile)}`,
+        `maskedEmail=${encodeURIComponent(pending.email)}`,
+        `mobileResendIn=${pending.mobileResendIn ?? ""}`,
+        `emailResendIn=${pending.emailResendIn ?? ""}`,
         `role=${encodeURIComponent(role)}`,
         `firstName=${encodeURIComponent(first)}`,
         `lastName=${encodeURIComponent(last)}`,
         `email=${encodeURIComponent(mail)}`,
       ].join("&");
-      router.replace(`/onboarding/verify-id?${query}` as any);
+      router.push(`/auth/verify-signup?${query}` as any);
     } catch (error) {
       setErrorMessage(getErrorMessage(error));
     } finally {
@@ -251,7 +290,9 @@ export default function CreateAccount() {
       await saveUserSession(result.data.token, result.data.user, result.data.refreshToken);
       await AsyncStorage.setItem("accountCreatedVia", "google");
       setSuccessMessage("Google authentication successful!");
-      router.replace("/auth/location");
+      // TEMP: location permission step disabled; restore the next line to ask for location again.
+      // router.replace("/auth/location");
+      router.replace("/(main)/home" as any);
     } catch (error) {
       setErrorMessage(getErrorMessage(error, "Google sign-in failed. Please try again."));
     } finally {
@@ -267,7 +308,7 @@ export default function CreateAccount() {
   };
 
   return (
-    <KeyboardAvoidingScreen style={styles.container}>
+    <KeyboardAvoidingScreen style={styles.container} statusBarColor="#3C2610">
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -275,7 +316,7 @@ export default function CreateAccount() {
         <Image source={require("@assets/images/gfi.png")} style={styles.logo} />
 
         <View style={styles.card}>
-          <Text
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}
             style={[
               styles.title,
               { fontFamily: "PlayfairDisplay_800ExtraBold" },
@@ -284,166 +325,162 @@ export default function CreateAccount() {
             Sign up and find your gully fame!
           </Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              First Name <Text style={styles.required}>*</Text>
-            </Text>
+          <OutlinedField dark label="Full Name" required icon="person-outline" focused={focus === "name"}>
             <TextInput
-              style={styles.input}
-              placeholder="Enter your First Name"
-              placeholderTextColor="#B7B7B7"
-              value={firstName}
-              onChangeText={setFirstName}
-              testID="signup-first-name"
+              style={darkFieldInputStyle}
+              placeholder="e.g. John Smith"
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
+              value={fullName}
+              onChangeText={setFullName}
+              onFocus={() => setFocus("name")}
+              onBlur={() => setFocus(null)}
+              autoCapitalize="words"
+              autoComplete="name"
+              textContentType="name"
+              returnKeyType="next"
+              testID="signup-full-name"
             />
-          </View>
+          </OutlinedField>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Last Name <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your Last Name"
-              placeholderTextColor="#B7B7B7"
-              value={lastName}
-              onChangeText={setLastName}
-              testID="signup-last-name"
+          <OutlinedField
+            dark
+            label="Mobile Number"
+            required
+            focused={focus === "mobile"}
+            error={mobileTaken ? "This mobile number is already registered." : false}
+          >
+            <CountryCodePicker
+              bare
+              dark
+              value={country}
+              onChange={(c) => {
+                setCountry(c);
+                setMobileTaken(takenMobiles.current.has(`${c.dial}${mobileNo.replace(/\D/g, "")}`));
+              }}
             />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Mobile No. <Text style={styles.required}>*</Text>
-            </Text>
+            <View style={styles.fieldDivider} />
             <TextInput
-              style={styles.input}
-              placeholder="Enter your Mobile No."
-              placeholderTextColor="#B7B7B7"
+              style={darkFieldInputStyle}
+              placeholder={country.iso === "IN" ? "98765 43210" : "Mobile number"}
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
               keyboardType="phone-pad"
+              maxLength={country.maxDigits + 2}
               value={mobileNo}
-              onChangeText={setMobileNo}
+              onChangeText={(text) => {
+                setMobileNo(text);
+                setMobileTaken(takenMobiles.current.has(`${country.dial}${text.replace(/\D/g, "")}`));
+              }}
+              onFocus={() => setFocus("mobile")}
+              onBlur={() => setFocus(null)}
+              autoComplete="tel"
+              textContentType="telephoneNumber"
               testID="signup-mobile"
             />
-          </View>
+          </OutlinedField>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              E-mail ID <Text style={styles.required}>*</Text>
-            </Text>
+          <OutlinedField
+            dark
+            label="Email Address"
+            required
+            icon="mail-outline"
+            focused={focus === "email"}
+            error={emailTaken ? "This email is already registered." : false}
+          >
             <TextInput
-              style={styles.input}
-              placeholder="Enter your E-mail ID"
-              placeholderTextColor="#B7B7B7"
+              style={darkFieldInputStyle}
+              placeholder="you@example.com"
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
+              autoComplete="email"
+              textContentType="emailAddress"
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setEmailTaken(takenEmails.current.has(text.trim().toLowerCase()));
+              }}
+              onFocus={() => setFocus("email")}
+              onBlur={() => setFocus(null)}
               testID="signup-email"
             />
-          </View>
+          </OutlinedField>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Password <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={[styles.input, styles.passwordInput]}
-                placeholder="Enter your Password"
-                placeholderTextColor="#B7B7B7"
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={handlePasswordChange}
-                testID="signup-password"
-              />
-              {password.length > 0 && (
-                <TouchableOpacity accessibilityRole="button" accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                  testID="signup-toggle-password"
-                  activeOpacity={0.7}
-                >
-                  {showPassword ? (
-                    <EyeOffIcon color="#666" size={20} />
-                  ) : (
-                    <EyeIcon color="#666" size={20} />
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-
+          <OutlinedField
+            dark
+            label="Password"
+            required
+            icon="lock-closed-outline"
+            focused={focus === "password"}
+            error={passwordErrors.length > 0 && password.length > 0 ? passwordErrors[0] : false}
+            helper={
+              password.length > 0
+                ? password.length >= AUTH_RULES.passwordMinLength
+                  ? `✓ At least ${AUTH_RULES.passwordMinLength} characters`
+                  : `${password.length}/${AUTH_RULES.passwordMinLength} characters`
+                : undefined
+            }
+          >
+            <TextInput
+              style={darkFieldInputStyle}
+              placeholder={`At least ${AUTH_RULES.passwordMinLength} characters`}
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
+              autoComplete="new-password"
+              textContentType="newPassword"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={handlePasswordChange}
+              onFocus={() => setFocus("password")}
+              onBlur={() => setFocus(null)}
+              testID="signup-password"
+            />
             {password.length > 0 && (
-              <View style={styles.passwordRequirementsContainer}>
-                <Text style={styles.passwordRequirementsTitle}>
-                  Password Requirements:
-                </Text>
-                <View style={styles.requirementsList}>
-                  <View style={styles.requirementItem}>
-                    <Text
-                      style={[
-                        styles.requirementText,
-                        password.length >= AUTH_RULES.passwordMinLength && styles.requirementMet,
-                      ]}
-                    >
-                      {password.length >= AUTH_RULES.passwordMinLength ? "✓" : "○"} Minimum{" "}
-                      {AUTH_RULES.passwordMinLength} characters
-                    </Text>
-                  </View>
-                </View>
-              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                style={styles.eyeIcon}
+                hitSlop={10}
+                onPress={() => setShowPassword(!showPassword)}
+                testID="signup-toggle-password"
+                activeOpacity={0.7}
+              >
+                {showPassword ? <EyeOffIcon color={DARK_FIELD_COLORS.icon} size={20} /> : <EyeIcon color={DARK_FIELD_COLORS.icon} size={20} />}
+              </TouchableOpacity>
             )}
+          </OutlinedField>
 
-            {passwordErrors.length > 0 && password.length > 0 && (
-              <View style={styles.passwordErrorContainer}>
-                {passwordErrors.map((error, index) => (
-                  <Text key={index} style={styles.passwordErrorText}>
-                    • {error}
-                  </Text>
-                ))}
-              </View>
+          <OutlinedField
+            dark
+            label="Confirm Password"
+            required
+            icon="shield-checkmark-outline"
+            focused={focus === "confirm"}
+            error={confirmPasswordError || false}
+          >
+            <TextInput
+              style={darkFieldInputStyle}
+              placeholder="Re-enter your password"
+              placeholderTextColor={DARK_FIELD_COLORS.placeholder}
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={handleConfirmPasswordChange}
+              onFocus={() => setFocus("confirm")}
+              onBlur={() => setFocus(null)}
+              testID="signup-confirm-password"
+            />
+            {confirmPassword.length > 0 && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
+                style={styles.eyeIcon}
+                hitSlop={10}
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                testID="signup-toggle-confirm-password"
+                activeOpacity={0.7}
+              >
+                {showConfirmPassword ? <EyeOffIcon color={DARK_FIELD_COLORS.icon} size={20} /> : <EyeIcon color={DARK_FIELD_COLORS.icon} size={20} />}
+              </TouchableOpacity>
             )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
-              Confirm Password <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.passwordInput,
-                  confirmPasswordError && styles.inputError,
-                ]}
-                placeholder="Confirm your Password"
-                placeholderTextColor="#B7B7B7"
-                secureTextEntry={!showConfirmPassword}
-                value={confirmPassword}
-                onChangeText={handleConfirmPasswordChange}
-                testID="signup-confirm-password"
-              />
-              {confirmPassword.length > 0 && (
-                <TouchableOpacity accessibilityRole="button" accessibilityLabel={showConfirmPassword ? "Hide password" : "Show password"}
-                  style={styles.eyeIcon}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  testID="signup-toggle-confirm-password"
-                  activeOpacity={0.7}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOffIcon color="#666" size={20} />
-                  ) : (
-                    <EyeIcon color="#666" size={20} />
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-            {confirmPasswordError ? (
-              <Text style={styles.confirmPasswordErrorText}>
-                {confirmPasswordError}
-              </Text>
-            ) : null}
-          </View>
+          </OutlinedField>
 
           <Text style={styles.roleTitle}>Choose your role</Text>
           <View style={styles.roleRow}>
@@ -485,20 +522,22 @@ export default function CreateAccount() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.termsRow}>
-            <TouchableOpacity
-              style={styles.termsLinkContainer}
-              activeOpacity={0.8}
-              onPress={() => router.push("./termsandconditions")}
-              testID="signup-terms-link"
-            >
-              <Text style={styles.termsLink}>
-                {termsAccepted
-                  ? "✓ Terms & Conditions*"
-                  : "Terms & Conditions*"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.termsRow}
+            activeOpacity={0.8}
+            onPress={() => router.push("./termsandconditions")}
+            testID="signup-terms-link"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: termsAccepted }}
+          >
+            <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+              {termsAccepted ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
+            </View>
+            <Text style={styles.termsText}>
+              I agree to the <Text style={styles.termsLink}>Terms & Conditions</Text>
+              <Text style={styles.required}> *</Text>
+            </Text>
+          </TouchableOpacity>
 
           {errorMessage ? (
             <View style={styles.errorContainer}>
@@ -584,9 +623,10 @@ export default function CreateAccount() {
             onPress={() => router.push("./signin")}
             testID="signup-sign-in-link"
             activeOpacity={0.7}
+            style={{ paddingVertical: 14 }}
           >
             <Text style={styles.footerText}>
-              Already have account? <Text style={styles.footerLink}>Login</Text>
+              Already have an account? <Text style={styles.footerLink}>Login</Text>
             </Text>
           </TouchableOpacity>
 
@@ -597,8 +637,7 @@ export default function CreateAccount() {
             style={styles.skipButton}
           >
             <Text style={styles.skipText}>
-              Let me have a look!{" "}
-              <Text style={styles.skipLink}>SKIP{">>"}</Text>
+              Just browsing? <Text style={styles.skipLink}>Skip →</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -613,59 +652,67 @@ const styles = StyleSheet.create({
     backgroundColor: "#3C2610",
   },
   content: {
-    paddingHorizontal: width * 0.01,
-    paddingTop: height * 0.08,
-    paddingBottom: 0,
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingTop: height * 0.025,
+    paddingBottom: 12,
     alignItems: "center",
   },
   logo: {
     width: width * 0.33,
-    height: height * 0.08,
+    height: height * 0.065,
     resizeMode: "contain",
-    marginBottom: 24,
+    marginBottom: 16,
   },
+  // Same dark card as the in-app (hamburger menu) pages.
   card: {
     width: "100%",
-    backgroundColor: "#F6F9FD",
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingBottom: 0,
     paddingTop: 20,
-    paddingHorizontal: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 6,
+    paddingBottom: 6,
+    paddingHorizontal: 16,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(236, 154, 21, 0.35)",
   },
   title: {
-    fontSize: 25,
-    color: "#1F2937",
-    marginBottom: 25,
+    fontSize: 21,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 10,
     fontFamily: "PlayfairDisplay_800ExtraBold",
   },
   inputGroup: {
     marginBottom: 10,
   },
   label: {
-    fontSize: 16,
     color: "#111827",
-    marginBottom: 6,
     fontFamily: "Inter_600SemiBold",
+    fontSize: 14,
+    marginBottom: 8,
   },
   required: {
     color: "#DC2626",
   },
   input: {
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#D4DAE9",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 11,
     paddingVertical: 9,
-    fontSize: 15,
     color: "#111827",
     fontFamily: "Inter_400Regular",
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#E7D9C4",
+    backgroundColor: "#FFFFFF",
+    minHeight: 54,
+    paddingHorizontal: 14,
+    fontSize: 15,
+  },
+  phoneRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  phoneInput: {
+    flex: 1,
   },
   inputError: {
     borderColor: "#DC2626",
@@ -680,9 +727,14 @@ const styles = StyleSheet.create({
     paddingRight: 40,
   },
   eyeIcon: {
-    position: "absolute",
-    right: 12,
-    padding: 4,
+    paddingLeft: 10,
+    paddingVertical: 4,
+  },
+  fieldDivider: {
+    width: 1,
+    height: 22,
+    backgroundColor: "#3A3A3A",
+    marginHorizontal: 10,
   },
   passwordRequirementsContainer: {
     marginTop: 8,
@@ -734,80 +786,103 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   roleTitle: {
-    fontSize: 15,
-    color: "#111827",
-    marginBottom: 10,
+    fontSize: 13,
+    color: "#CAD7D8",
+    marginTop: 4,
+    marginBottom: 8,
     fontFamily: "Inter_700Bold",
   },
   roleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 10,
+    gap: 10,
+    marginBottom: 6,
   },
   roleButton: {
     flex: 1,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: "#D4DAE9",
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 12,
+    backgroundColor: "#252525",
+    paddingVertical: 0,
     alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#3A3A3A",
+    height: 42,
   },
   roleButtonActive: {
-    backgroundColor: "#3C2610",
-    borderColor: "#3C2610",
+    backgroundColor: "rgba(236, 154, 21, 0.15)",
+    borderColor: "#EC9A15",
   },
   roleButtonText: {
-    fontSize: 15,
-    color: "#1F2937",
+    fontSize: 14,
+    color: "#FFFFFF",
     fontFamily: "Inter_600SemiBold",
   },
   roleButtonTextActive: {
-    color: "#FFFFFF",
+    color: "#EC9A15",
   },
   termsRow: {
-    marginBottom: 15,
-    marginTop: 3,
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 2,
+    marginBottom: 12,
+    paddingVertical: 6,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "#7C8283",
+    backgroundColor: "#252525",
     justifyContent: "center",
     alignItems: "center",
   },
-  termsLinkContainer: {
-    alignItems: "center",
+  checkboxChecked: {
+    backgroundColor: "#EC9A15",
+    borderColor: "#EC9A15",
+  },
+  termsText: {
+    flexShrink: 1,
+    textAlign: "center",
+    color: "#CAD7D8",
+    fontSize: 13,
+    fontFamily: "Inter_400Regular",
   },
   termsLink: {
-    color: "#3C2610",
-    textDecorationLine: "underline",
-    fontSize: 12,
+    color: "#EC9A15",
     fontFamily: "Inter_600SemiBold",
   },
   primaryButton: {
-    backgroundColor: "#3C2610",
-    borderRadius: 30,
-    paddingVertical: 18,
+    paddingVertical: 0,
+    backgroundColor: "#EC9A15",
+    borderRadius: 12,
+    height: 44,
+    justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
+    shadowColor: "#EC9A15",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   primaryButtonDisabled: {
     opacity: 0.6,
   },
   primaryButtonText: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: "Inter_700Bold",
   },
   errorContainer: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
     borderWidth: 1,
-    borderRadius: 8,
     padding: 12,
     marginBottom: 15,
+    backgroundColor: "#FEF2F2",
+    borderColor: "#FCA5A5",
+    borderRadius: 12,
   },
   errorText: {
     color: "#DC2626",
@@ -831,14 +906,14 @@ const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: "center",
-    marginTop: 10,
-    fontSize: 14,
-    color: "#000",
+    marginTop: 0,
+    fontSize: 13,
+    color: "#CAD7D8",
     fontFamily: "Inter_400Regular",
   },
   footerLink: {
     color: "#EC9A15",
-    fontWeight: 900,
+    fontFamily: "Inter_700Bold",
   },
   continueWithContainer: {
     flexDirection: "row",
@@ -871,18 +946,20 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   skipButton: {
-    marginTop: 15,
-    marginHorizontal: -30,
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 20,
+    marginTop: 0,
+    marginHorizontal: -22,
+    paddingTop: 4,
+    paddingBottom: 12,
+    backgroundColor: "transparent",
   },
   skipText: {
-    fontSize: 15,
-    color: "#000",
+    fontSize: 13,
+    color: "#8A8F90",
     textAlign: "center",
     fontFamily: "Inter_400Regular",
   },
   skipLink: {
     color: "#EC9A15",
+    fontFamily: "Inter_700Bold",
   },
 });

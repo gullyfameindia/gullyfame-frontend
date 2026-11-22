@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Platform } from "react-native";
 import { router } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { getMyKyc } from "@/api/services/kycService";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { Circle } from "react-native-svg";
@@ -128,7 +129,7 @@ export default function VerifiedScreen() {
       {}
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-          onPress={() => router.back()}
+          onPress={() => safeBack("/(main)/home")}
           style={styles.backButton}
         >
           <BackIcon />

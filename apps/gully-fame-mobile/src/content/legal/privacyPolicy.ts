@@ -196,7 +196,7 @@ export const PRIVACY_POLICY: LegalSection[] = [
       { t: "p", x: "Name: Dhruv Kathuria" },
       { t: "p", x: "Email: admin@gullyfame.com" },
       { t: "p", x: "Phone: +91 98212 34605" },
-      { t: "p", x: "Address: GULLYFAME INDIA PRIVATE LIMITED, Ground Floor, 55 B, House 55B, Satguru Ram Singh Marg, Travel Masti, Najafgarh Road Industrial Area, New Delhi, West Delhi, Delhi, 110015" },
+      { t: "p", x: "Address: GULLY FAME INDIA PRIVATE LIMITED, Ground Floor, 55 B, House 55B, Satguru Ram Singh Marg, Travel Masti, Najafgarh Road Industrial Area, New Delhi, West Delhi, Delhi, 110015" },
       { t: "p", x: "GullyFame India will acknowledge each grievance within 24 hours of receiving it and resolve it within 15 days, as required under the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021." },
     ],
   },

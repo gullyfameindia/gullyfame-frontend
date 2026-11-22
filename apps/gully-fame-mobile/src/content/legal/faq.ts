@@ -119,7 +119,7 @@ export const FAQS: LegalSection[] = [
     number: "13",
     heading: "What is the Grievance‑Redressal Mechanism and response timeline?",
     body: [
-      { t: "p", x: "In compliance with the IT Act and the Intermediary Guidelines, 2021, the Company has appointed a Grievance Officer whose contact details are available on the App and the website. Users may lodge complaints regarding content, privacy, or any other grievance, and the Grievance Officer shall acknowledge the complaint within 24 hours and resolve it within 15 days." },
+      { t: "p", x: "In compliance with the IT Act and the Intermediary Guidelines, 2021, the Company has appointed a Grievance Officer whose contact details are available on the App and the website. Users may lodge complaints regarding content, privacy, or any other grievance, and the Grievance Officer shall acknowledge the complaint within 24 hours and seek to resolve it within 72 hours." },
     ],
   },
   {

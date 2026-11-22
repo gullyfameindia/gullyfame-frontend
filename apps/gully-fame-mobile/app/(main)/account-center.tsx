@@ -17,8 +17,8 @@ import {
   Animated,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { safeBack } from "@/utils/safeBack";
 import { toBackendGender, genderLabel } from "@/api/services/userService";
-import { AUTH_RULES } from "@/api/services/authService";
 import { toastSuccess } from "@/components/ui/Toast";
 import { useFocusEffect } from "expo-router/react-navigation";
 import { LinearGradient } from "expo-linear-gradient";
@@ -31,6 +31,8 @@ import { showPermissionSettingsAlert } from "@/utils/permissionSettings";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import DateOfBirthCalendar from "@/components/ui/DateOfBirthCalendar";
 import ChangeMobilePopup from "@/components/account/ChangeMobilePopup";
+import ChangeEmailPopup from "@/components/account/ChangeEmailPopup";
+import { SkeletonDetail } from "@/components/Skeleton/Skeleton";
 
 
 export default function AccountCenterScreen() {
@@ -64,6 +66,7 @@ export default function AccountCenterScreen() {
   const [openDropdown, setOpenDropdown] = useState<null | "gender" | "role">(null);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [mobilePopupVisible, setMobilePopupVisible] = useState(false);
+  const [emailPopupVisible, setEmailPopupVisible] = useState(false);
   // Public/private choice per field (email, mobile, gender, dob). Kept on this device only.
   const [fieldPublic, setFieldPublic] = useState<Record<string, boolean>>({}); 
 
@@ -317,14 +320,7 @@ export default function AccountCenterScreen() {
       if (lastName !== (originalData.lastName || "")) {
         updateData.lastName = lastName;
       }
-      if (email !== originalEmail) {
-        const nextEmail = email.trim().toLowerCase();
-        if (!AUTH_RULES.email.test(nextEmail) || nextEmail.length > AUTH_RULES.emailMaxLength) {
-          Alert.alert("Invalid email", "Enter a valid email address (max 50 characters).");
-          return;
-        }
-        updateData.email = nextEmail;
-      }
+      // Email is changed through ChangeEmailPopup (verified with a code), not this form.
       if (dateOfBirth !== (originalData.dob || "")) {
         updateData.dob = dateOfBirth;
       }
@@ -699,6 +695,7 @@ export default function AccountCenterScreen() {
         ]}
       >
         <StatusBar barStyle="light-content" backgroundColor="#3C2610" />
+        <SkeletonDetail avatar style={{ alignSelf: "stretch" }} />
       </View>
     );
   }
@@ -734,7 +731,7 @@ export default function AccountCenterScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity accessibilityRole="button" accessibilityLabel="Go back" hitSlop={10}
-          onPress={() => router.back()}
+          onPress={() => safeBack("/(main)/home")}
           style={styles.headerSide}
         >
           <BackIcon />
@@ -845,17 +842,14 @@ export default function AccountCenterScreen() {
         <View style={[styles.card, styles.groupCard]}>
           <Text style={styles.groupLabel}>Contact Info</Text>
 
-          <FieldRow label="Email" privacy={privacyFor("email")} value={email} editing={isEditing} onPress={startEditing}>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter email"
-              placeholderTextColor={C.placeholder}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </FieldRow>
+          <FieldRow
+            label="Email"
+            privacy={privacyFor("email")}
+            value={email}
+            editing={false}
+            onPress={() => setEmailPopupVisible(true)}
+            caption="We'll send a code to confirm a new address. Tap to change it."
+          />
 
           <FieldRow
             label="Phone number"
@@ -965,6 +959,20 @@ export default function AccountCenterScreen() {
           setOriginalData((prev: any) => ({ ...prev, mobile: newMobile }));
           AsyncStorage.setItem("userMobile", newMobile).catch(() => {});
           toastSuccess("Your mobile number has been updated");
+        }}
+      />
+
+      <ChangeEmailPopup
+        visible={emailPopupVisible}
+        currentEmail={email}
+        onClose={() => setEmailPopupVisible(false)}
+        onChanged={(newEmail) => {
+          setEmailPopupVisible(false);
+          setEmail(newEmail);
+          setOriginalEmail(newEmail);
+          setOriginalData((prev: any) => ({ ...prev, email: newEmail }));
+          AsyncStorage.setItem("userEmail", newEmail).catch(() => {});
+          toastSuccess("Your email address has been updated");
         }}
       />
 
