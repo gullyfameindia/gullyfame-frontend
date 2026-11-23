@@ -30,7 +30,7 @@ const MOCK_LENSES: Omit<Lens, "isSaved">[] = [
   {
     id: "gully-frame",
     name: "Gully Frame",
-    iconUrl: require("../../../../../../assets/images/logo.png"),
+    iconUrl: require("../../../../../../assets/images/logo.webp"),
     overlayUrl: require("../../../../../../assets/lenses/gully-frame.png"),
     hintText: "Press Record To Start",
     category: "Frames",

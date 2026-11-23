@@ -8,7 +8,8 @@
         "env": {
           "EXPO_PUBLIC_ENV": "development",
           "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
-          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com"
+          "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com",
+          "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1049903520885-edqcnjpcsstokp3ittl5dur71a78tp34.apps.googleusercontent.com"
         }
       },
       "ios": {
@@ -28,7 +29,8 @@
           "SENTRY_DISABLE_AUTO_UPLOAD": "true",
           "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
           "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com",
-          "EXPO_PUBLIC_SENTRY_DSN": "https://855adf88668243d7a37e3852a4eb4211@o4512464094167040.ingest.us.sentry.io/4512464105832448"
+          "EXPO_PUBLIC_SENTRY_DSN": "https://855adf88668243d7a37e3852a4eb4211@o4512464094167040.ingest.us.sentry.io/4512464105832448",
+          "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1049903520885-edqcnjpcsstokp3ittl5dur71a78tp34.apps.googleusercontent.com"
         }
       },
       "ios": {
@@ -49,7 +51,8 @@
           "EXPO_PUBLIC_API_BASE_URL": "https://api.gullyfame.com/v1/api/",
           "EXPO_PUBLIC_SOCKET_URL": "https://api.gullyfame.com",
           "EXPO_PUBLIC_SENTRY_DSN": "https://855adf88668243d7a37e3852a4eb4211@o4512464094167040.ingest.us.sentry.io/4512464105832448",
-          "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+          "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+          "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1049903520885-edqcnjpcsstokp3ittl5dur71a78tp34.apps.googleusercontent.com"
         }
       },
       "ios": {

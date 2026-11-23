@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Gully Fame",
-    "slug": "gully-fame-mobile",
+    "slug": "gullyfame-india",
     "version": "1.0.0",
     "backgroundColor": "#000000",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon.png",
+    "icon": "./assets/images/appicon.png",
     "scheme": "gullyfamemobile",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -13,7 +13,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.gullyfame.mobile",
       "buildNumber": "1",
-      "icon": "./assets/images/app-icon.png",
+      "icon": "./assets/images/appicon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -23,10 +23,10 @@
       "versionCode": 1,
       "package": "com.gullyfame.mobile",
       "googleServicesFile": "./google-services.json",
-      "icon": "./assets/images/app-icon.png",
+      "icon": "./assets/images/appicon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon-adaptive-foreground.png",
-        "backgroundColor": "#161616"
+        "backgroundColor": "#000000"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -96,13 +96,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/app-icon-adaptive-foreground.png",
+          "image": "./assets/images/appicon.png",
           "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#161616",
+          "backgroundColor": "#000000",
           "dark": {
-            "image": "./assets/images/app-icon-adaptive-foreground.png",
-            "backgroundColor": "#161616"
+            "image": "./assets/images/appicon.png",
+            "backgroundColor": "#000000"
           }
         }
       ],
@@ -128,9 +128,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "b3d08547-d9c1-47f8-9832-8a64bb6de279"
+        "projectId": "6596e55e-56e0-4e00-be94-c5ffa7f20411"
       }
     },
-    "owner": "gullyfamei"
+    "owner": "gully-fame-india-private-limited"
   }
 }

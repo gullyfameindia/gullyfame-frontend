@@ -72,7 +72,7 @@ export default function LoginViaEmail() {
         {}
         <View style={styles.logoContainer}>
           <Image
-            source={require("@assets/images/gfi.png")}
+            source={require("../../assets/images/logo.webp")}
             style={styles.logo}
             resizeMode="contain"
           />

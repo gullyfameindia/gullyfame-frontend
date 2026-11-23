@@ -19,7 +19,7 @@ const RoleBasedBanner = ({ onLayout }: { onLayout?: (event: any) => void }) => {
         style={styles.communityBanner}
       >
         <Image
-          source={require("@assets/images/gfi.png")}
+          source={require("../../../../assets/images/logo.webp")}
           style={styles.bannerLogo}
           resizeMode="contain"
         />

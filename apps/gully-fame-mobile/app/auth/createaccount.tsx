@@ -327,7 +327,7 @@ export default function CreateAccount() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Image source={require("@assets/images/gfi.png")} style={styles.logo} />
+        <Image source={require("../../assets/images/logo.webp")} style={styles.logo} />
 
         <View style={styles.card}>
           <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}

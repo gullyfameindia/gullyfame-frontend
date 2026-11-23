@@ -120,7 +120,7 @@ function DrawerMenu({ visible, onClose }) {
 
             <View style={styles.drawerHeader}>
               <Image
-                source={require("@assets/images/gfi.png")}
+                source={require("../../../assets/images/logo.webp")}
                 style={styles.drawerLogo}
                 resizeMode="contain"
               />

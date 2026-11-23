@@ -137,7 +137,7 @@ export default function ResetPassword() {
             </Svg>
           </TouchableOpacity>
           <Image
-            source={require("@assets/images/gfi.png")}
+            source={require("../../assets/images/logo.webp")}
             style={styles.logo}
             resizeMode="contain"
           />

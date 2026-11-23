@@ -5,8 +5,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { wp, hp } from "@/utils/responsive";
 import { getAuthToken } from "@/api/client";
 
-// Points directly to apps/gully-fame-mobile/assets/images/logo.png
-const DEFAULT_LOGO = require("../../assets/images/logo.png");
+// Points directly to apps/gully-fame-mobile/assets/images/logo.webp
+const DEFAULT_LOGO = require("../../assets/images/logo.webp");
 const DEFAULT_BACKGROUND = "#3C2610";
 
 export default function SplashScreen() {

@@ -92,7 +92,7 @@ export default function SignIn() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.logoContainer}>
-          <Image source={require("@assets/images/gfi.png")} style={styles.logo} resizeMode="contain" />
+          <Image source={require("../../assets/images/logo.webp")} style={styles.logo} resizeMode="contain" />
           <Text style={styles.tagline}>Show your talent. Find your fame.</Text>
         </View>
 

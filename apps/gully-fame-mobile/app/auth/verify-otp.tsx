@@ -146,7 +146,7 @@ export default function VerifyOtp() {
               />
             </Svg>
           </TouchableOpacity>
-          <Image source={require("@assets/images/gfi.png")} style={styles.logo} resizeMode="contain" />
+          <Image source={require("../../assets/images/logo.webp")} style={styles.logo} resizeMode="contain" />
           <View style={styles.headerSide} />
         </View>
 
