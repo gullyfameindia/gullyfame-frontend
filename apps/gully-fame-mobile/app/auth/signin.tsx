@@ -3,7 +3,6 @@ import KeyboardAvoidingScreen from "@/components/KeyboardAvoidingScreen";
 import { StyleSheet, Text, TouchableOpacity, View, Image, ScrollView, Dimensions, Platform, TextInput } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
-import { showGuestModeUnavailable } from "@utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppleIcon, EyeIcon, EyeOffIcon } from "@/icons";
 import { Ionicons } from "@expo/vector-icons";
@@ -220,12 +219,6 @@ export default function SignIn() {
               <Text style={styles.createAccountLink}>Create One</Text>
             </TouchableOpacity>
           </View>
-
-                    <TouchableOpacity style={styles.skipContainer} onPress={showGuestModeUnavailable} testID="signin-skip" activeOpacity={0.7}>
-            <Text style={styles.skipText}>Just browsing?</Text>
-            <Text style={styles.skipLink}>Skip</Text>
-            <Ionicons name="arrow-forward" size={16} color={C.orange} />
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingScreen>

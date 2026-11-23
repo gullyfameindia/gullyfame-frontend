@@ -17,7 +17,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import OutlinedField, { DARK_FIELD_COLORS, darkFieldInputStyle } from "@/components/ui/OutlinedField";
 import { safeBack } from "@/utils/safeBack";
 import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
-import { showGuestModeUnavailable } from "@utils/guestMode";
 import { GoogleIcon, InstagramIcon, AppleIcon } from "@/icons";
 import { authService, AUTH_RULES } from "@api/services/authService";
 import { friendlyMessage } from "@api/client";
@@ -193,18 +192,7 @@ export default function LoginViaOTP() {
             >
               <Text style={styles.createAccountLink}>Create One</Text>
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.skipContainer}>
-            <TouchableOpacity
-              onPress={showGuestModeUnavailable}
-            >
-              <Text style={styles.skipText}>
-                Just browsing? <Text style={styles.skipLink}>Skip →</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </View>        </View>
       </ScrollView>
     </KeyboardAvoidingScreen>
   );

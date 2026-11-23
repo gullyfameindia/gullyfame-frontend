@@ -18,7 +18,6 @@ import OutlinedField, { DARK_FIELD_COLORS, darkFieldInputStyle } from "@/compone
 import { DEFAULT_COUNTRY_ISO, findCountry, isValidNationalNumber, type Country } from "@/constants/countries";
 import { router, useFocusEffect } from "expo-router";
 import { SOCIAL_LOGIN_ENABLED } from "@/config/features";
-import { showGuestModeUnavailable } from "@utils/guestMode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   GoogleIcon,
@@ -677,19 +676,7 @@ export default function CreateAccount() {
             <Text style={styles.footerText}>
               Already have an account? <Text style={styles.footerLink}>Login</Text>
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={showGuestModeUnavailable}
-            testID="signup-skip"
-            activeOpacity={0.7}
-            style={styles.skipButton}
-          >
-            <Text style={styles.skipText}>
-              Just browsing? <Text style={styles.skipLink}>Skip →</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
+          </TouchableOpacity>        </View>
       </ScrollView>
     </KeyboardAvoidingScreen>
   );

@@ -26,7 +26,7 @@
       "icon": "./assets/images/appicon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon-adaptive-foreground.png",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#2E0E00"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -96,12 +96,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/appicon.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 240,
           "resizeMode": "contain",
           "backgroundColor": "#000000",
           "dark": {
-            "image": "./assets/images/appicon.png",
+            "image": "./assets/images/splash-icon.png",
             "backgroundColor": "#000000"
           }
         }

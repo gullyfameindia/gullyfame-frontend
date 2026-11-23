@@ -586,7 +586,7 @@ export default function GullyReelScreen() {
       videoUri = `${FileSystem.cacheDirectory}gully_reel_${Date.now()}.mp4`;
       await FileSystem.downloadAsync(remoteUri, videoUri);
 
-      const watermarkAsset = Asset.fromModule(require("@assets/images/gfi.png"));
+      const watermarkAsset = Asset.fromModule(require("../../../assets/images/logo-watermark.png"));
       await watermarkAsset.downloadAsync();
       const watermarkUri = watermarkAsset.localUri || watermarkAsset.uri;
 
